@@ -16,7 +16,10 @@
             background-color: #f0f0f0;
             overflow: hidden;
         }
-        #video, #canvas {
+        #video {
+            display: none; /* Hide the original video feed */
+        }
+        #canvas {
             border: 2px solid #ccc;
             max-width: 100%;
             max-height: 100%;
@@ -87,17 +90,9 @@
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-            // Render only the bottom half of the video
-            const videoHeight = videoElement.videoHeight;
-            const videoWidth = videoElement.videoWidth;
-            const cropTop = videoHeight / 2; // Start from the middle of the video
-
+            // Render the entire video onto the canvas
             canvasCtx.drawImage(
-                results.image,
-                0, cropTop, // Source rectangle: x, y, width, height
-                videoWidth, videoHeight / 2, // Crop the bottom half
-                0, 0, // Destination rectangle: x, y
-                canvasElement.width, canvasElement.height / 2 // Scale to fit canvas
+                results.image, 0, 0, canvasElement.width, canvasElement.height
             );
 
             if (results.multiFaceLandmarks) {
