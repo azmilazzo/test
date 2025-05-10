@@ -28,11 +28,26 @@
             top: 0;
             left: 0;
         }
+        #overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 255, 0, 0.7); /* Green with transparency */
+            color: black;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 5px;
+            z-index: 1000; /* Ensure it's on top */
+        }
     </style>
 </head>
 <body>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
+    <div id="overlay">
+        <p>Status: Initializing...</p>
+        <p>Nose Coordinates (X, Y): --, --</p>
+    </div>
 
     <!-- Fixed CDN URLs -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
@@ -44,6 +59,7 @@
         const videoElement = document.getElementById('video');
         const canvasElement = document.getElementById('canvas');
         const canvasCtx = canvasElement.getContext('2d');
+        const overlayElement = document.getElementById('overlay');
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
@@ -71,8 +87,11 @@
 
         function onResults(results) {
             if (!results.multiFaceLandmarks) {
-                return; // No need for status updates
+                updateOverlay("Status: No face detected", "--, --");
+                return;
             }
+
+            updateOverlay("Status: Face detected", getNoseCoordinates(results));
 
             // Dynamically resize canvas to match video feed
             canvasElement.width = videoElement.videoWidth;
@@ -100,6 +119,23 @@
                 }
             }
             canvasCtx.restore();
+        }
+
+        function updateOverlay(status, noseCoords) {
+            overlayElement.innerHTML = `
+                <p>Status: ${status}</p>
+                <p>Nose Coordinates (X, Y): ${noseCoords}</p>
+            `;
+        }
+
+        function getNoseCoordinates(results) {
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const noseLandmark = results.multiFaceLandmarks[0][4]; // Nose tip landmark index is 4
+                const x = Math.round(noseLandmark.x * canvasElement.width);
+                const y = Math.round(noseLandmark.y * canvasElement.height);
+                return `${x}, ${y}`;
+            }
+            return "--, --";
         }
 
         function drawCircle(ctx, point, options) {
