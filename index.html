@@ -30,9 +30,9 @@
             transform: translate(-50%, -50%);
             z-index: 10;
         }
-        /* Mirror the video and canvas */
-        #video, #canvas {
-            transform: scaleX(-1); /* Mirror horizontally */
+        /* Mirror the canvas */
+        #canvas {
+            transform: scaleX(-1);
         }
     </style>
 </head>
@@ -127,7 +127,7 @@
 
             const landmarks = results.multiFaceLandmarks[0];
 
-            // Draw facial landmarks
+            // Draw facial landmarks with MIRRORED X coordinates
             drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, { color: '#00FF00', lineWidth: 1 });
 
             // Get nose tip coordinates (index 4)
@@ -155,7 +155,7 @@
                 simulateMouseHover(mirroredNoseX * canvasElement.width, noseY * canvasElement.height);
 
                 // Draw mirrored nose tip in blue
-                drawCircle(canvasCtx, { x: mirroredNoseX, y: noseY }, { color: '#0000FF', lineWidth: 2, radius: 3 });
+                drawCircle(canvasCtx, { x: mirroredNoseX, y: noseY }, { color: '#0000FF', lineWidth: 2, radius: 5 });
             } else {
                 console.log("Nose tip landmark not found");
             }
