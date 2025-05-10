@@ -39,6 +39,8 @@
 
     <!-- Load dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
 
@@ -141,12 +143,26 @@
             }
         }
 
-        function drawCircle(ctx, point, options) {
-            ctx.beginPath();
-            ctx.arc(point.x * canvasElement.width, point.y * canvasElement.height, options.radius || 3, 0, Math.PI * 2, true);
+        // Function to draw connectors
+        function drawConnectors(ctx, landmarks, connections, options) {
+            if (!landmarks || !connections) {
+                return;
+            }
+
             ctx.lineWidth = options.lineWidth || 1;
             ctx.strokeStyle = options.color || '#00FF00';
-            ctx.stroke();
+
+            for (const [a, b] of connections) {
+                const landmarkA = landmarks[a];
+                const landmarkB = landmarks[b];
+
+                if (landmarkA && landmarkB) {
+                    ctx.beginPath();
+                    ctx.moveTo(landmarkA.x * canvasElement.width, landmarkA.y * canvasElement.height);
+                    ctx.lineTo(landmarkB.x * canvasElement.width, landmarkB.y * canvasElement.height);
+                    ctx.stroke();
+                }
+            }
         }
 
         // Handle window resize
