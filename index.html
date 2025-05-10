@@ -29,10 +29,10 @@
     <canvas id="canvas"></canvas>
 
     <!-- Fixed CDN URLs -->
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 
     <script>
         const videoElement = document.getElementById('video');
@@ -41,7 +41,7 @@
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/${file}`;
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
             }
         });
 
