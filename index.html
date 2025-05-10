@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live2D + FaceMesh</title>
+    <title>Live2D + FaceMesh (Mirrored)</title>
     <style>
         body {
             margin: 0;
@@ -29,6 +29,10 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 10;
+        }
+        /* Mirror the video and canvas */
+        #video, #canvas {
+            transform: scaleX(-1); /* Mirror horizontally */
         }
     </style>
 </head>
@@ -82,7 +86,7 @@
         // Initialize MediaPipe FaceMesh
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                return `https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/${file}`;
             }
         });
 
@@ -129,28 +133,29 @@
             // Get nose tip coordinates (index 4)
             const noseTip = landmarks[4];
             if (noseTip) {
-                const noseX = noseTip.x * canvasElement.width;
-                const noseY = noseTip.y * canvasElement.height;
+                // Mirror the x-coordinate of the nose tip
+                const mirroredNoseX = 1 - noseTip.x; // Invert x-coordinate for mirroring
+                const noseY = noseTip.y;
 
                 // Center point of screen
                 const centerX = canvasElement.width / 2;
                 const centerY = canvasElement.height / 2;
 
-                // Normalize direction
-                const relX = (noseX - centerX) / canvasElement.width;
-                const relY = (noseY - centerY) / canvasElement.height;
+                // Normalize direction based on mirrored coordinates
+                const relX = ((mirroredNoseX * canvasElement.width) - centerX) / canvasElement.width;
+                const relY = (noseY * canvasElement.height - centerY) / canvasElement.height;
 
-                // Rotate Live2D model based on nose tip
+                // Rotate Live2D model based on mirrored nose tip
                 if (live2dModel && live2dModel.rotate) {
                     const angle = Math.atan2(relY, relX) * 180 / Math.PI;
                     live2dModel.rotate(angle * 0.5); // Adjust sensitivity
                 }
 
-                // Simulate mouse hover at nose tip position
-                simulateMouseHover(noseX, noseY);
+                // Simulate mouse hover at mirrored nose tip position
+                simulateMouseHover(mirroredNoseX * canvasElement.width, noseY * canvasElement.height);
 
-                // Draw nose tip in blue
-                drawCircle(canvasCtx, noseTip, { color: '#0000FF', lineWidth: 2, radius: 3 });
+                // Draw mirrored nose tip in blue
+                drawCircle(canvasCtx, { x: mirroredNoseX, y: noseY }, { color: '#0000FF', lineWidth: 2, radius: 3 });
             } else {
                 console.log("Nose tip landmark not found");
             }
@@ -182,9 +187,13 @@
                 const landmarkB = landmarks[b];
 
                 if (landmarkA && landmarkB) {
+                    // Mirror the x-coordinates of landmarks
+                    const mirroredLandmarkA = { ...landmarkA, x: 1 - landmarkA.x };
+                    const mirroredLandmarkB = { ...landmarkB, x: 1 - landmarkB.x };
+
                     ctx.beginPath();
-                    ctx.moveTo(landmarkA.x * canvasElement.width, landmarkA.y * canvasElement.height);
-                    ctx.lineTo(landmarkB.x * canvasElement.width, landmarkB.y * canvasElement.height);
+                    ctx.moveTo(mirroredLandmarkA.x * canvasElement.width, mirroredLandmarkA.y * canvasElement.height);
+                    ctx.lineTo(mirroredLandmarkB.x * canvasElement.width, mirroredLandmarkB.y * canvasElement.height);
                     ctx.stroke();
                 }
             }
