@@ -1,222 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live2D + FaceMesh (Mirrored)</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #2a2a2a;
-            height: 100vh;
-            overflow: hidden;
-        }
-        #video {
-            display: none;
-        }
-        #canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-        }
-        #live2d-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-        }
-        /* Mirror the canvas */
-        #canvas {
-            transform: scaleX(-1);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live2D + FaceMesh - Mirrored</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #2a2a2a;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #video {
+      display: none;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      transform: scaleX(-1); /* Mirror horizontally */
+    }
+
+    #live2d-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+  </style>
 </head>
 <body>
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
-    <div id="live2d-container"></div>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+  <div id="live2d-container"></div>
 
-    <!-- Load dependencies -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
+  <!-- Load dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
 
-    <script>
-        const videoElement = document.getElementById('video');
-        const canvasElement = document.getElementById('canvas');
-        const canvasCtx = canvasElement.getContext('2d');
+  <script>
+    const videoElement = document.getElementById('video');
+    const canvasElement = document.getElementById('canvas');
+    const canvasCtx = canvasElement.getContext('2d');
 
-        let live2dModel = null;
+    let live2dModel = null;
 
-        // Initialize Live2D model
-        L2Dwidget.init({
-            model: {
-                jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json'
-            },
-            display: {
-                position: 'center',
-                width: window.innerWidth,
-                height: window.innerHeight,
-                hOffset: 0,
-                vOffset: 0
-            },
-            mobile: {
-                show: true,
-                scale: 1,
-                motion: true
-            },
-            react: {
-                opacityDefault: 1,
-                opacityOnHover: 1
-            }
-        });
+    // Initialize Live2D Model
+    L2Dwidget.init({
+      model: {
+        jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json'
+      },
+      display: {
+        position: 'center',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        hOffset: 0,
+        vOffset: 0
+      },
+      mobile: {
+        show: true,
+        scale: 1,
+        motion: true
+      },
+      react: {
+        opacityDefault: 1,
+        opacityOnHover: 1
+      }
+    });
 
-        // Wait for Live2D model to load
-        setTimeout(() => {
-            live2dModel = L2Dwidget.model;
-        }, 1000);
+    setTimeout(() => {
+      live2dModel = L2Dwidget.model;
+    }, 1000);
 
-        // Initialize MediaPipe FaceMesh
-        const faceMesh = new FaceMesh({
-            locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-            }
-        });
+    // Initialize MediaPipe FaceMesh
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
 
-        faceMesh.setOptions({
-            maxNumFaces: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
 
-        faceMesh.onResults(onResults);
+    faceMesh.onResults(onResults);
 
-        // Start camera feed
-        const camera = new Camera(videoElement, {
-            onFrame: async () => {
-                await faceMesh.send({ image: videoElement });
-            },
-            width: window.innerWidth,
-            height: window.innerHeight
-        });
-        camera.start();
+    // Start camera feed
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+    camera.start();
 
-        function onResults(results) {
-            if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) {
-                console.log("No face detected");
-                return;
-            }
+    function onResults(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
 
-            // Resize canvas to match video size
-            canvasElement.width = videoElement.videoWidth;
-            canvasElement.height = videoElement.videoHeight;
+      // Resize canvas to match video size
+      canvasElement.width = videoElement.videoWidth;
+      canvasElement.height = videoElement.videoHeight;
 
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.drawImage(
-                results.image,
-                0, 0,
-                canvasElement.width, canvasElement.height
-            );
+      canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      canvasCtx.drawImage(
+        results.image,
+        0, 0,
+        canvasElement.width, canvasElement.height
+      );
 
-            const landmarks = results.multiFaceLandmarks[0];
+      const landmarks = results.multiFaceLandmarks[0];
 
-            // Draw facial landmarks with MIRRORED X coordinates
-            drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, { color: '#00FF00', lineWidth: 1 });
+      drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, { color: '#00FF00', lineWidth: 1 });
+      drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, { color: '#00FF00', lineWidth: 1 });
+      drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, { color: '#00FF00', lineWidth: 1 });
+      drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, { color: '#00FF00', lineWidth: 1 });
+      drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, { color: '#00FF00', lineWidth: 1 });
 
-            // Get nose tip coordinates (index 4)
-            const noseTip = landmarks[4];
-            if (noseTip) {
-                // Mirror the x-coordinate of the nose tip
-                const mirroredNoseX = 1 - noseTip.x; // Invert x-coordinate for mirroring
-                const noseY = noseTip.y;
+      const noseTip = landmarks[4];
+      if (noseTip) {
+        // Mirror x-coordinate for correct alignment
+        const mirroredNoseX = 1 - noseTip.x;
+        const noseY = noseTip.y;
 
-                // Center point of screen
-                const centerX = canvasElement.width / 2;
-                const centerY = canvasElement.height / 2;
+        // Draw nose tip
+        drawCircle(canvasCtx, { x: mirroredNoseX, y: noseY }, { color: '#0000FF', radius: 5 });
 
-                // Normalize direction based on mirrored coordinates
-                const relX = ((mirroredNoseX * canvasElement.width) - centerX) / canvasElement.width;
-                const relY = (noseY * canvasElement.height - centerY) / canvasElement.height;
+        // Simulate mouse hover at nose tip
+        simulateMouseHover(mirroredNoseX * canvasElement.width, noseY * canvasElement.height);
 
-                // Rotate Live2D model based on mirrored nose tip
-                if (live2dModel && live2dModel.rotate) {
-                    const angle = Math.atan2(relY, relX) * 180 / Math.PI;
-                    live2dModel.rotate(angle * 0.5); // Adjust sensitivity
-                }
-
-                // Simulate mouse hover at mirrored nose tip position
-                simulateMouseHover(mirroredNoseX * canvasElement.width, noseY * canvasElement.height);
-
-                // Draw mirrored nose tip in blue
-                drawCircle(canvasCtx, { x: mirroredNoseX, y: noseY }, { color: '#0000FF', lineWidth: 2, radius: 5 });
-            } else {
-                console.log("Nose tip landmark not found");
-            }
+        // Rotate Live2D model
+        if (live2dModel && live2dModel.rotate) {
+          const centerX = canvasElement.width / 2;
+          const centerY = canvasElement.height / 2;
+          const relX = ((mirroredNoseX * canvasElement.width) - centerX) / canvasElement.width;
+          const relY = ((noseY * canvasElement.height) - centerY) / canvasElement.height;
+          const angle = Math.atan2(relY, relX) * 180 / Math.PI;
+          live2dModel.rotate(angle * 0.5); // Adjust sensitivity
         }
+      }
+    }
 
-        // Function to simulate mouse hover
-        function simulateMouseHover(x, y) {
-            const event = new MouseEvent('mousemove', {
-                clientX: x,
-                clientY: y,
-                bubbles: true,
-                cancelable: true,
-                view: window
-            });
-            document.dispatchEvent(event);
-        }
+    function drawConnectors(ctx, landmarks, connections, options) {
+      if (!landmarks || !connections) return;
 
-        // Function to draw connectors
-        function drawConnectors(ctx, landmarks, connections, options) {
-            if (!landmarks || !connections) {
-                return;
-            }
+      ctx.lineWidth = options.lineWidth || 1;
+      ctx.strokeStyle = options.color || '#00FF00';
 
-            ctx.lineWidth = options.lineWidth || 1;
-            ctx.strokeStyle = options.color || '#00FF00';
+      for (const [a, b] of connections) {
+        const pointA = landmarks[a];
+        const pointB = landmarks[b];
 
-            for (const [a, b] of connections) {
-                const landmarkA = landmarks[a];
-                const landmarkB = landmarks[b];
+        if (!pointA || !pointB) continue;
 
-                if (landmarkA && landmarkB) {
-                    // Mirror the x-coordinates of landmarks
-                    const mirroredLandmarkA = { ...landmarkA, x: 1 - landmarkA.x };
-                    const mirroredLandmarkB = { ...landmarkB, x: 1 - landmarkB.x };
+        // Mirror x-coordinates
+        const mirroredA = { ...pointA, x: 1 - pointA.x };
+        const mirroredB = { ...pointB, x: 1 - pointB.x };
 
-                    ctx.beginPath();
-                    ctx.moveTo(mirroredLandmarkA.x * canvasElement.width, mirroredLandmarkA.y * canvasElement.height);
-                    ctx.lineTo(mirroredLandmarkB.x * canvasElement.width, mirroredLandmarkB.y * canvasElement.height);
-                    ctx.stroke();
-                }
-            }
-        }
+        ctx.beginPath();
+        ctx.moveTo(mirroredA.x * canvasElement.width, mirroredA.y * canvasElement.height);
+        ctx.lineTo(mirroredB.x * canvasElement.width, mirroredB.y * canvasElement.height);
+        ctx.stroke();
+      }
+    }
 
-        // Function to draw a circle
-        function drawCircle(ctx, point, options) {
-            ctx.beginPath();
-            ctx.arc(point.x * canvasElement.width, point.y * canvasElement.height, options.radius || 3, 0, Math.PI * 2, true);
-            ctx.lineWidth = options.lineWidth || 1;
-            ctx.strokeStyle = options.color || '#00FF00';
-            ctx.stroke();
-        }
+    function drawCircle(ctx, point, options) {
+      ctx.beginPath();
+      ctx.arc(point.x * canvasElement.width, point.y * canvasElement.height, options.radius || 3, 0, Math.PI * 2);
+      ctx.lineWidth = options.lineWidth || 1;
+      ctx.strokeStyle = options.color || '#00FF00';
+      ctx.stroke();
+    }
 
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            camera.stop();
-            camera.setOptions({
-                width: window.innerWidth,
-                height: window.innerHeight
-            });
-            camera.start();
-        });
-    </script>
+    function simulateMouseHover(x, y) {
+      const event = new MouseEvent('mousemove', {
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      document.dispatchEvent(event);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.stop();
+      camera.setOptions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+      camera.start();
+    });
+  </script>
 </body>
 </html>
