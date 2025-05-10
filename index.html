@@ -14,15 +14,20 @@
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
+            overflow: hidden; /* Prevent scrollbars */
         }
         #video, #canvas {
             border: 2px solid #ccc;
             max-width: 100%;
+            max-height: 100%;
+            width: auto;
             height: auto;
+            object-fit: contain; /* Ensures the video scales proportionally */
         }
         #status {
-            margin-top: 20px;
-            font-size: 1.2em;
+            margin-top: 10px;
+            font-size: 1em;
+            text-align: center;
         }
     </style>
 </head>
@@ -31,10 +36,10 @@
     <canvas id="canvas"></canvas>
     <div id="status">Initializing...</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/face_mesh.js"></script>
 
     <script>
         const videoElement = document.getElementById('video');
@@ -44,7 +49,7 @@
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                return `https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/${file}`;
             }
         });
 
@@ -60,8 +65,8 @@
             onFrame: async () => {
                 await faceMesh.send({image: videoElement});
             },
-            width: 640,
-            height: 480
+            width: window.innerWidth, // Dynamically set width
+            height: window.innerHeight * 0.8 // Leave space for status text
         });
         camera.start();
 
@@ -72,6 +77,10 @@
             }
 
             statusElement.innerText = 'Face detected';
+
+            // Dynamically resize canvas to match video feed
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
 
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -108,6 +117,16 @@
             ctx.strokeStyle = options.color || '#00FF00';
             ctx.stroke();
         }
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.stop();
+            camera.setOptions({
+                width: window.innerWidth,
+                height: window.innerHeight * 0.8
+            });
+            camera.start();
+        });
     </script>
 </body>
 </html>
