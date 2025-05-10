@@ -36,7 +36,7 @@
     <canvas id="canvas"></canvas>
     <div id="status">Initializing...</div>
 
-    <!-- FIXED CDN URLS (no spaces) -->
+    <!-- Fixed CDN URLs -->
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
@@ -62,12 +62,13 @@
 
         faceMesh.onResults(onResults);
 
+        // Adjust camera dimensions to focus on the bottom part
         const camera = new Camera(videoElement, {
             onFrame: async () => {
                 await faceMesh.send({image: videoElement});
             },
             width: window.innerWidth,
-            height: window.innerHeight * 0.8
+            height: window.innerHeight * 0.8 // Leave space for status text
         });
         camera.start();
 
@@ -79,13 +80,26 @@
 
             statusElement.innerText = 'Face detected';
 
+            // Dynamically resize canvas to match video feed
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
 
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            
+
+            // Render only the bottom half of the video
+            const videoHeight = videoElement.videoHeight;
+            const videoWidth = videoElement.videoWidth;
+            const cropTop = videoHeight / 2; // Start from the middle of the video
+
+            canvasCtx.drawImage(
+                results.image,
+                0, cropTop, // Source rectangle: x, y, width, height
+                videoWidth, videoHeight / 2, // Crop the bottom half
+                0, 0, // Destination rectangle: x, y
+                canvasElement.width, canvasElement.height / 2 // Scale to fit canvas
+            );
+
             if (results.multiFaceLandmarks) {
                 for (const landmarks of results.multiFaceLandmarks) {
                     drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: '#00FF00', lineWidth: 1});
@@ -110,6 +124,7 @@
             ctx.stroke();
         }
 
+        // Handle window resizing
         window.addEventListener('resize', () => {
             camera.stop();
             camera.setOptions({
