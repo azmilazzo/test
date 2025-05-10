@@ -146,11 +146,26 @@
                     live2dModel.rotate(angle * 0.5); // Adjust sensitivity
                 }
 
+                // Simulate mouse hover at nose tip position
+                simulateMouseHover(noseX, noseY);
+
                 // Draw nose tip in blue
                 drawCircle(canvasCtx, noseTip, { color: '#0000FF', lineWidth: 2, radius: 3 });
             } else {
                 console.log("Nose tip landmark not found");
             }
+        }
+
+        // Function to simulate mouse hover
+        function simulateMouseHover(x, y) {
+            const event = new MouseEvent('mousemove', {
+                clientX: x,
+                clientY: y,
+                bubbles: true,
+                cancelable: true,
+                view: window
+            });
+            document.dispatchEvent(event);
         }
 
         // Function to draw connectors
