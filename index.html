@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live2D with Face Tracking</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        #video {
+            display: none; /* Hide the original video feed */
+        }
+        #canvas {
+            border: 2px solid #ccc;
+            width: 100%; /* Full width */
+            height: 100vh; /* Full height */
+            object-fit: cover; /* Ensure the video covers the entire area */
+            position: absolute; /* Position the canvas absolutely */
+            top: 0;
+            left: 0;
+        }
+        #live2d-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000; /* Ensure it's on top */
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <!-- Live2D Container -->
+    <div id="live2d-container"></div>
+
+    <!-- Fixed CDN URLs -->
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/live2d-widget @3.1.4/lib/L2Dwidget.min.js"></script>
+
+    <script>
+        // Initialize variables
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const live2dContainer = document.getElementById('live2d-container');
+
+        // Initialize FaceMesh
+        const faceMesh = new FaceMesh({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/${file}`;
+            }
+        });
+
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        faceMesh.onResults(onResults);
+
+        // Adjust camera dimensions to fit the full screen
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await faceMesh.send({image: videoElement});
+            },
+            width: window.innerWidth,
+            height: window.innerHeight
+        });
+        camera.start();
+
+        function onResults(results) {
+            if (!results.multiFaceLandmarks) {
+                return; // No face detected
+            }
+
+            // Dynamically resize canvas to match video feed
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            // Render the entire video onto the canvas
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height
+            );
+
+            if (results.multiFaceLandmarks) {
+                for (const landmarks of results.multiFaceLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#00FF00', lineWidth: 1});
+
+                    drawCircle(canvasCtx, landmarks[4], {color: '#0000FF', lineWidth: 2, radius: 3});
+
+                    // Get nose tip coordinates
+                    const noseTip = landmarks[4];
+                    const noseX = noseTip.x * canvasElement.width;
+                    const noseY = noseTip.y * canvasElement.height;
+
+                    // Update Live2D model orientation based on nose tip
+                    updateLive2DModel(noseX, noseY);
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        function drawCircle(ctx, point, options) {
+            ctx.beginPath();
+            ctx.arc(point.x * canvasElement.width, point.y * canvasElement.height, options.radius || 3, 0, Math.PI * 2, true);
+            ctx.lineWidth = options.lineWidth || 1;
+            ctx.strokeStyle = options.color || '#00FF00';
+            ctx.stroke();
+        }
+
+        // Initialize Live2D model
+        L2Dwidget.init({
+            model: {
+                jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku @1.0.5/assets/shizuku.model.json',
+            },
+            display: {
+                position: 'center',
+                width: 300,
+                height: 300,
+                hOffset: 0,
+                vOffset: 0
+            },
+            mobile: {
+                show: true,
+                scale: 1,
+                motion: true
+            },
+            react: {
+                opacityDefault: 1,
+                opacityOnHover: 1
+            }
+        });
+
+        // Function to update Live2D model orientation
+        function updateLive2DModel(noseX, noseY) {
+            const centerX = canvasElement.width / 2;
+            const centerY = canvasElement.height / 2;
+
+            // Calculate relative position of nose tip to center
+            const relX = (noseX - centerX) / canvasElement.width;
+            const relY = (noseY - centerY) / canvasElement.height;
+
+            // Update Live2D model orientation
+            L2Dwidget.position({
+                x: relX * 0.5, // Scale down for subtlety
+                y: relY * 0.5
+            });
+        }
+
+        // Handle window resizing
+        window.addEventListener('resize', () => {
+            camera.stop();
+            camera.setOptions({
+                width: window.innerWidth,
+                height: window.innerHeight
+            });
+            camera.start();
+        });
+    </script>
+</body>
+</html>
