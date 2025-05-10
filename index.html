@@ -14,46 +14,34 @@
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
-            overflow: hidden;
+            overflow: hidden; /* Prevent scrollbars */
         }
-        #video {
-            display: none; /* Hide the original video feed */
-        }
-        #canvas {
+        #video, #canvas {
             border: 2px solid #ccc;
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-        }
-        #status {
-            margin-top: 10px;
-            font-size: 1em;
-            text-align: center;
+            width: 100%; /* Full width */
+            height: 100vh; /* Full height */
+            object-fit: cover; /* Ensure the video covers the entire area */
         }
     </style>
 </head>
 <body>
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
-    <div id="status">Initializing...</div>
 
     <!-- Fixed CDN URLs -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/face_mesh.js"></script>
 
     <script>
         const videoElement = document.getElementById('video');
         const canvasElement = document.getElementById('canvas');
         const canvasCtx = canvasElement.getContext('2d');
-        const statusElement = document.getElementById('status');
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                return `https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/${file}`;
             }
         });
 
@@ -65,23 +53,20 @@
 
         faceMesh.onResults(onResults);
 
-        // Adjust camera dimensions to focus on the bottom part
+        // Adjust camera dimensions to fit the full screen
         const camera = new Camera(videoElement, {
             onFrame: async () => {
                 await faceMesh.send({image: videoElement});
             },
             width: window.innerWidth,
-            height: window.innerHeight * 0.8 // Leave space for status text
+            height: window.innerHeight
         });
         camera.start();
 
         function onResults(results) {
             if (!results.multiFaceLandmarks) {
-                statusElement.innerText = 'No face detected';
-                return;
+                return; // No need for status updates
             }
-
-            statusElement.innerText = 'Face detected';
 
             // Dynamically resize canvas to match video feed
             canvasElement.width = videoElement.videoWidth;
@@ -124,7 +109,7 @@
             camera.stop();
             camera.setOptions({
                 width: window.innerWidth,
-                height: window.innerHeight * 0.8
+                height: window.innerHeight
             });
             camera.start();
         });
