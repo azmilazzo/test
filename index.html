@@ -16,11 +16,17 @@
             background-color: #f0f0f0;
             overflow: hidden; /* Prevent scrollbars */
         }
-        #video, #canvas {
+        #video {
+            display: none; /* Hide the original video feed */
+        }
+        #canvas {
             border: 2px solid #ccc;
             width: 100%; /* Full width */
             height: 100vh; /* Full height */
             object-fit: cover; /* Ensure the video covers the entire area */
+            position: absolute; /* Position the canvas absolutely */
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
