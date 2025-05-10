@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Landmark Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #video, #canvas {
+            border: 2px solid #ccc;
+            max-width: 100%;
+            height: auto;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div id="status">Initializing...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
+    <script>
+        const videoElement = document.getElementById('video');
+        const canvasElement = document.getElementById('canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+        const statusElement = document.getElementById('status');
+
+        const faceMesh = new FaceMesh({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+            }
+        });
+
+        faceMesh.setOptions({
+            maxNumFaces: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        faceMesh.onResults(onResults);
+
+        const camera = new Camera(videoElement, {
+            onFrame: async () => {
+                await faceMesh.send({image: videoElement});
+            },
+            width: 640,
+            height: 480
+        });
+        camera.start();
+
+        function onResults(results) {
+            if (!results.multiFaceLandmarks) {
+                statusElement.innerText = 'No face detected';
+                return;
+            }
+
+            statusElement.innerText = 'Face detected';
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height);
+            if (results.multiFaceLandmarks) {
+                for (const landmarks of results.multiFaceLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE,
+                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW,
+                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE,
+                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW,
+                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL,
+                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS,
+                        {color: '#00FF00', lineWidth: 1});
+
+                    // Draw nose tip in blue
+                    drawCircle(canvasCtx, landmarks[4], {color: '#0000FF', lineWidth: 2, radius: 3});
+                }
+            }
+            canvasCtx.restore();
+        }
+
+        function drawCircle(ctx, point, options) {
+            ctx.beginPath();
+            ctx.arc(point.x * canvasElement.width, point.y * canvasElement.height, options.radius || 3, 0, Math.PI * 2, true);
+            ctx.lineWidth = options.lineWidth || 1;
+            ctx.strokeStyle = options.color || '#00FF00';
+            ctx.stroke();
+        }
+    </script>
+</body>
+</html>
