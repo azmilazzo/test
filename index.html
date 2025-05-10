@@ -14,7 +14,7 @@
             height: 100vh;
             margin: 0;
             background-color: #f0f0f0;
-            overflow: hidden; /* Prevent scrollbars */
+            overflow: hidden;
         }
         #video, #canvas {
             border: 2px solid #ccc;
@@ -22,7 +22,7 @@
             max-height: 100%;
             width: auto;
             height: auto;
-            object-fit: contain; /* Ensures the video scales proportionally */
+            object-fit: contain;
         }
         #status {
             margin-top: 10px;
@@ -36,10 +36,11 @@
     <canvas id="canvas"></canvas>
     <div id="status">Initializing...</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/face_mesh.js"></script>
+    <!-- FIXED CDN URLS (no spaces) -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
 
     <script>
         const videoElement = document.getElementById('video');
@@ -49,7 +50,7 @@
 
         const faceMesh = new FaceMesh({
             locateFile: (file) => {
-                return `https://cdn.jsdelivr.net/npm/ @mediapipe/face_mesh/${file}`;
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
             }
         });
 
@@ -65,8 +66,8 @@
             onFrame: async () => {
                 await faceMesh.send({image: videoElement});
             },
-            width: window.innerWidth, // Dynamically set width
-            height: window.innerHeight * 0.8 // Leave space for status text
+            width: window.innerWidth,
+            height: window.innerHeight * 0.8
         });
         camera.start();
 
@@ -78,32 +79,23 @@
 
             statusElement.innerText = 'Face detected';
 
-            // Dynamically resize canvas to match video feed
             canvasElement.width = videoElement.videoWidth;
             canvasElement.height = videoElement.videoHeight;
 
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.drawImage(
-                results.image, 0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            
             if (results.multiFaceLandmarks) {
                 for (const landmarks of results.multiFaceLandmarks) {
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
-                        {color: '#00FF00', lineWidth: 1});
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE,
-                        {color: '#00FF00', lineWidth: 1});
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW,
-                        {color: '#00FF00', lineWidth: 1});
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE,
-                        {color: '#00FF00', lineWidth: 1});
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW,
-                        {color: '#00FF00', lineWidth: 1});
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL,
-                        {color: '#00FF00', lineWidth: 1});
-                    drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS,
-                        {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYEBROW, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYEBROW, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#00FF00', lineWidth: 1});
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {color: '#00FF00', lineWidth: 1});
 
-                    // Draw nose tip in blue
                     drawCircle(canvasCtx, landmarks[4], {color: '#0000FF', lineWidth: 2, radius: 3});
                 }
             }
@@ -118,7 +110,6 @@
             ctx.stroke();
         }
 
-        // Handle window resizing
         window.addEventListener('resize', () => {
             camera.stop();
             camera.setOptions({
