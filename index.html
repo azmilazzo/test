@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live2D with Hidden Camera</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #2a2a2a;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #video,
+    #canvas {
+      display: none; /* Hide video and canvas */
+    }
+
+    #live2d-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <!-- These are hidden -->
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
+
+  <!-- Live2D container is visible -->
+  <div id="live2d-container"></div>
+
+  <!-- Load dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/live2d-widget@3.1.4/lib/L2Dwidget.min.js"></script>
+
+  <script>
+    const videoElement = document.getElementById('video');
+
+    let live2dModel = null;
+
+    // Initialize Live2D Model
+    L2Dwidget.init({
+      model: {
+        jsonPath: 'https://unpkg.com/live2d-widget-model-shizuku@1.0.5/assets/shizuku.model.json'
+      },
+      display: {
+        position: 'center',
+        width: window.innerWidth,
+        height: window.innerHeight,
+        hOffset: 0,
+        vOffset: 0
+      },
+      mobile: {
+        show: true,
+        scale: 1,
+        motion: true
+      },
+      react: {
+        opacityDefault: 1,
+        opacityOnHover: 1
+      }
+    });
+
+    setTimeout(() => {
+      live2dModel = L2Dwidget.model;
+    }, 1000);
+
+    // Initialize MediaPipe FaceMesh
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+    });
+
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    faceMesh.onResults(onResults);
+
+    // Start camera feed (but don't render it)
+    const camera = new Camera(videoElement, {
+      onFrame: async () => {
+        await faceMesh.send({ image: videoElement });
+      },
+      width: window.innerWidth,
+      height: window.innerHeight
+    });
+    camera.start();
+
+    function onResults(results) {
+      if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0) {
+        return;
+      }
+
+      const landmarks = results.multiFaceLandmarks[0];
+
+      const noseTip = landmarks[4];
+      if (noseTip) {
+        // Mirror x-coordinate for correct alignment
+        const mirroredNoseX = 1 - noseTip.x;
+        const noseY = noseTip.y;
+
+        // Center point of screen
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        // Normalize direction based on mirrored coordinates
+        const relX = ((mirroredNoseX * window.innerWidth) - centerX) / window.innerWidth;
+        const relY = ((noseY * window.innerHeight) - centerY) / window.innerHeight;
+
+        // Rotate Live2D model
+        if (live2dModel && live2dModel.rotate) {
+          const angle = Math.atan2(relY, relX) * 180 / Math.PI;
+          live2dModel.rotate(angle * 0.5); // Adjust sensitivity
+        }
+
+        // Simulate mouse hover at nose tip
+        simulateMouseHover(mirroredNoseX * window.innerWidth, noseY * window.innerHeight);
+      }
+    }
+
+    function simulateMouseHover(x, y) {
+      const event = new MouseEvent('mousemove', {
+        clientX: x,
+        clientY: y,
+        bubbles: true,
+        cancelable: true,
+        view: window
+      });
+      document.dispatchEvent(event);
+    }
+
+    window.addEventListener('resize', () => {
+      camera.stop();
+      camera.setOptions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+      camera.start();
+    });
+  </script>
+</body>
+</html>
