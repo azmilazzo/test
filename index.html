@@ -105,7 +105,8 @@
         camera.start();
 
         function onResults(results) {
-            if (!results.multiFaceLandmarks) {
+            if (!results.multiFaceLandmarks || !results.multiFaceLandmarks.length) {
+                console.log("No face detected");
                 return;
             }
 
@@ -121,25 +122,34 @@
             );
 
             const landmarks = results.multiFaceLandmarks[0];
+
+            // Draw facial landmarks
             drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, { color: '#00FF00', lineWidth: 1 });
 
-            // Get nose tip coordinates
+            // Get nose tip coordinates (index 4)
             const noseTip = landmarks[4];
-            const noseX = noseTip.x * canvasElement.width;
-            const noseY = noseTip.y * canvasElement.height;
+            if (noseTip) {
+                const noseX = noseTip.x * canvasElement.width;
+                const noseY = noseTip.y * canvasElement.height;
 
-            // Center point of screen
-            const centerX = canvasElement.width / 2;
-            const centerY = canvasElement.height / 2;
+                // Center point of screen
+                const centerX = canvasElement.width / 2;
+                const centerY = canvasElement.height / 2;
 
-            // Normalize direction
-            const relX = (noseX - centerX) / canvasElement.width;
-            const relY = (noseY - centerY) / canvasElement.height;
+                // Normalize direction
+                const relX = (noseX - centerX) / canvasElement.width;
+                const relY = (noseY - centerY) / canvasElement.height;
 
-            // Rotate Live2D model based on nose tip
-            if (live2dModel && live2dModel.rotate) {
-                const angle = Math.atan2(relY, relX) * 180 / Math.PI;
-                live2dModel.rotate(angle * 0.5); // Adjust sensitivity
+                // Rotate Live2D model based on nose tip
+                if (live2dModel && live2dModel.rotate) {
+                    const angle = Math.atan2(relY, relX) * 180 / Math.PI;
+                    live2dModel.rotate(angle * 0.5); // Adjust sensitivity
+                }
+
+                // Draw nose tip in blue
+                drawCircle(canvasCtx, noseTip, { color: '#0000FF', lineWidth: 2, radius: 3 });
+            } else {
+                console.log("Nose tip landmark not found");
             }
         }
 
@@ -163,6 +173,15 @@
                     ctx.stroke();
                 }
             }
+        }
+
+        // Function to draw a circle
+        function drawCircle(ctx, point, options) {
+            ctx.beginPath();
+            ctx.arc(point.x * canvasElement.width, point.y * canvasElement.height, options.radius || 3, 0, Math.PI * 2, true);
+            ctx.lineWidth = options.lineWidth || 1;
+            ctx.strokeStyle = options.color || '#00FF00';
+            ctx.stroke();
         }
 
         // Handle window resize
