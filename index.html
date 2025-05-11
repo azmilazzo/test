@@ -5,7 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI Chat with WebLLM</title>
   <style>
-    /* ... existing styles ... */
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark-mode {
+      background: #1e1e1e;
+      color: #fff;
+    }
+    #chat {
+      width: 90%;
+      max-width: 500px;
+      margin: 20px auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      height: 400px;
+      overflow-y: scroll;
+      background: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      transition: background 0.3s;
+    }
+    body.dark-mode #chat {
+      background: #2c2c2c;
+      border-color: #444;
+    }
+    .message {
+      margin: 10px 0;
+    }
+    input, button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .dark-mode input, .dark-mode button {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+    }
+    /* New CSS for button alignment */
+    .button-container {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+    .button-container button {
+      flex: 1;
+    }
   </style>
 </head>
 <body>
@@ -18,13 +67,19 @@
   <!-- Chat Container -->
   <div id="chat"></div>
 
-  <!-- User Input -->
-  <input type="text" id="userInput" placeholder="Type your message..." />
-  <button onclick="sendMessage()">Send</button>
-  <button onclick="startVoiceInput()" style="margin-top: 10px;">🎤 Voice Input</button>
-  <button onclick="clearChatHistory()" style="margin-top: 10px;">🗑️ Clear Chat</button>
+  <!-- User Input Section -->
+  <div class="button-container">
+    <input type="text" id="userInput" placeholder="Type your message..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
 
-  <!-- Updated WebLLM Script -->
+  <!-- Additional Buttons -->
+  <div class="button-container">
+    <button onclick="startVoiceInput()">🎤 Voice Input</button>
+    <button onclick="clearChatHistory()">🗑️ Clear Chat</button>
+  </div>
+
+  <!-- WebLLM Script -->
   <script src="https://cdn.jsdelivr.net/npm/webllm@0.5.0/dist/webllm.min.js"></script>
   <script>
     let model = null;
@@ -45,7 +100,7 @@
         chatDiv.innerHTML += `<div class="message loading">🧠 Loading AI model...</div>`;
         const { WebLLM } = window;
         model = await WebLLM.create({
-          model: "llama3-7b", // Use smaller model
+          model: "llama3-7b",
           quantization: "q4f16_1",
         });
         chatDiv.innerHTML = "";
@@ -55,7 +110,84 @@
       }
     }
 
-    // ... rest of the code remains the same ...
+    async function sendMessage() {
+      const input = document.getElementById("userInput").value.trim();
+      if (!input) return;
+
+      chatDiv.innerHTML += `<div class="message"><b>You:</b> ${input}</div>`;
+      document.getElementById("userInput").value = "";
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+
+      chatDiv.innerHTML += `<div class="message loading">🧠 Thinking...</div>`;
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+
+      try {
+        const response = await model.generate({
+          prompt: input,
+          max_tokens: 150,
+          temperature: 0.7,
+        });
+
+        const messages = chatDiv.innerHTML.split("🧠 Thinking...</div>");
+        chatDiv.innerHTML = messages[0] + messages.slice(1).join("");
+        chatDiv.innerHTML += `<div class="message"><b>AI:</b> ${response.text}</div>`;
+        saveChatHistory(input, response.text);
+      } catch (error) {
+        chatDiv.innerHTML += `<div class="message" style="color: red;">⚠️ Error: ${error.message}</div>`;
+      }
+
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    function saveChatHistory(userInput, aiResponse) {
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      history.push({ user: userInput, ai: aiResponse });
+      localStorage.setItem("chatHistory", JSON.stringify(history));
+    }
+
+    async function loadChatHistory() {
+      const history = JSON.parse(localStorage.getItem("chatHistory")) || [];
+      for (const { user, ai } of history) {
+        chatDiv.innerHTML += `<div class="message"><b>You:</b> ${user}</div>`;
+        chatDiv.innerHTML += `<div class="message"><b>AI:</b> ${ai}</div>`;
+      }
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    function clearChatHistory() {
+      localStorage.removeItem("chatHistory");
+      chatDiv.innerHTML = "";
+    }
+
+    function startVoiceInput() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Voice input not supported.");
+        return;
+      }
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.onresult = (event) => {
+        document.getElementById("userInput").value = event.results[0][0].transcript;
+      };
+      recognition.onerror = (event) => {
+        chatDiv.innerHTML += `<div class="message" style="color: red;">⚠️ Voice error: ${event.error}</div>`;
+      };
+      recognition.start();
+    }
+
+    function toggleDarkMode() {
+      document.body.classList.toggle("dark-mode");
+      localStorage.setItem("darkMode", document.body.classList.contains("dark-mode"));
+    }
+
+    function applyDarkMode() {
+      const darkMode = localStorage.getItem("darkMode") === "true";
+      if (darkMode) {
+        document.body.classList.add("dark-mode");
+      }
+    }
+
+    window.onload = init;
   </script>
 </body>
 </html>
