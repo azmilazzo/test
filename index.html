@@ -1,167 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Chat with WebLLM</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f4;
-      margin: 0;
-      padding: 0;
-      transition: background 0.3s, color 0.3s;
-    }
-    body.dark-mode {
-      background: #1e1e1e;
-      color: #fff;
-    }
-    #chat {
-      width: 90%;
-      max-width: 500px;
-      margin: 20px auto;
-      border: 1px solid #ccc;
-      padding: 10px;
-      height: 400px;
-      overflow-y: scroll;
-      background: #fff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      transition: background 0.3s;
-      /* Add padding to avoid overlap with fixed button */
-      padding-top: 60px; 
-    }
-    body.dark-mode #chat {
-      background: #2c2c2c;
-      border-color: #444;
-    }
-    .message {
-      margin: 10px 0;
-    }
-    input, button {
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-    .dark-mode input, .dark-mode button {
-      background: #333;
-      color: #fff;
-      border: 1px solid #555;
-    }
-    /* Dark Mode Button Styling */
-    #darkModeButton {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 1000;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      background: rgba(255,255,255,0.8);
-      color: #333;
-      transition: background 0.3s;
-    }
-    body.dark-mode #darkModeButton {
-      background: rgba(0,0,0,0.8);
-      color: #fff;
-    }
-    /* Error Styling */
-    .error {
-      color: red;
-      margin: 10px 0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Companion</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #f1f1f1;
+            --text-color: #333;
+            --avatar-size: 40px;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--secondary-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 90%;
+            max-width: 600px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+        .chat-body {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        .message.user {
+            justify-content: flex-end;
+        }
+        .message.ai {
+            justify-content: flex-start;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 10px;
+            border-radius: 15px;
+            position: relative;
+        }
+        .message.user .message-bubble {
+            background-color: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 0;
+        }
+        .message.ai .message-bubble {
+            background-color: #e1ffc7;
+            color: var(--text-color);
+            border-bottom-left-radius: 0;
+        }
+        .message-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+        }
+        .message.user .message-bubble::after {
+            right: -10px;
+            border-left-color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+        }
+        .message.ai .message-bubble::after {
+            left: -10px;
+            border-right-color: #e1ffc7;
+            border-bottom-color: #e1ffc7;
+        }
+        .avatar {
+            width: var(--avatar-size);
+            height: var(--avatar-size);
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .message.user .avatar {
+            margin-right: 0;
+            margin-left: 10px;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #999;
+            margin-top: 5px;
+        }
+        .typing-indicator {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 10px;
+        }
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            margin-right: 5px;
+            animation: bounce 1s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .chat-input {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+            margin-right: 10px;
+        }
+        .chat-input button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background-color: darken(var(--primary-color), 10%);
+        }
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 5px;
+            background-color: var(--primary-color);
+            transition: width 0.1s ease-in-out;
+        }
+    </style>
 </head>
 <body>
+    <div class="chat-container">
+        <div class="chat-header">Chat with Luna 🌙</div>
+        <div class="chat-body" id="chat-body"></div>
+        <div class="typing-indicator" id="typing-indicator" style="display: none;">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Type a message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <div class="progress-bar" id="progress-bar"></div>
 
-  <!-- Dark Mode Toggle -->
-  <div id="darkModeButton" onclick="toggleDarkMode()">
-    🌙 Toggle Dark Mode
-  </div>
+    <script>
+        const personality = {
+            name: "Luna",
+            tone: "warm and supportive",
+            memoryLength: 4,
+            openingMessage: "Hi! I'm Luna 🌙...",
+            systemPrompt: "You are Luna... (rules)"
+        };
 
-  <!-- Chat Container -->
-  <div id="chat"></div>
+        let conversationHistory = [];
 
-  <!-- User Input Section -->
-  <input type="text" id="userInput" placeholder="Type your message..." />
-  <button onclick="sendMessage()">Send</button>
-  <button onclick="startVoiceInput()">🎤 Voice Input</button>
-  <button onclick="clearChatHistory()">🗑️ Clear Chat</button>
+        function formatTime(date) {
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
 
-  <!-- WebLLM Script -->
-  <script src="https://cdn.jsdelivr.net/npm/webllm@0.5.0/dist/webllm.min.js"></script>
-  <script>
-    let model = null;
-    const chatDiv = document.getElementById("chat");
-    let isModelLoaded = false;
+        function addMessage(message, sender) {
+            const chatBody = document.getElementById('chat-body');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender);
 
-    async function init() {
-      if (!window.WebLLM) {
-        showError("⚠️ Your device/browser doesn’t support WebLLM.");
-        return;
-      }
-      await loadModel();
-      await loadChatHistory();
-      applyDarkMode();
-    }
+            const avatarElement = document.createElement('div');
+            avatarElement.classList.add('avatar');
+            avatarElement.textContent = sender === 'user' ? 'U' : 'L';
 
-    async function loadModel() {
-      try {
-        chatDiv.innerHTML += `<div class="message loading">🧠 Loading AI model...</div>`;
-        const { WebLLM } = window;
-        model = await WebLLM.create({
-          model: "llama3-7b",
-          quantization: "q4f16_1",
+            const bubbleElement = document.createElement('div');
+            bubbleElement.classList.add('message-bubble');
+            bubbleElement.textContent = message;
+
+            const timestampElement = document.createElement('div');
+            timestampElement.classList.add('timestamp');
+            timestampElement.textContent = formatTime(new Date());
+
+            messageElement.appendChild(sender === 'user' ? bubbleElement : avatarElement);
+            if (sender !== 'user') messageElement.appendChild(bubbleElement);
+            messageElement.appendChild(timestampElement);
+
+            chatBody.appendChild(messageElement);
+            chatBody.scrollTop = chatBody.scrollHeight;
+        }
+
+        function showTypingIndicator(show) {
+            document.getElementById('typing-indicator').style.display = show ? 'flex' : 'none';
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, 'user');
+            conversationHistory.push({ sender: 'user', message, timestamp: new Date() });
+
+            userInput.value = '';
+            showTypingIndicator(true);
+
+            setTimeout(() => {
+                const aiResponse = getAIResponse(message);
+                addMessage(aiResponse, 'ai');
+                conversationHistory.push({ sender: 'ai', message: aiResponse, timestamp: new Date() });
+                showTypingIndicator(false);
+            }, 1500);
+        }
+
+        function getAIResponse(userMessage) {
+            // Placeholder AI response logic
+            return `Hello! How can I assist you today?`;
+        }
+
+        function loadModel() {
+            const progressBar = document.getElementById('progress-bar');
+            let width = 0;
+            const interval = setInterval(() => {
+                if (width >= 100) {
+                    clearInterval(interval);
+                    progressBar.style.width = 0;
+                    addMessage(personality.openingMessage, 'ai');
+                } else {
+                    width++;
+                    progressBar.style.width = width + '%';
+                }
+            }, 50);
+        }
+
+        loadModel();
+
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
         });
-        chatDiv.innerHTML = "";
-        console.log("✅ Model loaded!");
-        isModelLoaded = true;
-      } catch (error) {
-        showError(`⚠️ Failed to load AI: ${error.message}`);
-      }
-    }
-
-    async function sendMessage() {
-      if (!isModelLoaded) {
-        showError("⚠️ AI model isn’t ready yet. Please wait...");
-        return;
-      }
-
-      const input = document.getElementById("userInput").value.trim();
-      if (!input) return;
-
-      chatDiv.innerHTML += `<div class="message"><b>You:</b> ${input}</div>`;
-      document.getElementById("userInput").value = "";
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-
-      chatDiv.innerHTML += `<div class="message loading">🧠 Thinking...</div>`;
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-
-      try {
-        const response = await model.generate({
-          prompt: input,
-          max_tokens: 150,
-          temperature: 0.7,
-        });
-
-        const messages = chatDiv.innerHTML.split("🧠 Thinking...</div>");
-        chatDiv.innerHTML = messages[0] + messages.slice(1).join("");
-        chatDiv.innerHTML += `<div class="message"><b>AI:</b> ${response.text}</div>`;
-        saveChatHistory(input, response.text);
-      } catch (error) {
-        showError(`⚠️ Error: ${error.message}`);
-      }
-
-      chatDiv.scrollTop = chatDiv.scrollHeight;
-    }
-
-    function showError(message) {
-      chatDiv.innerHTML += `<div class="error">${message}</div>`;
-    }
-
-    // ... rest of the functions remain the same ...
-
-    window.onload = init;
-  </script>
+    </script>
 </body>
 </html>
