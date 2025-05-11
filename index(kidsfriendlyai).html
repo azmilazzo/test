@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TinyStories AI for Kids</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+            background: #f0f8ff;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        #micButton {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #ff6b6b;
+            border: none;
+            cursor: pointer;
+            margin: 20px;
+            font-size: 24px;
+            transition: background 0.3s;
+        }
+        #status {
+            color: #2c3e50;
+            min-height: 80px;
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        .instruction {
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            display: none;
+        }
+        #textInput {
+            width: 80%;
+            height: 60px;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+        }
+        #voiceSelect {
+            margin: 10px;
+            padding: 8px;
+            width: 80%;
+            border-radius: 5px;
+        }
+        .progress-container {
+            width: 80%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            margin: 20px auto;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: #4CAF50;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            text-align: center;
+            color: white;
+            font-size: 12px;
+            line-height: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Magic Story Buddy 🧚♂️</h1>
+    <div class="instruction" id="firstLoadMessage">
+        ⚠️ First time setup: Downloading AI model (~20MB). Stay on this page!
+    </div>
+
+    <button id="micButton">🎤</button>
+    <div id="status">Initializing...</div>
+    <div class="progress-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+    <select id="voiceSelect">
+        <option value="">Loading Voices...</option>
+    </select>
+
+    <textarea id="textInput" placeholder="Type your story idea here..."></textarea>
+    <button onclick="handleTextInput()">Send Text</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0"></script>
+<script>
+let pipeline;
+let voices = [];
+let modelLoaded = false;
+
+async function checkModelCache() {
+    const cacheKey = 'transformers-cache/Xenova/TinyStories-33M';
+    return await caches.has(cacheKey);
+}
+
+async function loadModel() {
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const firstLoadMessage = document.getElementById('firstLoadMessage');
+
+    try {
+        if (!(await checkModelCache())) {
+            firstLoadMessage.style.display = 'block';
+            progressContainer.style.display = 'block';
+        }
+
+        pipeline = await transformers.pipeline('text-generation', 'Xenova/TinyStories-33M', {
+            progress_callback: progress => {
+                const percent = Math.round(progress * 100);
+                progressBar.style.width = `${percent}%`;
+                progressBar.textContent = `${percent}%`;
+                if (percent === 100) progressContainer.style.display = 'none';
+            }
+        });
+
+        modelLoaded = true;
+        firstLoadMessage.style.display = 'none';
+        document.getElementById('status').textContent = "Ready! Tap mic or type below!";
+        localStorage.setItem('tinystories-cached', 'true');
+    } catch (error) {
+        progressContainer.style.display = 'none';
+        firstLoadMessage.style.display = 'none';
+        document.getElementById('status').textContent = "Error loading AI. Please refresh!";
+    }
+}
+
+function loadVoices() {
+    voices = window.speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('voiceSelect');
+    voiceSelect.innerHTML = voices.map(voice => 
+        `<option value="${voice.name}">${voice.name} (${voice.lang})</option>`
+    ).join('');
+    const childVoice = voices.find(v => v.name.includes('Child') || v.name.includes('UK'));
+    if (childVoice) voiceSelect.value = childVoice.name;
+}
+
+async function generateResponse(input) {
+    if (!modelLoaded) {
+        alert("Still loading... Please wait!");
+        return "";
+    }
+
+    try {
+        const output = await pipeline(input, {
+            max_new_tokens: 100,
+            temperature: 0.7,
+        });
+        return output[0].generated_text;
+    } catch (error) {
+        return "Oops! Let's try something else.";
+    }
+}
+
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.lang = 'en-US';
+
+document.getElementById('micButton').addEventListener('click', () => {
+    recognition.start();
+    document.getElementById('status').textContent = "Listening...";
+    document.getElementById('micButton').style.background = '#ff4757';
+});
+
+recognition.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    document.getElementById('status').textContent = `You: "${transcript}"`;
+    document.getElementById('micButton').style.background = '#ff6b6b';
+    
+    const response = await generateResponse(transcript);
+    document.getElementById('status').textContent = response;
+    speak(response);
+};
+
+async function handleTextInput() {
+    const text = document.getElementById('textInput').value;
+    if (!text) return;
+    
+    document.getElementById('status').textContent = "Thinking...";
+    const response = await generateResponse(text);
+    document.getElementById('status').textContent = response;
+    speak(response);
+    document.getElementById('textInput').value = '';
+}
+
+function speak(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const selectedVoice = document.getElementById('voiceSelect').value;
+    utterance.voice = voices.find(v => v.name === selectedVoice);
+    utterance.rate = 0.9;
+    window.speechSynthesis.speak(utterance);
+}
+
+document.getElementById('textInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleTextInput();
+    }
+});
+
+window.onload = async () => {
+    if (localStorage.getItem('tinystories-cached')) {
+        document.getElementById('firstLoadMessage').style.display = 'none';
+    }
+    loadModel();
+    loadVoices();
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+    }
+};
+</script>
+</body>
+</html>
