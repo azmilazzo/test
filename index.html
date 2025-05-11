@@ -10,6 +10,33 @@
         margin: 0 auto;
         padding: 20px;
       }
+      #loading-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+      #progress-bar {
+        width: 300px;
+        height: 20px;
+        background: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+      #progress-fill {
+        width: 0%;
+        height: 100%;
+        background: #4CAF50;
+        transition: width 0.3s ease;
+      }
       #chatlog {
         margin-bottom: 20px;
       }
@@ -42,10 +69,18 @@
     </style>
   </head>
   <body>
+    <div id="loading-screen">
+      <h2>Loading AI Model...</h2>
+      <div id="progress-bar">
+        <div id="progress-fill"></div>
+      </div>
+      <p id="loading-status">Initializing...</p>
+    </div>
+
     <div id="chatlog"></div>
     <div id="input-container">
       <input type="text" id="prompt-input" placeholder="Enter your message...">
-      <button onclick="generate()">Send</button>
+      <button onclick="generate()" id="send-button" disabled>Send</button>
     </div>
     <div id="status"></div>
 
@@ -54,21 +89,36 @@
       const statusDisplay = document.getElementById("status");
       const chatlog = document.getElementById("chatlog");
       const promptInput = document.getElementById("prompt-input");
+      const loadingScreen = document.getElementById("loading-screen");
+      const progressFill = document.getElementById("progress-fill");
+      const loadingStatus = document.getElementById("loading-status");
+      const sendButton = document.getElementById("send-button");
 
       async function initChat() {
-        statusDisplay.textContent = "Initializing chat...";
         chat = new WebLLMChat();
         
-        // Customize model options
+        let lastProgress = 0;
         chat.setInitProgressCallback((report) => {
-          statusDisplay.textContent = `Loading model... ${report}`;
+          loadingStatus.textContent = report;
+          // Extract percentage from progress report
+          const match = report.match(/(\d+)%/);
+          if (match) {
+            const progress = parseInt(match[1]);
+            if (progress > lastProgress) {
+              progressFill.style.width = `${progress}%`;
+              lastProgress = progress;
+            }
+          }
         });
 
         try {
           await chat.reload("Phi-2");
-          statusDisplay.textContent = "Chat initialized successfully!";
+          loadingScreen.style.display = "none";
+          sendButton.disabled = false;
+          statusDisplay.textContent = "Ready to chat!";
         } catch (err) {
-          statusDisplay.textContent = "Error initializing chat: " + err.message;
+          loadingStatus.textContent = "Error: " + err.message;
+          loadingStatus.style.color = "red";
         }
       }
 
@@ -84,6 +134,7 @@
         const prompt = promptInput.value.trim();
         if (!prompt) return;
 
+        sendButton.disabled = true;
         promptInput.value = "";
         appendMessage(prompt, "user");
         
@@ -91,14 +142,15 @@
           statusDisplay.textContent = "Generating response...";
           const response = await chat.generate(prompt);
           appendMessage(response, "assistant");
-          statusDisplay.textContent = "Response generated successfully!";
+          statusDisplay.textContent = "Ready to chat!";
         } catch (err) {
-          statusDisplay.textContent = "Error generating response: " + err.message;
+          statusDisplay.textContent = "Error: " + err.message;
         }
+        sendButton.disabled = false;
       }
 
       promptInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") generate();
+        if (e.key === "Enter" && !sendButton.disabled) generate();
       });
 
       // Initialize chat when page loads
