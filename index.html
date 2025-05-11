@@ -1,220 +1,87 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>WebLLM Chat Demo</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/dist/web-llm.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      #loading-screen {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.95);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-      #progress-bar {
-        width: 300px;
-        height: 20px;
-        background: #f0f0f0;
-        border-radius: 10px;
-        overflow: hidden;
-        margin: 10px 0;
-      }
-      #progress-fill {
-        width: 0%;
-        height: 100%;
-        background: #4CAF50;
-        transition: width 0.3s ease;
-      }
-      #download-stats {
-        text-align: center;
-        margin: 10px 0;
-      }
-      .stat-value {
-        font-weight: bold;
-        color: #4CAF50;
-      }
-      #chatlog {
-        margin-bottom: 20px;
-      }
-      .message {
-        margin: 10px 0;
-        padding: 10px;
-        border-radius: 5px;
-      }
-      .user {
-        background-color: #e3f2fd;
-      }
-      .assistant {
-        background-color: #f5f5f5;
-      }
-      #input-container {
-        display: flex;
-        gap: 10px;
-      }
-      #prompt-input {
-        flex-grow: 1;
-        padding: 10px;
-      }
-      button {
-        padding: 10px 20px;
-      }
-      #status {
-        margin-top: 20px;
-        color: #666;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="loading-screen">
-      <h2>Loading AI Model...</h2>
-      <div id="progress-bar">
-        <div id="progress-fill"></div>
-      </div>
-      <div id="download-stats">
-        <p>Downloaded: <span id="downloaded-size" class="stat-value">0 MB</span> / <span id="total-size" class="stat-value">0 MB</span></p>
-        <p>Progress: <span id="progress-percent" class="stat-value">0%</span></p>
-        <p>Estimated time remaining: <span id="time-remaining" class="stat-value">Calculating...</span></p>
-        <p>Download speed: <span id="download-speed" class="stat-value">0 MB/s</span></p>
-      </div>
-      <p id="loading-status">Initializing...</p>
-    </div>
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Companion Launcher</title>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #fdf6f9; color: #333; }
+    h1 { color: #c83e6f; }
+    .section { margin-bottom: 20px; }
+    label, select, input, button { display: block; margin: 10px 0; font-size: 16px; }
+    #chat-container { display: none; border: 1px solid #ccc; padding: 10px; max-width: 600px; height: 400px; overflow-y: auto; background: white; }
+    .message { margin: 5px 0; }
+    .user { color: #0074D9; }
+    .bot { color: #2ECC40; }
+  </style>
+</head>
+<body><h1>Start Your AI Companion</h1><div class="section">
+  <label for="model">Choose a model:</label>
+  <select id="model">
+    <option value="zephyr-7b-beta">Zephyr 7B Beta</option>
+    <option value="neural-chat-7b">Neural Chat 7B</option>
+    <option value="mistral-openhermes">Mistral OpenHermes</option>
+  </select>
+  <button onclick="launchColab()">Start AI Server</button>
+</div><div class="section">
+  <label for="api-url">Paste Your API URL:</label>
+  <input type="text" id="api-url" placeholder="https://xxxx.trycloudflare.com/v1">
+  <button onclick="connectChat()">Connect Chatbot</button>
+</div><div id="chat-container">
+  <h3>Chat with your AI Companion:</h3>
+  <div id="chat-log"></div>
+  <input type="text" id="user-input" placeholder="Say something...">
+  <button onclick="sendMessage()">Send</button>
+</div><script>
+function launchColab() {
+  const model = document.getElementById('model').value;
+  const baseLink = 'https://colab.research.google.com/github/lostruins/koboldcpp/blob/concedo/colab.ipynb';
+  const colabLink = `${baseLink}?model=${model}`;
+  window.open(colabLink, '_blank');
+}
 
-    <div id="chatlog"></div>
-    <div id="input-container">
-      <input type="text" id="prompt-input" placeholder="Enter your message...">
-      <button onclick="generate()" id="send-button" disabled>Send</button>
-    </div>
-    <div id="status"></div>
+let apiUrl = '';
 
-    <script>
-      let chat;
-      const statusDisplay = document.getElementById("status");
-      const chatlog = document.getElementById("chatlog");
-      const promptInput = document.getElementById("prompt-input");
-      const loadingScreen = document.getElementById("loading-screen");
-      const progressFill = document.getElementById("progress-fill");
-      const loadingStatus = document.getElementById("loading-status");
-      const sendButton = document.getElementById("send-button");
-      
-      // Download stats elements
-      const downloadedSize = document.getElementById("downloaded-size");
-      const totalSize = document.getElementById("total-size");
-      const progressPercent = document.getElementById("progress-percent");
-      const timeRemaining = document.getElementById("time-remaining");
-      const downloadSpeed = document.getElementById("download-speed");
+function connectChat() {
+  apiUrl = document.getElementById('api-url').value.trim();
+  if (!apiUrl.endsWith('/v1')) {
+    alert('Invalid API URL');
+    return;
+  }
+  document.getElementById('chat-container').style.display = 'block';
+}
 
-      // Download tracking variables
-      let startTime = null;
-      let lastUpdate = null;
-      let lastBytes = 0;
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addMessage('user', msg);
 
-      function formatSize(bytes) {
-        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
-      }
+  const res = await fetch(`${apiUrl}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'koboldcpp',
+      messages: [
+        { role: 'system', content: 'You are a friendly and romantic AI companion.' },
+        { role: 'user', content: msg }
+      ],
+      temperature: 0.8
+    })
+  });
 
-      function formatTime(seconds) {
-        if (seconds < 60) return `${Math.round(seconds)}s`;
-        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
-        return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
-      }
+  const data = await res.json();
+  const reply = data.choices?.[0]?.message?.content || '...';
+  addMessage('bot', reply);
+}
 
-      async function initChat() {
-        chat = new WebLLMChat();
-        startTime = Date.now();
-        lastUpdate = startTime;
-        
-        chat.setInitProgressCallback((report) => {
-          loadingStatus.textContent = report;
-          
-          // Parse progress report
-          const bytesMatch = report.match(/(\d+)\/(\d+) bytes/);
-          if (bytesMatch) {
-            const downloaded = parseInt(bytesMatch[1]);
-            const total = parseInt(bytesMatch[2]);
-            const progress = (downloaded / total) * 100;
-            
-            // Update progress bar and percentage
-            progressFill.style.width = `${progress}%`;
-            progressPercent.textContent = `${progress.toFixed(1)}%`;
-            
-            // Update sizes
-            downloadedSize.textContent = formatSize(downloaded);
-            totalSize.textContent = formatSize(total);
-            
-            // Calculate speed and time remaining
-            const now = Date.now();
-            const timeDiff = (now - lastUpdate) / 1000; // seconds
-            if (timeDiff >= 1) { // Update every second
-              const bytesDiff = downloaded - lastBytes;
-              const speed = bytesDiff / timeDiff; // bytes per second
-              const remainingBytes = total - downloaded;
-              const remainingTime = remainingBytes / speed;
-              
-              downloadSpeed.textContent = formatSize(speed) + '/s';
-              timeRemaining.textContent = formatTime(remainingTime);
-              
-              lastUpdate = now;
-              lastBytes = downloaded;
-            }
-          }
-        });
-
-        try {
-          await chat.reload("Phi-2");
-          loadingScreen.style.display = "none";
-          sendButton.disabled = false;
-          statusDisplay.textContent = "Ready to chat!";
-        } catch (err) {
-          loadingStatus.textContent = "Error: " + err.message;
-          loadingStatus.style.color = "red";
-        }
-      }
-
-      function appendMessage(content, role) {
-        const messageDiv = document.createElement("div");
-        messageDiv.className = `message ${role}`;
-        messageDiv.textContent = content;
-        chatlog.appendChild(messageDiv);
-        chatlog.scrollTop = chatlog.scrollHeight;
-      }
-
-      async function generate() {
-        const prompt = promptInput.value.trim();
-        if (!prompt) return;
-
-        sendButton.disabled = true;
-        promptInput.value = "";
-        appendMessage(prompt, "user");
-        
-        try {
-          statusDisplay.textContent = "Generating response...";
-          const response = await chat.generate(prompt);
-          appendMessage(response, "assistant");
-          statusDisplay.textContent = "Ready to chat!";
-        } catch (err) {
-          statusDisplay.textContent = "Error: " + err.message;
-        }
-        sendButton.disabled = false;
-      }
-
-      promptInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter" && !sendButton.disabled) generate();
-      });
-
-      // Initialize chat when page loads
-      initChat();
-    </script>
-  </body>
+function addMessage(role, text) {
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.className = 'message ' + role;
+  div.textContent = (role === 'user' ? 'You: ' : 'AI: ') + text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+</script></body>
 </html>
