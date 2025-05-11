@@ -16,7 +16,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(255, 255, 255, 0.9);
+        background: rgba(255, 255, 255, 0.95);
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -36,6 +36,14 @@
         height: 100%;
         background: #4CAF50;
         transition: width 0.3s ease;
+      }
+      #download-stats {
+        text-align: center;
+        margin: 10px 0;
+      }
+      .stat-value {
+        font-weight: bold;
+        color: #4CAF50;
       }
       #chatlog {
         margin-bottom: 20px;
@@ -74,6 +82,12 @@
       <div id="progress-bar">
         <div id="progress-fill"></div>
       </div>
+      <div id="download-stats">
+        <p>Downloaded: <span id="downloaded-size" class="stat-value">0 MB</span> / <span id="total-size" class="stat-value">0 MB</span></p>
+        <p>Progress: <span id="progress-percent" class="stat-value">0%</span></p>
+        <p>Estimated time remaining: <span id="time-remaining" class="stat-value">Calculating...</span></p>
+        <p>Download speed: <span id="download-speed" class="stat-value">0 MB/s</span></p>
+      </div>
       <p id="loading-status">Initializing...</p>
     </div>
 
@@ -93,20 +107,66 @@
       const progressFill = document.getElementById("progress-fill");
       const loadingStatus = document.getElementById("loading-status");
       const sendButton = document.getElementById("send-button");
+      
+      // Download stats elements
+      const downloadedSize = document.getElementById("downloaded-size");
+      const totalSize = document.getElementById("total-size");
+      const progressPercent = document.getElementById("progress-percent");
+      const timeRemaining = document.getElementById("time-remaining");
+      const downloadSpeed = document.getElementById("download-speed");
+
+      // Download tracking variables
+      let startTime = null;
+      let lastUpdate = null;
+      let lastBytes = 0;
+
+      function formatSize(bytes) {
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+      }
+
+      function formatTime(seconds) {
+        if (seconds < 60) return `${Math.round(seconds)}s`;
+        if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+        return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+      }
 
       async function initChat() {
         chat = new WebLLMChat();
+        startTime = Date.now();
+        lastUpdate = startTime;
         
-        let lastProgress = 0;
         chat.setInitProgressCallback((report) => {
           loadingStatus.textContent = report;
-          // Extract percentage from progress report
-          const match = report.match(/(\d+)%/);
-          if (match) {
-            const progress = parseInt(match[1]);
-            if (progress > lastProgress) {
-              progressFill.style.width = `${progress}%`;
-              lastProgress = progress;
+          
+          // Parse progress report
+          const bytesMatch = report.match(/(\d+)\/(\d+) bytes/);
+          if (bytesMatch) {
+            const downloaded = parseInt(bytesMatch[1]);
+            const total = parseInt(bytesMatch[2]);
+            const progress = (downloaded / total) * 100;
+            
+            // Update progress bar and percentage
+            progressFill.style.width = `${progress}%`;
+            progressPercent.textContent = `${progress.toFixed(1)}%`;
+            
+            // Update sizes
+            downloadedSize.textContent = formatSize(downloaded);
+            totalSize.textContent = formatSize(total);
+            
+            // Calculate speed and time remaining
+            const now = Date.now();
+            const timeDiff = (now - lastUpdate) / 1000; // seconds
+            if (timeDiff >= 1) { // Update every second
+              const bytesDiff = downloaded - lastBytes;
+              const speed = bytesDiff / timeDiff; // bytes per second
+              const remainingBytes = total - downloaded;
+              const remainingTime = remainingBytes / speed;
+              
+              downloadSpeed.textContent = formatSize(speed) + '/s';
+              timeRemaining.textContent = formatTime(remainingTime);
+              
+              lastUpdate = now;
+              lastBytes = downloaded;
             }
           }
         });
