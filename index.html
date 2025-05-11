@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web-based AI Companion</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/lib/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.8/dist/webllm.js"></script>
+    <script>
+        let webllm = new WebLLM();
+    </script>
     <style>
         * {
             margin: 0;
@@ -28,7 +31,7 @@
             height: 100%;
             background: rgba(255,255,255,0.95);
             backdrop-filter: blur(5px);
-            display: none;
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
@@ -232,25 +235,14 @@
                         throw new Error("Browser requirements not met");
                     }
 
-                    document.getElementById('progress-container').style.display = 'flex';
-
-                    this.engine = await webllm.ChatModule.create({
-                        model: "Phi-2-4bit",
-                        quantization: "q4f16_1",
-                        wasmUrl: "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/lib/webllm.wasm",
-                        progress: (current, total) => {
-                            const percent = (current / total) * 100;
-                            document.getElementById('progress-fill').style.width = `${percent}%`;
-                            document.getElementById('progress-text').textContent = 
-                                `Loading model: ${Math.round(percent)}%`;
-                        }
+                    await webllm.loadModel({
+                        model: "Phi-2",
+                        modelPath: "https://huggingface.co/microsoft/phi-2/resolve/main/",
+                        wasmPath: "https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm@0.2.8/dist/"
                     });
 
-                    this.loadHistory();
                     this.isInitialized = true;
-                    
                     document.getElementById('progress-container').style.display = 'none';
-                    
                     this.addMessage("Hello! I'm here to chat with you. How are you feeling today?", 'ai');
                     
                 } catch (error) {
@@ -272,8 +264,7 @@
                     this.addMessage(userInput, 'user');
                     document.querySelector('.typing-indicator').style.display = 'flex';
 
-                    const context = this.getContext();
-                    const response = await this.engine.generate(context + userInput);
+                    const response = await webllm.chat(userInput);
 
                     document.querySelector('.typing-indicator').style.display = 'none';
                     this.addMessage(response, 'ai');
@@ -312,13 +303,6 @@
                 messageDiv.appendChild(bubble);
                 chatContainer.appendChild(messageDiv);
                 chatContainer.scrollTop = chatContainer.scrollHeight;
-            }
-
-            getContext() {
-                return this.chatHistory
-                    .slice(-this.memoryLength * 2)
-                    .map(msg => `${msg.sender}: ${msg.text}\n`)
-                    .join('') + '\nai: ';
             }
 
             saveHistory() {
