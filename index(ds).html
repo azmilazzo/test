@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Talking AI Companion</title>
+    <title>AI Companion with Voice</title>
     <style>
         :root {
             --primary: #2c3e50;
@@ -12,11 +12,18 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: #ecf0f1;
+            background: #f5f5f5;
+        }
+
+        .security-warning {
+            background: #ffebee;
+            border-left: 4px solid var(--error);
+            padding: 15px;
+            margin-bottom: 20px;
         }
 
         #chat-container {
@@ -26,22 +33,44 @@
             padding: 25px;
         }
 
-        #messages {
-            height: 500px;
-            overflow-y: auto;
-            padding: 15px;
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
+        .key-section {
             margin-bottom: 20px;
-            background: #f9f9f9;
+        }
+
+        input, button, textarea {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 5px 0;
+            width: 100%;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
         }
 
         .message {
-            margin: 12px 0;
-            padding: 12px 18px;
-            border-radius: 25px;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
             max-width: 80%;
-            animation: fadeIn 0.3s ease-in;
         }
 
         .user-message {
@@ -51,62 +80,22 @@
         }
 
         .bot-message {
-            background: #e74c3c;
+            background: #666;
             color: white;
             margin-right: auto;
         }
 
-        #input-container {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
+        .debug-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-family: monospace;
         }
 
-        input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #bdc3c7;
-            border-radius: 25px;
-            font-size: 16px;
-        }
-
-        input:disabled {
-            background: #f5f5f5;
-            cursor: not-allowed;
-        }
-
-        button {
-            padding: 12px 25px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: background 0.3s ease;
-        }
-
-        button:hover {
-            background: var(--secondary);
-        }
-
-        button:disabled {
-            background: #95a5a6 !important;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            display: none;
-            color: #7f8c8d;
-            font-style: italic;
-            margin: 10px 0;
-        }
-
-        .error {
-            color: var(--error);
-            padding: 10px;
-            border: 2px solid var(--error);
-            border-radius: 5px;
-            margin: 10px 0;
+        .key-preview {
+            color: #666;
+            word-break: break-all;
         }
 
         .controls {
@@ -127,40 +116,80 @@
             display: none;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .loading {
+            display: none;
+            color: #7f8c8d;
+            font-style: italic;
+            margin: 10px 0;
+        }
+
+        .error {
+            color: var(--error);
+            padding: 10px;
+            border: 2px solid var(--error);
+            border-radius: 5px;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
+    <div class="security-warning">
+        <strong>⚠️ SECURITY WARNING:</strong>
+        <ul>
+            <li>API keys stored in localStorage</li>
+            <li>For local testing only</li>
+            <li>Rotate keys immediately if compromised</li>
+            <li>Use backend server for production</li>
+        </ul>
+    </div>
+
     <div id="chat-container">
-        <h1 style="color: var(--primary); text-align: center;">Talking AI Companion 🗣️</h1>
-        
+        <!-- Key Management Section -->
+        <div class="key-section">
+            <input type="text" id="api-key" 
+                   placeholder="Paste OpenRouter API key (starts with sk-or-v1-...)">
+            <div>
+                <button onclick="saveKey()">Save Key</button>
+                <button onclick="showKey()">Show Key</button>
+                <button onclick="testKey()">Test Key</button>
+            </div>
+            <div class="debug-panel">
+                <h4>Key Debug Information</h4>
+                <div id="key-debug" class="key-preview"></div>
+                <div id="test-result"></div>
+            </div>
+        </div>
+
+        <!-- Voice Controls -->
         <div class="controls">
             <button id="toggle-voice">🔊 Enable Voice</button>
             <select id="voice-select" disabled></select>
             <button id="cancel-button" onclick="cancelRequest()">Cancel</button>
         </div>
 
+        <!-- Chat Interface -->
+        <textarea id="system-prompt" rows="3">
+You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, say you don't know.
+        </textarea>
+
         <div id="messages"></div>
-        <div class="loading" id="loading">Nova is thinking...</div>
-        
-        <div id="input-container">
-            <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off">
-            <button onclick="sendMessage()">Send</button>
+        <div class="loading" id="loading">AI is thinking...</div>
+
+        <div>
+            <input type="text" id="user-input" 
+                   placeholder="Type your message..." disabled>
+            <button onclick="sendMessage()" id="send-btn" disabled>Send</button>
         </div>
     </div>
 
     <script>
-        const API_KEY = 'sk-or-v1-xxxxxxxxxxxxxx';
-        let conversationHistory = [];
+        // Key Management
+        const STORAGE_KEY = 'debugOpenRouterKey';
         const synth = window.speechSynthesis;
         let voices = [];
         let isVoiceEnabled = false;
         let controller = null;
-        const userInput = document.getElementById('user-input');
-        const sendButton = document.querySelector('#input-container button');
+        let conversationHistory = [];
 
         function populateVoices() {
             voices = synth.getVoices();
@@ -171,6 +200,7 @@
                 .join('');
         }
 
+        // Initialize voice synthesis
         synth.onvoiceschanged = populateVoices;
 
         document.getElementById('toggle-voice').addEventListener('click', () => {
@@ -180,54 +210,84 @@
             document.getElementById('voice-select').disabled = !isVoiceEnabled;
         });
 
+        // Key functions
+        function saveKey() {
+            const key = document.getElementById('api-key').value.trim();
+            localStorage.setItem(STORAGE_KEY, key);
+            updateDebugInfo();
+            updateUIState();
+        }
+
+        function showKey() {
+            const fullKey = localStorage.getItem(STORAGE_KEY) || '';
+            const maskedKey = fullKey.slice(0, 12) + '...' + fullKey.slice(-4);
+            alert(`Current key: ${maskedKey}\nFull key: ${fullKey}`);
+        }
+
+        async function testKey() {
+            const key = localStorage.getItem(STORAGE_KEY);
+            if (!key) return;
+
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/auth/key', {
+                    headers: {
+                        'Authorization': `Bearer ${key}`,
+                        'HTTP-Referer': 'http://localhost',
+                        'X-Title': 'Key Debugger'
+                    }
+                });
+                
+                const resultDiv = document.getElementById('test-result');
+                resultDiv.textContent = response.ok 
+                    ? '✅ Key is valid' 
+                    : `❌ Error: ${response.status} ${response.statusText}`;
+                resultDiv.style.color = response.ok ? 'green' : 'red';
+
+            } catch (error) {
+                document.getElementById('test-result').textContent = 
+                    `🚨 Network error: ${error.message}`;
+            }
+        }
+
+        // Chat functions
         async function sendMessage() {
+            const userInput = document.getElementById('user-input');
             const message = userInput.value.trim();
             if (!message) return;
 
-            // Disable controls
             userInput.disabled = true;
-            sendButton.disabled = true;
-            document.getElementById('cancel-button').style.display = 'inline-block';
-            clearErrors();
             addMessage('user', message);
             userInput.value = '';
             showLoading(true);
 
             try {
                 controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
-
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     signal: controller.signal,
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${API_KEY}`,
+                        'Authorization': `Bearer ${localStorage.getItem(STORAGE_KEY)}`,
                         'HTTP-Referer': window.location.href,
-                        'X-Title': 'Talking Companion',
+                        'X-Title': 'AI Companion',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         model: 'deepseek/deepseek-r1-distill-qwen-32b:free',
                         messages: [
-                            {
-                                role: "system",
-                                content: "You are Nova, a friendly AI companion. Keep responses concise for voice synthesis."
-                            },
+                            { role: "system", content: document.getElementById('system-prompt').value },
                             ...conversationHistory,
                             { role: "user", content: message }
                         ],
                         temperature: 0.7,
-                        max_tokens: 300
+                        max_tokens: 500
                     })
                 });
 
-                clearTimeout(timeoutId);
                 const data = await response.json();
                 
-                if (!response.ok) throw new Error(data.error?.message || `API Error: ${response.status}`);
-                if (!data.choices?.[0]?.message?.content?.trim()) throw new Error('Empty response');
-
-                const botMessage = data.choices[0].message.content.trim();
+                if (!response.ok) throw new Error(data.error?.message || 'API error');
+                
+                const botMessage = data.choices[0].message.content;
                 addMessage('bot', botMessage);
                 conversationHistory.push(
                     { role: "user", content: message },
@@ -235,76 +295,44 @@
                 );
 
                 if (isVoiceEnabled) {
-                    await new Promise((resolve, reject) => {
-                        const utterance = speakMessage(botMessage);
-                        if (!utterance) return resolve();
-                        
-                        utterance.onend = resolve;
-                        utterance.onerror = reject;
-                        
-                        // Add speech timeout
-                        setTimeout(() => {
-                            synth.cancel();
-                            resolve();
-                        }, 30000);
-                    });
+                    const utterance = new SpeechSynthesisUtterance(botMessage);
+                    utterance.voice = voices.find(v => v.name === document.getElementById('voice-select').value);
+                    synth.speak(utterance);
                 }
 
             } catch (error) {
-                console.error('Error:', error);
-                showError(`Error: ${error.message}`);
-                if (error.message.includes('rate limit')) showError('Please wait 60 seconds');
+                addMessage('bot', `Error: ${error.message}`);
             } finally {
-                // Guaranteed cleanup
                 userInput.disabled = false;
-                sendButton.disabled = false;
-                document.getElementById('cancel-button').style.display = 'none';
-                controller = null;
-                showLoading(false);
                 userInput.focus();
-            }
-        }
-
-        function speakMessage(text) {
-            if (synth.speaking) synth.cancel();
-            if (!document.getElementById('voice-select').value) {
-                showError('No voice selected');
-                return null;
-            }
-            
-            try {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.voice = voices.find(v => v.name === document.getElementById('voice-select').value);
-                utterance.rate = 0.9;
-                
-                utterance.onstart = () => showLoading(false);
-                utterance.onend = () => showLoading(false);
-                utterance.onerror = (e) => {
-                    showError('Voice error: ' + e.error);
-                    showLoading(false);
-                };
-                
-                synth.speak(utterance);
-                return utterance;
-            } catch (error) {
-                showError('Voice setup failed');
-                return null;
+                showLoading(false);
+                controller = null;
             }
         }
 
         function cancelRequest() {
-            if (controller) {
-                controller.abort();
-                showError('Request cancelled');
-            }
+            if (controller) controller.abort();
             if (synth.speaking) synth.cancel();
-            
-            // Force cleanup
-            userInput.disabled = false;
-            sendButton.disabled = false;
             document.getElementById('cancel-button').style.display = 'none';
             showLoading(false);
-            userInput.focus();
+        }
+
+        // UI functions
+        function updateDebugInfo() {
+            const key = localStorage.getItem(STORAGE_KEY) || '';
+            const debugDiv = document.getElementById('key-debug');
+            debugDiv.innerHTML = `
+                Key Format: ${key.startsWith('sk-or-v1-') ? '✅' : '❌'}<br>
+                Key Length: ${key.length} characters<br>
+                First 12: ${key.slice(0, 12)}...<br>
+                Last 4: ...${key.slice(-4)}
+            `;
+        }
+
+        function updateUIState() {
+            const hasKey = !!localStorage.getItem(STORAGE_KEY);
+            document.getElementById('send-btn').disabled = !hasKey;
+            document.getElementById('user-input').disabled = !hasKey;
         }
 
         function addMessage(role, content) {
@@ -320,26 +348,11 @@
             document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
 
-        function showError(message) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.textContent = message;
-            document.getElementById('chat-container').insertBefore(errorDiv, document.getElementById('input-container'));
-        }
-
-        function clearErrors() {
-            document.querySelectorAll('.error').forEach(el => el.remove());
-        }
+        // Initialize
+        document.getElementById('api-key').value = localStorage.getItem(STORAGE_KEY) || '';
+        updateDebugInfo();
+        updateUIState();
+        populateVoices();
     </script>
-
-    <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px;">
-        <strong>⚠️ Security Notice:</strong>
-        <ul style="margin: 10px 0 0 20px;">
-            <li>For local testing only</li>
-            <li>API key exposed in client-side code</li>
-            <li>Rotate keys immediately if compromised</li>
-            <li>Use backend server for production</li>
-        </ul>
-    </div>
 </body>
 </html>
