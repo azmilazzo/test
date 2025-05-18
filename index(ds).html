@@ -13,6 +13,7 @@
             --surface: #1e1e1e;
             --text: #ffffff;
             --text-secondary: #b3b3b3;
+            --speaking: #27ae60;
         }
 
         body {
@@ -185,6 +186,11 @@
             animation: pulse 1.5s infinite;
         }
 
+        .voice-status.speaking {
+            background: var(--speaking);
+            animation: pulse 1.5s infinite;
+        }
+
         .wake-word-indicator {
             position: fixed;
             top: 20px;
@@ -193,6 +199,9 @@
             padding: 10px 20px;
             border-radius: 25px;
             display: none;
+            min-width: 200px;
+            text-align: center;
+            transition: opacity 0.3s ease;
         }
 
         @keyframes pulse {
@@ -292,9 +301,12 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
     <script>
         const WAKE_WORD = "hey luna";
         const WAKE_WORD_CONFIDENCE = 0.7;
+        const SESSION_TIMEOUT_DURATION = 7000;
         let isAlwaysListening = true;
         let isAwaitingCommand = false;
         let recognition = null;
+        let sessionTimeout = null;
+        let timerInterval = null;
 
         function toggleSettings() {
             const panel = document.getElementById('settings-panel');
@@ -339,6 +351,11 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             };
 
             recognition.onerror = (event) => {
+                console.error('Recognition error:', event.error);
+                isAwaitingCommand = false;
+                updateVoiceStatus('inactive');
+                document.getElementById('wake-word-indicator').style.display = 'none';
+                
                 switch(event.error) {
                     case 'no-speech':
                         if (isAlwaysListening) setTimeout(() => recognition.start(), 1000);
@@ -352,7 +369,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     default:
                         showError(`Recognition error: ${event.error}`);
                 }
-                updateVoiceStatus('error');
             };
 
             recognition.onend = () => {
@@ -371,11 +387,12 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         }
 
         function handleWakeWordDetected() {
+            clearTimeout(sessionTimeout);
+            clearInterval(timerInterval);
             isAwaitingCommand = true;
             updateVoiceStatus('active');
             document.getElementById('wake-word-indicator').style.display = 'block';
             
-            // Audio feedback
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const oscillator = audioContext.createOscillator();
             oscillator.connect(audioContext.destination);
@@ -386,14 +403,38 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         }
 
         function handleUserCommand(transcript) {
-            isAwaitingCommand = false;
-            document.getElementById('wake-word-indicator').style.display = 'none';
-            updateVoiceStatus('inactive');
+            clearTimeout(sessionTimeout);
+            clearInterval(timerInterval);
             
             const command = transcript.replace(WAKE_WORD, '').trim();
             if (command) {
                 document.getElementById('user-input').value = command;
                 sendMessage();
+            }
+        }
+
+        function startSessionTimeout() {
+            let secondsLeft = SESSION_TIMEOUT_DURATION / 1000;
+            updateTimerDisplay(secondsLeft);
+            
+            timerInterval = setInterval(() => {
+                secondsLeft -= 1;
+                updateTimerDisplay(secondsLeft);
+            }, 1000);
+
+            sessionTimeout = setTimeout(() => {
+                clearInterval(timerInterval);
+                isAwaitingCommand = false;
+                updateVoiceStatus('inactive');
+                document.getElementById('wake-word-indicator').style.display = 'none';
+                showError("Session timed out. Say 'Hey Luna' to continue");
+            }, SESSION_TIMEOUT_DURATION);
+        }
+
+        function updateTimerDisplay(seconds) {
+            const indicator = document.getElementById('wake-word-indicator');
+            if (indicator.style.display === 'block') {
+                indicator.textContent = `🎧 Listening... (${Math.max(0, seconds)}s)`;
             }
         }
 
@@ -404,7 +445,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             switch(state) {
                 case 'active':
                     status.classList.add('listening');
-                    indicator.textContent = "🎧 Listening for command...";
+                    indicator.textContent = "🎧 Listening... (7s)";
                     break;
                 case 'error':
                     status.style.backgroundColor = '#c0392b';
@@ -412,7 +453,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     indicator.style.display = 'none';
                     break;
                 default:
-                    status.classList.remove('listening');
+                    status.classList.remove('listening', 'speaking');
                     status.style.backgroundColor = '#333';
                     indicator.textContent = "🎧 Listening for 'Hey Luna'...";
             }
@@ -469,14 +510,44 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     { role: "assistant", content: botMessage }
                 );
 
+                const handleSpeech = () => {
+                    document.getElementById('voice-status').classList.remove('speaking');
+                    startSessionTimeout();
+                };
+
                 if (isVoiceEnabled) {
                     const utterance = new SpeechSynthesisUtterance(botMessage);
-                    utterance.voice = voices.find(v => v.name === document.getElementById('voice-select').value);
-                    synth.speak(utterance);
+                    const selectedVoiceName = document.getElementById('voice-select').value;
+                    const selectedVoice = voices.find(v => v.name === selectedVoiceName) || voices[0];
+
+                    if (!selectedVoice) {
+                        showError("No voices available");
+                        return;
+                    }
+
+                    utterance.voice = selectedVoice;
+                    utterance.onend = handleSpeech;
+                    utterance.onerror = (err) => {
+                        console.error('Speech error:', err);
+                        handleSpeech();
+                    };
+
+                    try {
+                        synth.speak(utterance);
+                        document.getElementById('voice-status').classList.add('speaking');
+                    } catch (speechError) {
+                        console.error('Speech failed:', speechError);
+                        handleSpeech();
+                    }
+                } else {
+                    startSessionTimeout();
                 }
 
             } catch (error) {
                 addMessage('bot', `Error: ${error.message}`);
+                isAwaitingCommand = false;
+                updateVoiceStatus('inactive');
+                document.getElementById('wake-word-indicator').style.display = 'none';
             } finally {
                 userInput.disabled = false;
                 userInput.focus();
@@ -496,10 +567,24 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         function populateVoices() {
             voices = synth.getVoices();
             const voiceSelect = document.getElementById('voice-select');
-            voiceSelect.innerHTML = voices
-                .filter(voice => voice.lang.includes('en'))
-                .map(voice => `<option value="${voice.name}">${voice.name} (${voice.lang})</option>`)
-                .join('');
+            
+            if (voiceSelect.options.length === 0) {
+                voiceSelect.innerHTML = voices
+                    .filter(voice => voice.lang.includes('en'))
+                    .map(voice => 
+                        `<option value="${voice.name}" ${voice.default ? 'selected' : ''}>
+                            ${voice.name} (${voice.lang})
+                        </option>`
+                    ).join('');
+                
+                if (voices.length > 0) {
+                    document.getElementById('voice-select').disabled = false;
+                }
+            }
+            
+            if (voices.length === 0) {
+                setTimeout(populateVoices, 1000);
+            }
         }
 
         synth.onvoiceschanged = populateVoices;
@@ -515,6 +600,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             if (controller) controller.abort();
             if (synth.speaking) synth.cancel();
             showLoading(false);
+            document.getElementById('voice-status').classList.remove('speaking');
         }
 
         function saveKey() {
