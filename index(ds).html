@@ -3,64 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Companion with Voice</title>
+    <title>Dark AI Companion</title>
     <style>
         :root {
             --primary: #2c3e50;
             --secondary: #3498db;
             --error: #c0392b;
+            --bg: #121212;
+            --surface: #1e1e1e;
+            --text: #ffffff;
+            --text-secondary: #b3b3b3;
         }
 
         body {
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        #settings-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--surface);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: var(--text);
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        #settings-panel {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 320px;
+            height: 100vh;
+            background: var(--surface);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 999;
+        }
+
+        #settings-panel.active {
+            transform: translateX(-350px);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        #chat-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background: #f5f5f5;
+            height: 100vh;
+            box-sizing: border-box;
         }
 
         .security-warning {
-            background: #ffebee;
+            background: #2b0000;
             border-left: 4px solid var(--error);
             padding: 15px;
             margin-bottom: 20px;
         }
 
-        #chat-container {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
-            padding: 25px;
-        }
-
-        .key-section {
-            margin-bottom: 20px;
-        }
-
         input, button, textarea {
             padding: 12px;
-            border: 2px solid #ddd;
+            background: #333;
+            border: 1px solid #444;
             border-radius: 8px;
             margin: 5px 0;
             width: 100%;
+            color: var(--text);
         }
 
         button {
             background: var(--primary);
             color: white;
-            border: none;
             cursor: pointer;
             transition: opacity 0.2s;
         }
 
         button:hover {
-            opacity: 0.9;
+            opacity: 0.8;
         }
 
         #messages {
-            height: 400px;
+            height: calc(100vh - 220px);
             overflow-y: auto;
-            border: 2px solid #eee;
+            border: 1px solid #444;
             border-radius: 8px;
             padding: 15px;
             margin: 15px 0;
@@ -71,31 +117,17 @@
             padding: 12px;
             border-radius: 8px;
             max-width: 80%;
+            background: #2a2a2a;
         }
 
         .user-message {
-            background: var(--secondary);
-            color: white;
+            background: var(--primary);
             margin-left: auto;
         }
 
         .bot-message {
-            background: #666;
-            color: white;
+            background: #3a3a3a;
             margin-right: auto;
-        }
-
-        .debug-panel {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            font-family: monospace;
-        }
-
-        .key-preview {
-            color: #666;
-            word-break: break-all;
         }
 
         .controls {
@@ -106,21 +138,17 @@
         }
 
         #voice-select {
+            background: #333;
+            color: var(--text);
             padding: 8px;
             border-radius: 15px;
             flex: 1;
         }
 
-        #cancel-button {
-            background: var(--error);
-            display: none;
-        }
-
         .loading {
             display: none;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             font-style: italic;
-            margin: 10px 0;
         }
 
         .error {
@@ -130,21 +158,43 @@
             border-radius: 5px;
             margin: 10px 0;
         }
+
+        @media (max-width: 768px) {
+            #settings-panel {
+                width: 100vw;
+                right: -100vw;
+            }
+
+            #settings-panel.active {
+                transform: translateX(-100vw);
+            }
+
+            #chat-container {
+                padding: 10px;
+            }
+
+            #messages {
+                height: calc(100vh - 180px);
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="security-warning">
-        <strong>⚠️ SECURITY WARNING:</strong>
-        <ul>
-            <li>API keys stored in localStorage</li>
-            <li>For local testing only</li>
-            <li>Rotate keys immediately if compromised</li>
-            <li>Use backend server for production</li>
-        </ul>
-    </div>
+    <button id="settings-btn" aria-label="Settings">⚙️</button>
 
-    <div id="chat-container">
-        <!-- Key Management Section -->
+    <div id="settings-panel">
+        <button class="close-btn" onclick="toggleSettings()">×</button>
+        
+        <div class="security-warning">
+            <strong>⚠️ SECURITY WARNING:</strong>
+            <ul>
+                <li>API keys stored in localStorage</li>
+                <li>For local testing only</li>
+                <li>Rotate keys immediately if compromised</li>
+                <li>Use backend server for production</li>
+            </ul>
+        </div>
+
         <div class="key-section">
             <input type="text" id="api-key" 
                    placeholder="Paste OpenRouter API key (starts with sk-or-v1-...)">
@@ -160,17 +210,21 @@
             </div>
         </div>
 
+        <div class="system-prompt-section">
+            <h4>System Prompt</h4>
+            <textarea id="system-prompt" rows="5">
+You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, say you don't know.
+            </textarea>
+        </div>
+    </div>
+
+    <div id="chat-container">
         <!-- Voice Controls -->
         <div class="controls">
             <button id="toggle-voice">🔊 Enable Voice</button>
             <select id="voice-select" disabled></select>
             <button id="cancel-button" onclick="cancelRequest()">Cancel</button>
         </div>
-
-        <!-- Chat Interface -->
-        <textarea id="system-prompt" rows="3">
-You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, say you don't know.
-        </textarea>
 
         <div id="messages"></div>
         <div class="loading" id="loading">AI is thinking...</div>
@@ -183,6 +237,14 @@ You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, 
     </div>
 
     <script>
+        // Settings Panel Toggle
+        function toggleSettings() {
+            const panel = document.getElementById('settings-panel');
+            panel.classList.toggle('active');
+        }
+
+        document.getElementById('settings-btn').addEventListener('click', toggleSettings);
+
         // Key Management
         const STORAGE_KEY = 'debugOpenRouterKey';
         const synth = window.speechSynthesis;
@@ -191,6 +253,7 @@ You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, 
         let controller = null;
         let conversationHistory = [];
 
+        // Voice Synthesis Setup
         function populateVoices() {
             voices = synth.getVoices();
             const voiceSelect = document.getElementById('voice-select');
@@ -200,7 +263,6 @@ You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, 
                 .join('');
         }
 
-        // Initialize voice synthesis
         synth.onvoiceschanged = populateVoices;
 
         document.getElementById('toggle-voice').addEventListener('click', () => {
@@ -210,7 +272,7 @@ You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, 
             document.getElementById('voice-select').disabled = !isVoiceEnabled;
         });
 
-        // Key functions
+        // Key Functions
         function saveKey() {
             const key = document.getElementById('api-key').value.trim();
             localStorage.setItem(STORAGE_KEY, key);
@@ -249,7 +311,7 @@ You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, 
             }
         }
 
-        // Chat functions
+        // Chat Functions
         async function sendMessage() {
             const userInput = document.getElementById('user-input');
             const message = userInput.value.trim();
@@ -317,7 +379,7 @@ You are a helpful AI assistant. Respond in clear, concise sentences. If unsure, 
             showLoading(false);
         }
 
-        // UI functions
+        // UI Functions
         function updateDebugInfo() {
             const key = localStorage.getItem(STORAGE_KEY) || '';
             const debugDiv = document.getElementById('key-debug');
