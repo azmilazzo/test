@@ -1,4 +1,15 @@
-<!DOCTYPE html>
+.video-container:before {
+            content: "Camera preview area";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #6c757d;
+            font-size: 18px;
+            pointer-events: none;
+            display: block;
+            z-index: 0;
+        }<!DOCTYPE html>
 <html>
 <head>
     <title>Local Face Recognition System</title>
@@ -20,26 +31,34 @@
             <p id="cameraStatus"></p>
         </div>
         
-        <!-- Image Registration Section -->
-        <div class="registration">
-            <h3>Register New Face</h3>
-            <input type="file" id="imageUpload" accept="image/*">
-            <input type="text" id="personName" placeholder="Person's name">
-            <button id="registerBtn" disabled onclick="registerFace()">Register Face</button>
-        </div>
+        <div class="main-content">
+            <!-- Left column for registration and faces -->
+            <div class="left-column">
+                <!-- Image Registration Section -->
+                <div class="registration">
+                    <h3>Register New Face</h3>
+                    <input type="file" id="imageUpload" accept="image/*">
+                    <input type="text" id="personName" placeholder="Person's name">
+                    <button id="registerBtn" disabled onclick="registerFace()">Register Face</button>
+                </div>
 
-        <!-- Registered Faces Section -->
-        <div class="known-faces">
-            <h3>Registered Faces</h3>
-            <div id="registeredFaces"></div>
-        </div>
-
-        <!-- Live Recognition Section -->
-        <div class="recognition">
-            <h3>Live Recognition</h3>
-            <div class="video-container">
-                <video id="video" width="720" height="560" autoplay muted></video>
-                <canvas id="canvas" width="720" height="560"></canvas>
+                <!-- Registered Faces Section -->
+                <div class="known-faces">
+                    <h3>Registered Faces</h3>
+                    <div id="registeredFaces"></div>
+                </div>
+            </div>
+            
+            <!-- Right column for live recognition -->
+            <div class="right-column">
+                <!-- Live Recognition Section -->
+                <div class="recognition">
+                    <h3>Live Recognition</h3>
+                    <div class="video-container">
+                        <video id="video" width="480" height="360" autoplay muted></video>
+                        <canvas id="canvas" width="480" height="360"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -393,17 +412,16 @@
             background-color: #bb2d3b;
         }
         
-        .video-container:after {
-            content: "Camera preview area";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #6c757d;
-            font-size: 18px;
-            pointer-events: none;
-            display: block;
-            z-index: -1;
+        .video-container {
+            position: relative;
+            width: 720px;
+            height: 560px;
+            margin: 20px auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
         }
 
         video, canvas {
