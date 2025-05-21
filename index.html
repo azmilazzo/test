@@ -8,40 +8,27 @@
     <div class="container">
         <h1>Face Recognition System</h1>
         
-        <div class="status">
-            <p id="modelStatus">Loading models...</p>
+        <!-- Registration Controls -->
+        <div class="registration-controls">
+            <button onclick="startCapture()">Capture Face</button>
+            <input type="text" id="personName" placeholder="Enter name">
+            <button id="registerBtn" disabled onclick="registerFace()">Register</button>
         </div>
         
-        <div class="main-content">
-            <div class="left-column">
-                <div class="registration">
-                    <h3>Register Face</h3>
-                    <input type="file" id="imageUpload" accept="image/*">
-                    <button onclick="startCapture()">Take Photo</button>
-                    <div id="captureContainer" style="display:none">
-                        <video id="captureVideo" width="200" height="150" autoplay></video>
-                        <button onclick="captureFrame()">Capture</button>
-                    </div>
-                    <input type="text" id="personName" placeholder="Name">
-                    <button id="registerBtn" disabled onclick="registerFace()">Register</button>
-                </div>
-                
-                <div class="known-faces">
-                    <h3>Registered Faces</h3>
-                    <div id="registeredFaces"></div>
-                </div>
+        <!-- Registered Faces -->
+        <div class="registered-faces">
+            <h3>Registered Faces</h3>
+            <div id="registeredFaces"></div>
+        </div>
+        
+        <!-- Live Recognition -->
+        <div class="live-recognition">
+            <h3>Live Recognition</h3>
+            <div class="video-container">
+                <video id="video" width="640" height="480" autoplay muted></video>
+                <canvas id="canvas" width="640" height="480"></canvas>
             </div>
-
-            <div class="right-column">
-                <div class="recognition">
-                    <h3>Live Detection</h3>
-                    <div id="statusDisplay"></div>
-                    <div class="video-container">
-                        <video id="video" width="480" height="360" autoplay muted playsinline></video>
-                        <canvas id="canvas" width="480" height="360"></canvas>
-                    </div>
-                </div>
-            </div>
+            <div id="statusDisplay">Detected: Unknown</div>
         </div>
     </div>
 
@@ -50,20 +37,21 @@
         let modelsLoaded = false;
         let capturedImage = null;
 
+        // Initialize models
         async function loadModels() {
             try {
                 await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models ');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models ');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models ');
-                document.getElementById('modelStatus').textContent = 'Models loaded!';
                 modelsLoaded = true;
                 loadSavedFaces();
+                startVideo();
             } catch (err) {
-                document.getElementById('modelStatus').textContent = 'Error loading models';
-                console.error(err);
+                console.error('Model loading failed:', err);
             }
         }
 
+        // Start camera feed
         async function startVideo() {
             const video = document.getElementById('video');
             try {
@@ -72,13 +60,14 @@
                 video.play();
                 detectFaces();
             } catch (err) {
-                alert('Camera access required');
-                console.error(err);
+                console.error('Camera access failed:', err);
             }
         }
 
+        // Face detection loop
         async function detectFaces() {
             if (!modelsLoaded) return;
+            
             const video = document.getElementById('video');
             const canvas = document.getElementById('canvas');
             const displaySize = { width: video.width, height: video.height };
@@ -93,7 +82,7 @@
                 const detections = await faceapi.detectAllFaces(video)
                     .withFaceLandmarks()
                     .withFaceDescriptors();
-                    
+                
                 const resizedDetections = faceapi.resizeResults(detections, displaySize);
                 canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 
@@ -104,24 +93,25 @@
                     });
                     document.getElementById('statusDisplay').textContent = `Detected: ${names.join(', ')}`;
                     
+                    // Draw face landmarks and boxes
                     resizedDetections.forEach(d => {
+                        faceapi.draw.drawFaceLandmarks(canvas, d.landmarks);
                         const bestMatch = faceMatcher.findBestMatch(d.descriptor);
-                        const box = d.detection.box;
-                        new faceapi.draw.DrawBox(box, { 
+                        new faceapi.draw.DrawBox(d.detection.box, { 
                             label: bestMatch.toString(),
                             boxColor: bestMatch.distance < 0.6 ? 'green' : 'red'
                         }).draw(canvas);
                     });
                 } else {
-                    document.getElementById('statusDisplay').textContent = "No faces detected";
+                    document.getElementById('statusDisplay').textContent = "Detected: Unknown";
                 }
             }, 100);
         }
 
+        // Register new face
         async function registerFace() {
-            if (!modelsLoaded) return alert('Models not loaded');
             const name = document.getElementById('personName').value;
-            if (!name) return alert('Enter name');
+            if (!name) return alert('Please enter a name');
             
             try {
                 let imageSource;
@@ -148,14 +138,66 @@
                     resetRegistration();
                     alert('Registration successful!');
                 } else {
-                    alert('No face detected');
+                    alert('No face detected in the image');
                 }
             } catch (err) {
                 console.error(err);
-                alert('Registration error');
+                alert('Registration failed');
             }
         }
 
+        // Camera capture functionality
+        async function startCapture() {
+            const captureVideo = document.createElement('video');
+            captureVideo.width = 320;
+            captureVideo.height = 240;
+            captureVideo.autoplay = true;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                captureVideo.srcObject = stream;
+                
+                // Create modal overlay
+                const modal = document.createElement('div');
+                modal.style.position = 'fixed';
+                modal.style.top = '50%';
+                modal.style.left = '50%';
+                modal.style.transform = 'translate(-50%, -50%)';
+                modal.style.backgroundColor = 'white';
+                modal.style.padding = '20px';
+                modal.style.borderRadius = '8px';
+                modal.style.zIndex = '1000';
+
+                modal.innerHTML = `
+                    <h4>Capture Face</h4>
+                    <video width="320" height="240" autoplay></video>
+                    <button onclick="captureFrame(${captureVideo})">Capture</button>
+                    <button onclick="closeCapture()">Cancel</button>
+                `;
+                document.body.appendChild(modal);
+
+                modal.querySelector('video').srcObject = stream;
+            } catch (err) {
+                alert('Camera access denied');
+            }
+        }
+
+        function captureFrame(videoElement) {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0);
+            capturedImage = canvas.toDataURL('image/jpeg');
+            closeCapture();
+            document.getElementById('registerBtn').disabled = false;
+        }
+
+        function closeCapture() {
+            document.querySelectorAll('.modal').forEach(el => el.remove());
+        }
+
+        // Helper functions
         function convertImageToBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -195,36 +237,13 @@
             displayRegisteredFaces();
         }
 
-        async function startCapture() {
-            const video = document.getElementById('captureVideo');
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                document.getElementById('captureContainer').style.display = 'block';
-            } catch (err) {
-                alert('Camera access required');
-            }
-        }
-
-        function captureFrame() {
-            const video = document.getElementById('captureVideo');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            capturedImage = canvas.toDataURL('image/jpeg');
-            document.getElementById('captureContainer').style.display = 'none';
-            video.srcObject.getTracks().forEach(track => track.stop());
-            document.getElementById('registerBtn').disabled = false;
-        }
-
         function resetRegistration() {
-            document.getElementById('imageUpload').value = '';
             document.getElementById('personName').value = '';
             capturedImage = null;
             document.getElementById('registerBtn').disabled = true;
         }
 
+        // Load saved faces
         function loadSavedFaces() {
             const saved = localStorage.getItem('knownFaces');
             if (saved) {
@@ -233,9 +252,9 @@
             }
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            await loadModels();
-            startVideo();
+        // Initialize app
+        window.addEventListener('DOMContentLoaded', () => {
+            loadModels();
             loadSavedFaces();
         });
     </script>
@@ -244,40 +263,20 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
-            background: #f0f0f0;
+            background: #f5f5f5;
         }
         .container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
         }
-        .status {
-            text-align: center;
-            margin: 20px 0;
-            padding: 10px;
-            background: #e0e0e0;
-            border-radius: 5px;
-        }
-        .main-content {
-            display: flex;
-            gap: 20px;
-        }
-        .left-column {
-            flex: 1;
-        }
-        .right-column {
-            flex: 1.5;
-        }
-        .registration {
-            background: white;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .registration-controls {
+            margin-bottom: 20px;
         }
         .video-container {
             position: relative;
             width: 640px;
             height: 480px;
-            margin: 0 auto;
+            margin: 20px auto;
         }
         video, canvas {
             position: absolute;
@@ -286,8 +285,15 @@
             width: 100%;
             height: 100%;
         }
-        canvas {
-            z-index: 1;
+        #statusDisplay {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .registered-faces {
+            margin: 20px 0;
         }
         #registeredFaces {
             display: grid;
@@ -298,8 +304,9 @@
             text-align: center;
             background: white;
             padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid #eee;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .face-item img {
             width: 100px;
@@ -308,33 +315,26 @@
             border-radius: 50%;
         }
         button {
-            background: #4CAF50;
-            color: white;
-            border: none;
             padding: 8px 16px;
             margin: 5px;
-            border-radius: 3px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
             cursor: pointer;
         }
         button:hover {
-            background: #45a049;
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
         }
         input {
             padding: 8px;
             margin: 5px;
-            border: 1px solid #ccc;
-            border-radius: 3px;
-        }
-        #captureContainer {
-            margin: 10px 0;
-            padding: 10px;
-            background: #f8f9fa;
             border: 1px solid #ddd;
-        }
-        #statusDisplay {
-            text-align: center;
-            font-size: 1.2em;
-            margin: 10px 0;
+            border-radius: 4px;
         }
     </style>
 </body>
