@@ -1,144 +1,256 @@
 <!DOCTYPE html>
-<html lang="en">
-<!-- Previous head and style sections remain the same -->
-
+<html>
+<head>
+    <title>Local Face Recognition System</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+</head>
 <body>
-    <div id="status-bar"></div>
-    <div id="debug-info"></div>
+    <div class="container">
+        <!-- Image Registration Section -->
+        <div class="registration">
+            <h3>Register New Face</h3>
+            <input type="file" id="imageUpload" accept="image/*">
+            <input type="text" id="personName" placeholder="Person's name">
+            <button onclick="registerFace()">Register Face</button>
+        </div>
 
-    <div class="loading-screen" id="loading-screen">
-        <h2>AI Chat</h2>
-        <div class="loading-details" id="loading-details">Checking system...</div>
-        <div class="loading-progress">
-            <div class="progress-bar" id="progress-bar"></div>
+        <!-- Registered Faces Section -->
+        <div class="known-faces">
+            <h3>Registered Faces</h3>
+            <div id="registeredFaces"></div>
         </div>
-        <div class="progress-text" id="progress-text">0%</div>
-        <div class="stats-container">
-            <div class="stat-box">
-                <div class="stat-label">Downloaded</div>
-                <div class="stat-value" id="downloaded-size">0 MB</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Speed</div>
-                <div class="stat-value" id="download-speed">0 MB/s</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">ETA</div>
-                <div class="stat-value" id="eta">--:--</div>
-            </div>
+
+        <!-- Live Recognition Section -->
+        <div class="recognition">
+            <video id="video" width="720" height="560" autoplay muted></video>
+            <canvas id="canvas" width="720" height="560"></canvas>
         </div>
-        <div id="error-log" style="margin-top: 20px; color: #666; font-size: 12px; text-align: left; max-width: 300px;"></div>
     </div>
 
-    <!-- Previous chat container HTML remains the same -->
+    <script>
+        let knownFaces = {};
 
-    <script type="module">
-        import * as webllm from 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/dist/web-llm.js';
-
-        let chat;
-        const errorLog = document.getElementById('error-log');
-        
-        function log(message) {
-            console.log(message);
-            errorLog.innerHTML += message + '<br>';
-            errorLog.scrollTop = errorLog.scrollHeight;
-        }
-
-        async function checkSystemRequirements() {
-            log('Checking system requirements...');
-            
-            // Check WebAssembly
-            if (typeof WebAssembly === 'undefined') {
-                throw new Error('WebAssembly not supported');
+        // Load saved faces from localStorage on startup
+        async function loadSavedFaces() {
+            const saved = localStorage.getItem('knownFaces');
+            if (saved) {
+                knownFaces = JSON.parse(saved);
+                await displayRegisteredFaces();
             }
-            log('✓ WebAssembly supported');
-
-            // Check memory
-            const memory = navigator.deviceMemory || 'unknown';
-            log(`Device memory: ${memory}GB`);
-            
-            // Check processors
-            const processors = navigator.hardwareConcurrency || 'unknown';
-            log(`CPU cores: ${processors}`);
-
-            // Check online status
-            log(`Online status: ${navigator.onLine}`);
-
-            // Check browser
-            log(`Browser: ${navigator.userAgent}`);
         }
 
-        async function initChat() {
+        // Register new face
+        async function registerFace() {
+            const imageFile = document.getElementById('imageUpload').files[0];
+            const personName = document.getElementById('personName').value;
+
+            if (!imageFile || !personName) {
+                alert('Please select an image and enter a name');
+                return;
+            }
+
             try {
-                await checkSystemRequirements();
+                // Convert image to base64
+                const base64Image = await convertImageToBase64(imageFile);
                 
-                log('Creating chat module...');
-                chat = await webllm.ChatModule.create();
-                log('Chat module created');
+                // Process face detection
+                const img = await faceapi.fetchImage(base64Image);
+                const detection = await faceapi.detectSingleFace(img)
+                    .withFaceLandmarks()
+                    .withFaceDescriptor();
 
-                // Set up progress tracking
-                chat.setProgressCallback((progress) => {
-                    log(`Progress update: ${JSON.stringify(progress)}`);
-                    if (progress.type === "download") {
-                        updateProgress(progress.loaded, progress.total || 2048 * 1024 * 1024); // 2GB estimate
-                    }
-                });
+                if (detection) {
+                    // Store face data
+                    knownFaces[personName] = {
+                        name: personName,
+                        descriptor: Array.from(detection.descriptor),
+                        image: base64Image
+                    };
 
-                log('Loading model...');
-                updateLoadingStatus('Loading model (this may take a few minutes)...');
-
-                // Try loading a smaller model first
-                await chat.reload("TinyLlama-1.1B-Chat-v0.3", {
-                    wasmUrl: 'https://cdn.jsdelivr.net/npm/@mlc-ai/web-llm/lib/',
-                    cacheUrl: './model-cache/',
-                    maxThreads: 2, // Reduced threads for mobile
-                    modelConfig: {
-                        temperature: 0.7,
-                        max_tokens: 50,
-                        repetition_penalty: 1.1,
-                        top_p: 0.9
-                    }
-                });
-
-                log('Model loaded successfully');
-                updateLoadingStatus('Setting up chat...');
-
-                await chat.setSystemPrompt('You are a helpful AI assistant.');
-                log('System prompt set');
-
-                document.getElementById('loading-screen').style.display = 'none';
-                document.getElementById('user-input').disabled = false;
-                document.getElementById('send-button').disabled = false;
-
-                addMessage("Hello! How can I help you today?", 'bot');
-
+                    // Save to localStorage
+                    localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
+                    
+                    // Update display
+                    await displayRegisteredFaces();
+                    
+                    // Clear inputs
+                    document.getElementById('imageUpload').value = '';
+                    document.getElementById('personName').value = '';
+                } else {
+                    alert('No face detected in the image');
+                }
             } catch (error) {
-                log(`Error: ${error.message}`);
-                console.error('Full error:', error);
-                updateLoadingStatus(`Error: ${error.message}. Check error log below.`);
+                console.error('Error registering face:', error);
+                alert('Error processing image');
             }
         }
 
-        // Previous helper functions remain the same
-
-        // Initialize on page load
-        window.addEventListener('DOMContentLoaded', () => {
-            log('Page loaded, starting initialization...');
-            setTimeout(initChat, 1000);
-        });
-
-        // Handle visibility changes
-        document.addEventListener('visibilitychange', () => {
-            log(`Visibility changed: ${document.visibilityState}`);
-        });
-
-        // Monitor memory
-        if (window.performance && window.performance.memory) {
-            setInterval(() => {
-                const memory = window.performance.memory;
-                log(`Memory usage: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB`);
-            }, 5000);
+        // Convert image file to base64
+        function convertImageToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         }
+
+        // Display registered faces
+        async function displayRegisteredFaces() {
+            const container = document.getElementById('registeredFaces');
+            container.innerHTML = '';
+
+            for (const [name, data] of Object.entries(knownFaces)) {
+                const div = document.createElement('div');
+                div.className = 'face-item';
+                
+                div.innerHTML = `
+                    <img src="${data.image}" alt="${name}" width="100">
+                    <p>${name}</p>
+                    <button onclick="deleteFace('${name}')">Delete</button>
+                `;
+                
+                container.appendChild(div);
+            }
+        }
+
+        // Delete registered face
+        function deleteFace(name) {
+            delete knownFaces[name];
+            localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
+            displayRegisteredFaces();
+        }
+
+        // Initialize face detection models
+        async function loadModels() {
+            await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+            await faceapi.nets.ssdMobilenetv1.loadFromUri('/models');
+        }
+
+        // Start video stream
+        async function startVideo() {
+            const video = document.getElementById('video');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing webcam:", err);
+            }
+        }
+
+        // Live face detection
+        async function detectFaces() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const displaySize = { width: video.width, height: video.height };
+            faceapi.matchDimensions(canvas, displaySize);
+
+            // Create face matcher from known faces
+            const labeledDescriptors = Object.entries(knownFaces).map(([name, data]) => {
+                return new faceapi.LabeledFaceDescriptors(
+                    name, 
+                    [new Float32Array(data.descriptor)]
+                );
+            });
+            
+            const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors);
+
+            setInterval(async () => {
+                const detections = await faceapi.detectAllFaces(video)
+                    .withFaceLandmarks()
+                    .withFaceDescriptors();
+
+                const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
+                resizedDetections.forEach(detection => {
+                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                    const box = detection.detection.box;
+                    const drawBox = new faceapi.draw.DrawBox(box, { 
+                        label: bestMatch.toString(),
+                        lineWidth: 2,
+                        boxColor: bestMatch.distance < 0.6 ? 'green' : 'red'
+                    });
+                    drawBox.draw(canvas);
+                });
+            }, 100);
+        }
+
+        // Initialize application
+        window.addEventListener('load', async () => {
+            await loadModels();
+            await loadSavedFaces();
+            await startVideo();
+            document.getElementById('video').addEventListener('play', detectFaces);
+        });
     </script>
+
+    <style>
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .registration {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+
+        .recognition {
+            position: relative;
+            width: 720px;
+            margin: 20px auto;
+        }
+
+        video, canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .known-faces {
+            margin: 20px 0;
+        }
+
+        .face-item {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .face-item img {
+            border-radius: 50%;
+            margin-bottom: 5px;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        input {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
 </body>
 </html>
