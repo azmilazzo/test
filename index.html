@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>Face Recognition System</title>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js @0.22.2/dist/face-api.min.js"></script>
+    <script src="https://unpkg.com/face-api.js @0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -58,9 +58,9 @@
         async function loadModels() {
             try {
                 document.getElementById('modelStatus').textContent = 'Loading models...';
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models ');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models ');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models ');
+                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://unpkg.com/face-api.js @0.22.2/weights');
+                await faceapi.nets.faceLandmark68Net.loadFromUri('https://unpkg.com/face-api.js @0.22.2/weights');
+                await faceapi.nets.faceRecognitionNet.loadFromUri('https://unpkg.com/face-api.js @0.22.2/weights');
                 document.getElementById('modelStatus').textContent = 'Models loaded!';
                 document.getElementById('registerBtn').disabled = false;
                 modelsLoaded = true;
@@ -223,6 +223,11 @@
         }
 
         window.addEventListener('DOMContentLoaded', async () => {
+            if (typeof faceapi === 'undefined') {
+                document.getElementById('modelStatus').textContent = 'Error: face-api.js failed to load';
+                return;
+            }
+            
             await loadModels();
             await startVideo();
             detectFaces();
