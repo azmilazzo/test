@@ -4,6 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Luna Voice Assistant</title>
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
+    <script type="module">
+        // Import directly from the CDN. This exposes 'Piper' object globally.
+        import * as Piper from 'https://cdn.jsdelivr.net/npm/@piper-lab/piper-js@0.1.0/dist/index.mjs';
+
+        // Make it accessible globally or via a specific property on window
+        window.PiperJS = Piper;
+
+        // You'll still need to provide the path to espeak-ng-data for Piper.js
+        window.initPiperPhonemizer = async (espeakNgDataPath) => {
+            if (!window.PiperJS || !window.PiperJS.Phonemizer) {
+                throw new Error("Piper.js Phonemizer not loaded correctly from CDN.");
+            }
+            try {
+                // Piper.js Phonemizer.create expects the path to the espeak-ng-data folder
+                const phonemizer = await window.PiperJS.Phonemizer.create(espeakNgDataPath);
+                return phonemizer;
+            } catch (e) {
+                console.error("Failed to initialize Piper Phonemizer:", e);
+                throw e; // Propagate error
+            }
+        };
+    </script>
     <style>
         :root {
             --primary: #2c3e50;
@@ -15,6 +38,7 @@
             --text-secondary: #b3b3b3;
             --speaking: #27ae60;
             --listening: #c0392b; /* Added for clarity */
+            --loading-tts: #f39c12; /* Added for TTS loading status */
         }
 
         body {
@@ -186,6 +210,7 @@
             color: var(--text);
             padding: 8px;
             border-radius: 8px; /* Consistent with other inputs */
+            display: none; /* Hide native voice select as we're using Piper now */
         }
 
         .loading {
@@ -235,6 +260,10 @@
 
         .voice-status.speaking {
             background: var(--speaking); /* Green for speaking */
+            animation: pulse 1.5s infinite;
+        }
+        .voice-status.loading-tts {
+            background: var(--loading-tts); /* Orange for loading TTS */
             animation: pulse 1.5s infinite;
         }
 
@@ -295,8 +324,7 @@
                 width: 100%;
                 min-width: unset; /* Remove min-width override */
             }
-        }
-    </style>
+        </style>
 </head>
 <body>
     <button id="settings-btn" aria-label="Settings">⚙️</button>
@@ -309,7 +337,7 @@
 
     <div id="settings-panel">
         <button class="close-btn" onclick="toggleSettings()">×</button>
-        
+
         <div class="security-warning">
             <strong>⚠️ SECURITY WARNING:</strong>
             <ul>
@@ -323,7 +351,7 @@
 
         <div class="key-section">
             <h4>OpenRouter API Key</h4>
-            <input type="text" id="api-key" 
+            <input type="text" id="api-key"
                     placeholder="Paste OpenRouter API key (starts with sk-or-v1-...)">
             <div style="display: flex; gap: 10px;">
                 <button onclick="saveKey()">Save</button>
@@ -340,11 +368,7 @@
         <div class="system-prompt-section" style="margin-top: 20px;">
             <h4>System Prompt</h4>
             <textarea id="system-prompt" rows="5">
-                You are Luna, a kind, empathetic, and supportive AI companion. 
-                Your purpose is to engage in natural, flowing conversations, provide emotional support, 
-                and help users explore their thoughts and feelings. Always respond in a warm and understanding tone. 
-                Remember details from previous conversations to maintain consistency. 
-                Avoid giving medical or financial advice. Focus on building a personal connection with the user.
+You are Luna, a friendly voice assistant. Keep responses concise for voice synthesis.
             </textarea>
         </div>
     </div>
@@ -352,14 +376,13 @@
     <div id="chat-container">
         <div class="controls">
             <button id="toggle-voice">🔊 Enable Voice</button>
-            <select id="voice-select" disabled></select>
-            <button id="cancel-button" onclick="cancelRequest()">Cancel</button>
+            <select id="voice-select" disabled></select> <button id="cancel-button" onclick="cancelRequest()">Cancel</button>
         </div>
 
         <div id="messages"></div>
         <div class="loading" id="loading">Luna is thinking...</div>
 
-        <div style="margin-top: auto;"> <input type="text" id="user-input" 
+        <div style="margin-top: auto;"> <input type="text" id="user-input"
                     placeholder="Type your message..." disabled>
             <button onclick="sendMessage()" id="send-btn" disabled>Send</button>
         </div>
@@ -370,7 +393,7 @@
         const WAKE_WORD_CONFIDENCE = 0.7; // Lowered slightly for potentially less clear mobile mic
         const SESSION_TIMEOUT_DURATION = 7000; // 7 seconds
         const AUDIO_CONTEXT_TIMEOUT = 500; // Short delay for beep sound
-        
+
         let recognition = null;
         let isRecognitionActive = false; // Tracks if recognition is currently running
         let isAwaitingCommand = false;
@@ -379,9 +402,13 @@
         let isVoiceEnabled = false;
         let controller = null;
         let conversationHistory = [];
-        let synth = window.speechSynthesis;
-        let voices = [];
-        let audioContext = null; // For beep sound
+        let currentAudioSource = null; // To keep track of current audio playback for cancellation
+
+        // Piper TTS Specific variables
+        let ttsSession = null;
+        let ttsConfig = null;
+        let piperPhonemize = null;
+        let audioContext = null; // Single AudioContext for all audio (beeps and TTS)
 
         const STORAGE_KEY = 'debugOpenRouterKey';
 
@@ -395,7 +422,7 @@
         // --- Voice Recognition Setup & Control ---
         function initVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            
+
             if (!SpeechRecognition) {
                 showError("Speech recognition not supported in this browser.");
                 return;
@@ -414,11 +441,11 @@
             recognition.onresult = (event) => {
                 const results = Array.from(event.results);
                 const lastResult = results[results.length - 1];
-                
+
                 // Only process final results with sufficient confidence
                 if (lastResult.isFinal && lastResult[0].confidence > WAKE_WORD_CONFIDENCE) {
                     const transcript = lastResult[0].transcript.toLowerCase().trim();
-                    
+
                     if (!isAwaitingCommand && transcript.includes(WAKE_WORD)) {
                         handleWakeWordDetected();
                     } else if (isAwaitingCommand) {
@@ -435,7 +462,7 @@
                 clearInterval(timerInterval); // Clear timer interval on error
                 updateVoiceStatus('inactive');
                 document.getElementById('wake-word-indicator').style.display = 'none';
-                
+
                 switch(event.error) {
                     case 'no-speech':
                         // If no speech for a while, recognition stops. Restart if active.
@@ -463,7 +490,7 @@
             recognition.onend = () => {
                 isRecognitionActive = false;
                 // Only attempt to restart if the page is visible, voice is enabled, and we intend to be listening
-                if (document.visibilityState === 'visible' && !synth.speaking && !isAwaitingCommand && isVoiceEnabled) {
+                if (document.visibilityState === 'visible' && !isAwaitingCommand && isVoiceEnabled && !currentAudioSource) { // Also check if TTS is speaking
                     // Small delay before restart to prevent rapid on/off cycling
                     setTimeout(() => startRecognition(), 500);
                 }
@@ -488,8 +515,6 @@
                     if (isVoiceEnabled) {
                         showError("Please allow microphone access when prompted.");
                         startRecognition(); // This will trigger the permission prompt
-                    } else {
-                        showError("Microphone access will be requested if voice features are enabled.");
                     }
                 } else {
                     showError("Microphone access denied. Cannot use voice features.");
@@ -551,7 +576,7 @@
             isAwaitingCommand = true;
             updateVoiceStatus('listening'); // Indicate active listening for a command
             document.getElementById('wake-word-indicator').style.display = 'block';
-            
+
             // Play a short beep sound
             if (audioContext === null) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -593,7 +618,7 @@
             isAwaitingCommand = false; // Reset awaiting command flag
             updateVoiceStatus('inactive'); // Go back to idle mic status
             document.getElementById('wake-word-indicator').style.display = 'none';
-            
+
             const command = transcript.replace(WAKE_WORD, '').trim();
             if (command) {
                 document.getElementById('user-input').value = command;
@@ -604,7 +629,7 @@
                 updateVoiceStatus('inactive');
                 // Restart recognition if voice is enabled to listen for next wake word
                 if (isVoiceEnabled && document.visibilityState === 'visible') {
-                    startRecognition(); 
+                    startRecognition();
                 }
             }
         }
@@ -612,7 +637,7 @@
         function startSessionTimeout() {
             let secondsLeft = SESSION_TIMEOUT_DURATION / 1000;
             updateTimerDisplay(secondsLeft);
-            
+
             timerInterval = setInterval(() => {
                 secondsLeft -= 1;
                 updateTimerDisplay(secondsLeft);
@@ -626,7 +651,7 @@
                 showError("Session timed out. Say 'Hey Luna' to continue.");
                 // Restart recognition if voice is enabled to listen for next wake word
                 if (isVoiceEnabled && document.visibilityState === 'visible') {
-                    startRecognition(); 
+                    startRecognition();
                 }
             }, SESSION_TIMEOUT_DURATION);
         }
@@ -641,33 +666,36 @@
         function updateVoiceStatus(state) {
             const status = document.getElementById('voice-status');
             const micIcon = document.getElementById('mic-icon');
-            status.classList.remove('listening', 'speaking'); // Clear previous states
+            status.classList.remove('listening', 'speaking', 'error', 'loading-tts'); // Clear previous states
             micIcon.textContent = '🎤'; // Default icon
 
-            // Get the computed style to access CSS variables
             const computedStyle = getComputedStyle(document.documentElement);
 
             switch(state) {
                 case 'listening':
-                    status.classList.add('listening'); // This class applies the background from CSS variable --listening
-                    micIcon.textContent = '🔴'; // Red dot mic
+                    status.classList.add('listening');
+                    micIcon.textContent = '🔴';
                     status.title = 'Listening for your command';
                     break;
                 case 'speaking':
-                    status.classList.add('speaking'); // This class applies the background from CSS variable --speaking
-                    micIcon.textContent = '🔊'; // Speaker icon
+                    status.classList.add('speaking');
+                    micIcon.textContent = '🔊';
                     status.title = 'Luna is speaking';
                     break;
+                case 'loading-tts':
+                    status.classList.add('loading-tts');
+                    micIcon.textContent = '🔄'; // Spinning arrow
+                    status.title = 'Loading voice model...';
+                    break;
                 case 'error':
-                    // CORRECTED LINE: Get the value of --error CSS variable using getPropertyValue
                     status.style.backgroundColor = computedStyle.getPropertyValue('--error');
-                    micIcon.textContent = '❌'; // Error icon
+                    micIcon.textContent = '❌';
                     status.title = 'Error - Click to retry mic';
                     break;
                 case 'inactive': // Wake word listening state
                 default:
-                    status.style.backgroundColor = '#333'; // Direct hardcoded color as per original design
-                    micIcon.textContent = '🎤'; // Standard mic
+                    status.style.backgroundColor = '#333';
+                    micIcon.textContent = '🎤';
                     status.title = 'Listening for "Hey Luna"';
                     break;
             }
@@ -675,15 +703,19 @@
 
         // Tap the mic status to manually restart listening (useful if recognition stalls)
         document.getElementById('voice-status').addEventListener('click', () => {
-            if (isVoiceEnabled) { // Only if voice is globally enabled
+            if (isVoiceEnabled) {
                 console.log("Mic status clicked. Restarting recognition.");
-                stopRecognition(); // Stop any active recognition
-                clearTimeout(sessionTimeout); // Ensure timeouts are clear
+                stopRecognition();
+                if (currentAudioSource) { // Cancel current TTS playback if active
+                    currentAudioSource.stop();
+                    currentAudioSource = null;
+                }
+                clearTimeout(sessionTimeout);
                 clearInterval(timerInterval);
-                isAwaitingCommand = false; // Not awaiting command on manual restart
+                isAwaitingCommand = false;
                 updateVoiceStatus('inactive');
                 document.getElementById('wake-word-indicator').style.display = 'none';
-                setTimeout(() => startRecognition(), 100); // Short delay before restart
+                setTimeout(() => startRecognition(), 100);
             } else {
                 showError("Voice features are disabled. Enable them to use microphone.");
             }
@@ -696,16 +728,15 @@
             const message = userInput.value.trim();
             if (!message) return;
 
-            // Immediately stop listening for wake word/command and update status
-            stopRecognition(); 
+            stopRecognition();
             clearTimeout(sessionTimeout);
             clearInterval(timerInterval);
             isAwaitingCommand = false;
             document.getElementById('wake-word-indicator').style.display = 'none';
-            updateVoiceStatus('inactive'); // Reset mic status to idle
+            updateVoiceStatus('inactive');
 
             userInput.disabled = true;
-            document.getElementById('send-btn').disabled = true; // Disable send button
+            document.getElementById('send-btn').disabled = true;
             addMessage('user', message);
             userInput.value = '';
             showLoading(true);
@@ -717,12 +748,12 @@
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem(STORAGE_KEY)}`,
-                        'HTTP-Referer': window.location.href, // Or a specific domain if allowed
+                        'HTTP-Referer': window.location.href,
                         'X-Title': 'Luna Assistant',
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'deepseek/deepseek-chat-v3-0324:free', // Using a free model for demonstration
+                        model: 'deepseek/deepseek-r1-distill-qwen-32b:free',
                         messages: [
                             { role: "system", content: document.getElementById('system-prompt').value },
                             ...conversationHistory,
@@ -734,11 +765,11 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     throw new Error(data.error?.message || `API error: ${response.status} ${response.statusText}`);
                 }
-                
+
                 const botMessage = data.choices[0].message.content;
                 addMessage('bot', botMessage);
                 conversationHistory.push(
@@ -748,11 +779,13 @@
 
                 const handleSpeechEnd = () => {
                     document.getElementById('voice-status').classList.remove('speaking');
+                    currentAudioSource = null; // Clear the audio source once done
                     if (isVoiceEnabled && document.visibilityState === 'visible') {
-                        startRecognition(); // Restart mic after bot finishes speaking
-                        startSessionTimeout(); // Re-enable session timeout for next command
+                        if (!isAwaitingCommand && !isRecognitionActive) {
+                            startRecognition();
+                        }
+                        startSessionTimeout();
                     } else {
-                        // If voice disabled or page hidden, still clear timeout and return to idle
                         clearTimeout(sessionTimeout);
                         clearInterval(timerInterval);
                         isAwaitingCommand = false;
@@ -761,34 +794,80 @@
                 };
 
                 if (isVoiceEnabled) {
-                    const utterance = new SpeechSynthesisUtterance(botMessage);
-                    const selectedVoiceName = document.getElementById('voice-select').value;
-                    const selectedVoice = voices.find(v => v.name === selectedVoiceName) || voices[0];
-
-                    if (!selectedVoice) {
-                        showError("No voices available for speech synthesis. Check browser settings.");
-                        handleSpeechEnd(); // Proceed without speech
+                    // --- Piper TTS Integration ---
+                    if (!ttsSession || !ttsConfig || !piperPhonemize) {
+                        showError("TTS model not loaded. Please wait or refresh.");
+                        handleSpeechEnd();
                         return;
                     }
 
-                    utterance.voice = selectedVoice;
-                    utterance.onend = handleSpeechEnd;
-                    utterance.onerror = (err) => {
-                        console.error('Speech synthesis error:', err);
-                        showError("Text-to-speech failed. Try another voice or browser.");
-                        handleSpeechEnd(); // Continue even if speech fails
-                    };
+                    document.getElementById('voice-status').classList.add('speaking');
 
                     try {
-                        synth.speak(utterance);
-                        document.getElementById('voice-status').classList.add('speaking');
-                    } catch (speechError) {
-                        console.error('Error speaking utterance:', speechError);
-                        showError("Could not start speech synthesis. Browser issue?");
+                        // 1. Phonemize the text
+                        // PiperPhonemize.phonemize returns an array of phoneme strings.
+                        // We then map these strings to their corresponding IDs from ttsConfig.phoneme_id_map.
+                        const phonemeStrings = piperPhonemize.phonemize(botMessage, ttsConfig.phoneme_id_map);
+                        const phonemeIds = phonemeStrings.map(p => ttsConfig.phoneme_id_map[p][0]);
+
+                        const inputTensor = new ort.Tensor('int64', BigInt64Array.from(phonemeIds), [1, phonemeIds.length]);
+
+                        // 2. Prepare inputs for the ONNX model
+                        const feeds = {
+                            'input': inputTensor,
+                            'input_lengths': new ort.Tensor('int64', BigInt64Array.from([phonemeIds.length]), [1]),
+                            'scales': new ort.Tensor('float32', new Float32Array([
+                                ttsConfig.inference.noise_scale,
+                                ttsConfig.inference.length_scale,
+                                ttsConfig.inference.noise_w // This should be in the config for VITS models
+                            ]), [3]),
+                            // If your model has speakers, add speaker_id, e.g., ttsConfig.speaker_id_map['amy']
+                            // 'speaker_id': new ort.Tensor('int64', BigInt64Array.from([0]), [1]) // Assuming single speaker model or speaker 0
+                        };
+
+                        // 3. Run inference
+                        console.log("Running ONNX inference...");
+                        const results = await ttsSession.run(feeds);
+                        const audioData = results.output.data; // This is a Float32Array of audio samples
+
+                        // 4. Play audio using Web Audio API
+                        if (!audioContext || audioContext.state === 'suspended') {
+                             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                             await audioContext.resume();
+                        }
+
+                        const sampleRate = ttsConfig.audio.sample_rate; // Get sample rate from config
+                        const buffer = audioContext.createBuffer(1, audioData.length, sampleRate);
+                        const channel = buffer.getChannelData(0);
+
+                        for (let i = 0; i < audioData.length; i++) {
+                            channel[i] = audioData[i];
+                        }
+
+                        const source = audioContext.createBufferSource();
+                        source.buffer = buffer;
+                        source.connect(audioContext.destination);
+                        currentAudioSource = source; // Store reference to current audio source
+
+                        source.onended = () => {
+                            console.log('Piper speech finished.');
+                            handleSpeechEnd();
+                        };
+                        source.onerror = (err) => {
+                            console.error('Audio playback error:', err);
+                            showError("Failed to play audio from Piper TTS.");
+                            handleSpeechEnd();
+                        };
+
+                        source.start();
+
+                    } catch (ttsError) {
+                        console.error('Piper TTS synthesis error:', ttsError);
+                        showError(`Piper TTS failed: ${ttsError.message}`);
                         handleSpeechEnd();
                     }
                 } else {
-                    handleSpeechEnd(); // If voice is disabled, just proceed
+                    handleSpeechEnd(); // If voice is disabled
                 }
 
             } catch (error) {
@@ -801,15 +880,14 @@
                     showError(`API Error: ${error.message}`);
                     console.error("API Request Error:", error);
                 }
-                isAwaitingCommand = false; // Ensure this is reset on error
-                updateVoiceStatus('inactive'); // Reset mic status to idle
-                // Attempt to restart recognition if voice is enabled and not already active
+                isAwaitingCommand = false;
+                updateVoiceStatus('inactive');
                 if (isVoiceEnabled && document.visibilityState === 'visible' && !isRecognitionActive) {
                     startRecognition();
                 }
             } finally {
                 userInput.disabled = false;
-                document.getElementById('send-btn').disabled = !localStorage.getItem(STORAGE_KEY); // Re-enable based on key
+                document.getElementById('send-btn').disabled = !localStorage.getItem(STORAGE_KEY);
                 userInput.focus();
                 showLoading(false);
                 controller = null;
@@ -818,92 +896,74 @@
 
         function showError(message) {
             const existingError = document.querySelector('.error');
-            if (existingError) existingError.remove(); // Remove existing error to show new one
+            if (existingError) existingError.remove();
 
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error';
             errorDiv.textContent = message;
             document.body.appendChild(errorDiv);
-            setTimeout(() => errorDiv.remove(), 5000); // Error disappears after 5 seconds
+            setTimeout(() => errorDiv.remove(), 5000);
         }
-
-        // --- Voice & Speech Synthesis Setup ---
-        function populateVoices() {
-            voices = synth.getVoices();
-            const voiceSelect = document.getElementById('voice-select');
-            
-            // Clear existing options to prevent duplicates on subsequent calls
-            voiceSelect.innerHTML = ''; 
-            
-            if (voices.length > 0) {
-                const englishVoices = voices.filter(voice => voice.lang.startsWith('en'));
-                if (englishVoices.length === 0) {
-                    showError("No English voices found. Text-to-speech may not work as expected.");
-                }
-
-                englishVoices.forEach(voice => {
-                    const option = document.createElement('option');
-                    option.value = voice.name;
-                    option.textContent = `${voice.name} (${voice.lang})`;
-                    if (voice.default) {
-                        option.selected = true;
-                    }
-                    voiceSelect.appendChild(option);
-                });
-                document.getElementById('voice-select').disabled = false;
-            } else {
-                showError("No speech synthesis voices available. Ensure your browser supports it.");
-                document.getElementById('voice-select').disabled = true;
-            }
-            
-            // If voices are not yet loaded, try again after a delay
-            if (voices.length === 0) {
-                setTimeout(populateVoices, 1000);
-            }
-        }
-        synth.onvoiceschanged = populateVoices; // Event fires when voices are loaded
-
-        document.getElementById('toggle-voice').addEventListener('click', () => {
-            isVoiceEnabled = !isVoiceEnabled;
-            const button = document.getElementById('toggle-voice');
-            button.textContent = isVoiceEnabled ? "🔇 Disable Voice" : "🔊 Enable Voice";
-            document.getElementById('voice-select').disabled = !isVoiceEnabled;
-
-            localStorage.setItem('isVoiceEnabled', isVoiceEnabled); // Save state
-
-            if (isVoiceEnabled) {
-                // If enabling voice, ensure recognition is running
-                if (document.visibilityState === 'visible') {
-                    startRecognition();
-                }
-            } else {
-                // If disabling voice, stop recognition and any active speech
-                stopRecognition();
-                if (synth.speaking) {
-                    synth.cancel();
-                }
-                clearTimeout(sessionTimeout);
-                clearInterval(timerInterval);
-                isAwaitingCommand = false;
-                updateVoiceStatus('inactive');
-                document.getElementById('wake-word-indicator').style.display = 'none';
-            }
-        });
 
         function cancelRequest() {
             if (controller) {
                 controller.abort();
-                controller = null; // Clear controller after abort
+                controller = null;
             }
-            if (synth.speaking) {
-                synth.cancel();
+            if (currentAudioSource) { // Cancel current Piper TTS playback
+                currentAudioSource.stop();
+                currentAudioSource = null;
             }
             showLoading(false);
             document.getElementById('voice-status').classList.remove('speaking');
-            
-            // Ensure mic is restarted if voice is enabled and page is visible
+
             if (isVoiceEnabled && document.visibilityState === 'visible') {
                 startRecognition();
+            }
+        }
+
+        // --- Piper TTS Model Loading ---
+        async function loadPiperTTSModelsAndPhonemizer() {
+            updateVoiceStatus('loading-tts'); // Indicate loading of TTS model
+
+            // **UPDATED:** Relative URLs for Amy (low quality) voice model from your own repository
+            const modelUrl = './en_US-amy-low.onnx'; // Assuming directly in root
+            const configUrl = './en_US-amy-low.onnx.json'; // Assuming directly in root
+
+            try {
+                // Load the ONNX model
+                ttsSession = await ort.InferenceSession.create(modelUrl, {
+                    executionProviders: ['wasm'], // Prefer WASM for broad compatibility
+                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/', // Point to ONNX Runtime WASM files on CDN
+                    logSeverityLevel: 3, // Only log errors
+                });
+
+                // Load the config JSON
+                const response = await fetch(configUrl);
+                ttsConfig = await response.json();
+
+                // Initialize AudioContext if not already
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                // Initialize Piper Phonemizer using the globally available function
+                // Make sure `espeak-ng-data` are accessible in a subfolder relative to your HTML.
+                // The path './espeak-ng-data/' is relative to your index.html
+                piperPhonemize = await window.initPiperPhonemizer('./espeak-ng-data/');
+
+                console.log('Piper TTS model and phonemizer loaded successfully!');
+                updateVoiceStatus('inactive'); // Go back to idle mic status
+                return true;
+
+            } catch (error) {
+                console.error('Failed to load Piper TTS model or phonemizer:', error);
+                showError(`Failed to load TTS components: ${error.message}. Check console for details.`);
+                updateVoiceStatus('error'); // Show error state
+                return false;
             }
         }
 
@@ -951,9 +1011,9 @@
                         'X-Title': 'Key Debugger'
                     }
                 });
-                
-                const data = await response.json(); // Even errors come with JSON body
-                
+
+                const data = await response.json();
+
                 if (response.ok) {
                     resultDiv.textContent = `✅ Key is valid (Usage: ${data.data.usage_rate_limit_per_minute}/min)`;
                     resultDiv.style.color = 'green';
@@ -992,7 +1052,6 @@
             messageDiv.className = `message ${role}-message`;
             messageDiv.textContent = content;
             messagesDiv.appendChild(messageDiv);
-            // Auto-scroll to the bottom
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
@@ -1001,26 +1060,59 @@
         }
 
         // --- Initialization ---
-        function initializeApp() {
+        async function initializeApp() {
             // Load voice enabled state from localStorage first
             const savedVoiceState = localStorage.getItem('isVoiceEnabled');
             if (savedVoiceState === 'true') {
                 isVoiceEnabled = true;
                 document.getElementById('toggle-voice').textContent = "🔇 Disable Voice";
-                document.getElementById('voice-select').disabled = false;
             } else {
                 isVoiceEnabled = false;
                 document.getElementById('toggle-voice').textContent = "🔊 Enable Voice";
-                document.getElementById('voice-select').disabled = true;
             }
+
+            // Hide the native voice select element as it's no longer used
+            document.getElementById('voice-select').style.display = 'none';
 
             document.getElementById('api-key').value = localStorage.getItem(STORAGE_KEY) || '';
             updateDebugInfo();
             updateUIState();
-            populateVoices(); // Populate voices immediately
+
+            // Load Piper TTS models and phonemizer when the app initializes
+            // This happens in the background. User can still type while loading.
+            await loadPiperTTSModelsAndPhonemizer();
 
             // Initialize recognition based on saved state and visibility
-            initVoiceRecognition(); 
+            initVoiceRecognition();
+
+            document.getElementById('toggle-voice').addEventListener('click', () => {
+                isVoiceEnabled = !isVoiceEnabled;
+                const button = document.getElementById('toggle-voice');
+                button.textContent = isVoiceEnabled ? "🔇 Disable Voice" : "🔊 Enable Voice";
+
+                localStorage.setItem('isVoiceEnabled', isVoiceEnabled); // Save state
+
+                if (isVoiceEnabled) {
+                    if (document.visibilityState === 'visible') {
+                        startRecognition();
+                    }
+                    if (!ttsSession || !ttsConfig || !piperPhonemize) {
+                        showError("Voice features are enabled, but TTS models are still loading or failed. Please wait.");
+                        loadPiperTTSModelsAndPhonemizer(); // Try loading again if not ready
+                    }
+                } else {
+                    stopRecognition();
+                    if (currentAudioSource) {
+                        currentAudioSource.stop(); // Stop any ongoing TTS playback
+                        currentAudioSource = null;
+                    }
+                    clearTimeout(sessionTimeout);
+                    clearInterval(timerInterval);
+                    isAwaitingCommand = false;
+                    updateVoiceStatus('inactive');
+                    document.getElementById('wake-word-indicator').style.display = 'none';
+                }
+            });
         }
 
         // Run initialization when DOM is ready
