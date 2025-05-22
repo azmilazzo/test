@@ -288,7 +288,8 @@
     </div>
 
     <script>
-        let knownFaces = {};
+        let knownFaces = []; // Changed to an array
+
         let modelsLoaded = false;
         let videoStreamActive = false;
 
@@ -329,13 +330,13 @@
             const saved = localStorage.getItem('knownFaces');
             if (saved) {
                 const parsedFaces = JSON.parse(saved);
-                // Reconstruct Float32Array descriptors
-                for (const name in parsedFaces) {
-                    if (parsedFaces[name].descriptor) {
-                        parsedFaces[name].descriptor = new Float32Array(Object.values(parsedFaces[name].descriptor));
+                // Reconstruct Float32Array descriptors from the array of faces
+                knownFaces = parsedFaces.map(face => {
+                    if (face.descriptor) {
+                        face.descriptor = new Float32Array(Object.values(face.descriptor));
                     }
-                }
-                knownFaces = parsedFaces;
+                    return face;
+                });
                 await displayRegisteredFaces();
             }
         }
@@ -405,11 +406,14 @@
                     .withFaceDescriptor();
 
                 if (detection) {
-                    knownFaces[personName] = {
+                    // Generate a unique ID for each registered face
+                    const uniqueId = `${personName}_${Date.now()}`; 
+                    knownFaces.push({ // Push to the array
+                        id: uniqueId,
                         name: personName,
                         descriptor: Array.from(detection.descriptor), // Store as plain array for JSON
                         image: base64Image 
-                    };
+                    });
 
                     localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
                     await displayRegisteredFaces(); // Re-render
@@ -447,31 +451,36 @@
 
         async function displayRegisteredFaces() {
             registeredFacesContainer.innerHTML = '';
-            if (Object.keys(knownFaces).length === 0) {
+            if (knownFaces.length === 0) { // Check array length
                 registeredFacesContainer.innerHTML = '<p>No faces registered yet.</p>';
                 return;
             }
 
-            for (const name in knownFaces) {
-                const data = knownFaces[name];
+            knownFaces.forEach(data => { // Iterate using forEach
                 const div = document.createElement('div');
                 div.className = 'face-item';
                 
                 div.innerHTML = `
-                    <img src="${data.image}" alt="${name}" width="80" height="80">
-                    <p>${name}</p>
-                    <button onclick="deleteFace('${name}')">Delete</button>
+                    <img src="${data.image}" alt="${data.name}" width="80" height="80">
+                    <p>${data.name}</p>
+                    <button onclick="deleteFace('${data.id}')">Delete</button>
                 `;
                 registeredFacesContainer.appendChild(div);
-            }
+            });
         }
 
-        function deleteFace(name) {
-            if (confirm(`Are you sure you want to delete ${name}?`)) {
-                delete knownFaces[name];
+        function deleteFace(idToDelete) { // Accept ID instead of name
+            const faceToDelete = knownFaces.find(face => face.id === idToDelete);
+            if (!faceToDelete) {
+                console.warn('Face with ID not found:', idToDelete);
+                return; 
+            }
+
+            if (confirm(`Are you sure you want to delete ${faceToDelete.name}?`)) {
+                knownFaces = knownFaces.filter(face => face.id !== idToDelete); // Filter out the deleted face
                 localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
                 displayRegisteredFaces();
-                modelStatusEl.textContent = `${name} deleted.`;
+                modelStatusEl.textContent = `${faceToDelete.name} deleted.`;
             }
         }
 
@@ -530,9 +539,9 @@
             
             recognitionLiveStatusEl.textContent = "Starting live detection...";
             
-            // Prepare LabeledFaceDescriptors
+            // Prepare LabeledFaceDescriptors from the array of known faces
             const labeledFaceDescriptors = await Promise.all(
-                Object.values(knownFaces).map(async (face) => {
+                knownFaces.map(async (face) => { // Iterate through the array
                     if (face.descriptor && face.descriptor.length > 0) {
                          // Ensure descriptor is Float32Array
                         const descriptorArray = (face.descriptor instanceof Float32Array) 
@@ -584,6 +593,7 @@
 
                         if (faceMatcher) {
                             const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                            // Only update label if a known face is found
                             if (bestMatch.label !== 'unknown') {
                                 label = `${bestMatch.label} (${bestMatch.distance.toFixed(2)})`;
                                 color = 'green';
