@@ -30,7 +30,7 @@
     </style>
 </head>
 <body>
-    <!-- Your existing HTML elements -->
+    <!-- Your HTML elements -->
     <button id="settings-btn" aria-label="Settings">⚙️</button>
     <div class="voice-status" id="voice-status">
         <span id="mic-icon">🎤</span>
@@ -39,18 +39,17 @@
         🎧 Listening for "Hey Luna"...
     </div>
     <div id="settings-panel">
-        <!-- Your existing settings panel code -->
+        <!-- Your settings panel code -->
     </div>
     <div id="chat-container">
-        <!-- Your existing chat container code -->
+        <!-- Your chat container code -->
     </div>
 
 <script>
 const WAKE_WORD = "hey luna";
 const modelUrl = "https://raw.githubusercontent.com/azmilazzo/test/main/en_US-amy-low.onnx ";
-const configUrl = "https://raw.githubusercontent.com/azmilazzo/test/main/en_US-amy-low.onnx.json ";
+const STORAGE_KEY = 'debugOpenRouterKey';
 
-// ONNX TTS Engine
 class ONNXTTS {
     constructor() {
         this.session = null;
@@ -59,8 +58,7 @@ class ONNXTTS {
 
     async initialize() {
         try {
-            this.session = new ort.InferenceSession();
-            await this.session.loadModel({ url: modelUrl }); // Fixed method call
+            this.session = await ort.InferenceSession.create(modelUrl);
             this.isReady = true;
             console.log("ONNX TTS initialized successfully");
             return true;
@@ -73,20 +71,15 @@ class ONNXTTS {
     async synthesize(text) {
         try {
             // Basic preprocessing (replace with your model's requirements)
-            const tokens = text.split('').map(c => c.charCodeAt(0)); // Example: ASCII encoding
-            const inputTensor = ort.Tensor.fromValues(tokens, 'int32');
-
-            const outputs = await this.session.run({ 
-                inputNames: { input: inputTensor }, 
-                outputNames: ['output'] // Use your model's actual output name
-            });
+            const inputTensor = ort.Tensor.fromValues([0.1, 0.2, 0.3], 'float32'); // Replace with actual data
+            const outputs = await this.session.run({ input: inputTensor });
             const audioTensor = outputs.output;
 
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const audioBuffer = audioContext.createBuffer(
-                1, // channels
+                1,
                 audioTensor.data.length,
-                22050 // sample rate
+                22050
             );
             audioBuffer.copyToChannel(audioTensor.data, 0);
 
@@ -102,7 +95,18 @@ class ONNXTTS {
 
 let ttsEngine = new ONNXTTS();
 
-// Load TTS engine on startup
+// Error handling
+function showError(message) {
+    const existingError = document.querySelector('.error');
+    if (existingError) existingError.remove();
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error';
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+    setTimeout(() => errorDiv.remove(), 5000);
+}
+
+// TTS Loading
 async function loadTTSEngine() {
     updateVoiceStatus('loading-tts');
     try {
@@ -122,29 +126,31 @@ async function loadTTSEngine() {
     }
 }
 
-// Define showError function
-function showError(message) {
-    const existingError = document.querySelector('.error');
-    if (existingError) existingError.remove();
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'error';
-    errorDiv.textContent = message;
-    document.body.appendChild(errorDiv);
-    setTimeout(() => errorDiv.remove(), 5000);
-}
-
 // Voice Recognition Setup
 function initVoiceRecognition() {
     // Your existing voice recognition code
 }
 
-// Message Handling with TTS
+// UI State Management
+function updateUIState() {
+    const apiKey = localStorage.getItem(STORAGE_KEY);
+    document.getElementById('send-btn').disabled = !apiKey;
+    document.getElementById('toggle-voice').disabled = !apiKey;
+}
+
+// Voice Status Updates
+function updateVoiceStatus(state) {
+    const status = document.getElementById('voice-status');
+    // Your existing status update logic
+}
+
+// Message Handling
 async function sendMessage() {
-    // Your existing message handling code
+    // Your existing message handling code with TTS integration
     if (isVoiceEnabled && ttsEngine.isReady) {
         updateVoiceStatus('speaking');
         try {
-            await ttsEngine.synthesize(botMessage);
+            await ttsEngine.synthesize("Your text here"); // Replace with actual botMessage
             handleSpeechEnd();
         } catch (error) {
             showError(`TTS failed: ${error.message}`);
@@ -160,7 +166,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateUIState();
 });
 
-// Your existing functions (showKey, updateUIState, etc.)
+// Your existing functions (toggleSettings, saveKey, etc.)
 function toggleSettings() {
     const panel = document.getElementById('settings-panel');
     panel.classList.toggle('active');
@@ -176,7 +182,6 @@ function saveKey() {
         localStorage.removeItem(STORAGE_KEY);
         showError("API Key cleared!");
     }
-    updateDebugInfo();
     updateUIState();
 }
 
@@ -190,17 +195,12 @@ function showKey() {
     }
 }
 
-function updateUIState() {
-    const apiKey = localStorage.getItem(STORAGE_KEY);
-    document.getElementById('send-btn').disabled = !apiKey;
-    document.getElementById('toggle-voice').disabled = !apiKey;
-}
-
-function updateVoiceStatus(state) {
-    // Your existing status update logic
-}
-
-// Rest of your functions (handleSpeechEnd, addMessage, etc.)
+// Add missing functions
+function initVoiceRecognition() { /* Your existing code */ }
+function updateVoiceStatus(state) { /* Your existing code */ }
+function addMessage(type, text) { /* Your existing code */ }
+function showLoading(state) { /* Your existing code */ }
+function handleSpeechEnd() { /* Your existing code */ }
 </script>
 </body>
 </html>
