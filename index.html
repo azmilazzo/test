@@ -435,9 +435,9 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 switch(event.error) {
                     case 'no-speech':
                         // If no speech for a while, recognition stops. Restart if active.
-                        if (document.visibilityState === 'visible' && isRecognitionActive) {
+                        if (document.visibilityState === 'visible' && isRecognitionActive && isVoiceEnabled) { // Only restart if voice is enabled
                             setTimeout(() => {
-                                if (recognition && document.visibilityState === 'visible') { // Double check before restarting
+                                if (recognition && document.visibilityState === 'visible' && isVoiceEnabled) { // Double check before restarting
                                     recognition.start();
                                 }
                             }, 500); // Short delay before restarting
@@ -458,8 +458,8 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
 
             recognition.onend = () => {
                 isRecognitionActive = false;
-                // Only attempt to restart if the page is visible and we intend to be listening
-                if (document.visibilityState === 'visible' && !synth.speaking && !isAwaitingCommand) {
+                // Only attempt to restart if the page is visible, voice is enabled, and we intend to be listening
+                if (document.visibilityState === 'visible' && !synth.speaking && !isAwaitingCommand && isVoiceEnabled) {
                     // Small delay before restart to prevent rapid on/off cycling
                     setTimeout(() => startRecognition(), 500);
                 }
@@ -475,11 +475,18 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             // Request microphone permission and start recognition
             navigator.permissions.query({ name: 'microphone' }).then(permission => {
                 if (permission.state === 'granted') {
-                    startRecognition();
+                    // Start only if voice is enabled initially
+                    if (isVoiceEnabled) {
+                        startRecognition();
+                    }
                 } else if (permission.state === 'prompt') {
-                    // Prompt user for permission by starting recognition
-                    showError("Please allow microphone access when prompted.");
-                    startRecognition(); // This will trigger the permission prompt
+                    // Prompt user for permission by starting recognition (if voice enabled)
+                    if (isVoiceEnabled) {
+                        showError("Please allow microphone access when prompted.");
+                        startRecognition(); // This will trigger the permission prompt
+                    } else {
+                        showError("Microphone access will be requested if voice features are enabled.");
+                    }
                 } else {
                     showError("Microphone access denied. Cannot use voice features.");
                     updateVoiceStatus('error');
@@ -488,7 +495,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         }
 
         function startRecognition() {
-            if (!isRecognitionActive && recognition && document.visibilityState === 'visible') {
+            if (!isRecognitionActive && recognition && document.visibilityState === 'visible' && isVoiceEnabled) {
                 try {
                     recognition.start();
                     console.log('SpeechRecognition started.');
@@ -501,7 +508,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     }
                 }
             } else {
-                console.log('Not starting recognition: already active, or no recognition object, or page not visible.');
+                console.log('Not starting recognition: already active, or no recognition object, or page not visible, or voice disabled.');
             }
         }
 
@@ -516,8 +523,9 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         // --- Page Visibility API to control mic ---
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                console.log('Page is visible. Attempting to start recognition.');
+                console.log('Page is visible.');
                 if (isVoiceEnabled) { // Only start if voice features are generally enabled
+                    console.log('Voice is enabled, attempting to start recognition.');
                     initVoiceRecognition(); // Re-initialize or restart
                 }
             } else {
@@ -590,6 +598,10 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 // If only wake word detected but no actual command, restart session timeout
                 showError("No command detected. Say 'Hey Luna' again or type your message.");
                 updateVoiceStatus('inactive');
+                // Restart recognition if voice is enabled to listen for next wake word
+                if (isVoiceEnabled && document.visibilityState === 'visible') {
+                    startRecognition(); 
+                }
             }
         }
 
@@ -608,6 +620,10 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 updateVoiceStatus('inactive');
                 document.getElementById('wake-word-indicator').style.display = 'none';
                 showError("Session timed out. Say 'Hey Luna' to continue.");
+                // Restart recognition if voice is enabled to listen for next wake word
+                if (isVoiceEnabled && document.visibilityState === 'visible') {
+                    startRecognition(); 
+                }
             }, SESSION_TIMEOUT_DURATION);
         }
 
@@ -624,25 +640,29 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             status.classList.remove('listening', 'speaking'); // Clear previous states
             micIcon.textContent = '🎤'; // Default icon
 
+            // Get the computed style to access CSS variables
+            const computedStyle = getComputedStyle(document.documentElement);
+
             switch(state) {
                 case 'listening':
-                    status.classList.add('listening'); // Red
+                    status.classList.add('listening'); // This class applies the background from CSS variable --listening
                     micIcon.textContent = '🔴'; // Red dot mic
                     status.title = 'Listening for your command';
                     break;
                 case 'speaking':
-                    status.classList.add('speaking'); // Green
+                    status.classList.add('speaking'); // This class applies the background from CSS variable --speaking
                     micIcon.textContent = '🔊'; // Speaker icon
                     status.title = 'Luna is speaking';
                     break;
                 case 'error':
-                    status.style.backgroundColor = var(--error);
+                    // CORRECTED LINE: Get the value of --error CSS variable using getPropertyValue
+                    status.style.backgroundColor = computedStyle.getPropertyValue('--error');
                     micIcon.textContent = '❌'; // Error icon
                     status.title = 'Error - Click to retry mic';
                     break;
                 case 'inactive': // Wake word listening state
                 default:
-                    status.style.backgroundColor = '#333';
+                    status.style.backgroundColor = '#333'; // Direct hardcoded color as per original design
                     micIcon.textContent = '🎤'; // Standard mic
                     status.title = 'Listening for "Hey Luna"';
                     break;
@@ -779,6 +799,10 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 }
                 isAwaitingCommand = false; // Ensure this is reset on error
                 updateVoiceStatus('inactive'); // Reset mic status to idle
+                // Attempt to restart recognition if voice is enabled and not already active
+                if (isVoiceEnabled && document.visibilityState === 'visible' && !isRecognitionActive) {
+                    startRecognition();
+                }
             } finally {
                 userInput.disabled = false;
                 document.getElementById('send-btn').disabled = !localStorage.getItem(STORAGE_KEY); // Re-enable based on key
@@ -840,6 +864,8 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             const button = document.getElementById('toggle-voice');
             button.textContent = isVoiceEnabled ? "🔇 Disable Voice" : "🔊 Enable Voice";
             document.getElementById('voice-select').disabled = !isVoiceEnabled;
+
+            localStorage.setItem('isVoiceEnabled', isVoiceEnabled); // Save state
 
             if (isVoiceEnabled) {
                 // If enabling voice, ensure recognition is running
@@ -972,45 +998,29 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
 
         // --- Initialization ---
         function initializeApp() {
+            // Load voice enabled state from localStorage first
+            const savedVoiceState = localStorage.getItem('isVoiceEnabled');
+            if (savedVoiceState === 'true') {
+                isVoiceEnabled = true;
+                document.getElementById('toggle-voice').textContent = "🔇 Disable Voice";
+                document.getElementById('voice-select').disabled = false;
+            } else {
+                isVoiceEnabled = false;
+                document.getElementById('toggle-voice').textContent = "🔊 Enable Voice";
+                document.getElementById('voice-select').disabled = true;
+            }
+
             document.getElementById('api-key').value = localStorage.getItem(STORAGE_KEY) || '';
             updateDebugInfo();
             updateUIState();
             populateVoices(); // Populate voices immediately
 
-            // If voice is enabled by default or user preference, start recognition
-            if (isVoiceEnabled) { // Assumes isVoiceEnabled starts as false, if it should be true, load from localStorage
-                document.getElementById('toggle-voice').click(); // Simulate click to enable voice and start mic
-            } else {
-                 // Even if voice is disabled, we still need to initialize recognition
-                 // if we want to enable it later or if the toggle button is clicked.
-                 // However, we don't start it immediately unless `isVoiceEnabled` is true.
-                 // The visibilitychange listener will handle starting it if `isVoiceEnabled` is true later.
-                 initVoiceRecognition(); 
-            }
+            // Initialize recognition based on saved state and visibility
+            initVoiceRecognition(); 
         }
 
         // Run initialization when DOM is ready
         document.addEventListener('DOMContentLoaded', initializeApp);
-
-        // Optional: Persist isVoiceEnabled state in localStorage
-        // This makes the setting sticky across page loads.
-        window.addEventListener('load', () => {
-            const savedVoiceState = localStorage.getItem('isVoiceEnabled');
-            if (savedVoiceState === 'true') {
-                if (!isVoiceEnabled) { // Only click if it's currently false
-                    document.getElementById('toggle-voice').click();
-                }
-            } else {
-                if (isVoiceEnabled) { // Only click if it's currently true
-                    document.getElementById('toggle-voice').click();
-                }
-            }
-        });
-
-        // Save voice state on toggle
-        document.getElementById('toggle-voice').addEventListener('click', () => {
-            localStorage.setItem('isVoiceEnabled', isVoiceEnabled);
-        });
     </script>
 </body>
 </html>
