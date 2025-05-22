@@ -1,199 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Mobile Face Recognition</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Face Recognition Web App</title>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      margin: 10px;
+      margin: 0;
+      font-family: sans-serif;
+      background: #f9f9f9;
+      padding: 1rem;
     }
 
-    .main-content {
+    .container {
       display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
+      flex-direction: column;
+      gap: 1rem;
     }
 
-    .left-column, .right-column {
-      flex: 1;
-      min-width: 300px;
+    .video-wrapper {
+      position: relative;
+      width: 100%;
     }
 
     video, canvas {
       width: 100%;
-      height: auto;
+      border-radius: 8px;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+
+    input, button {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
       border: 1px solid #ccc;
-      border-radius: 10px;
+      border-radius: 5px;
+    }
+
+    .face-list {
+      margin-top: 10px;
     }
 
     .face-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin-top: 10px;
-      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
 
     .face-item img {
       width: 50px;
       height: 50px;
-      object-fit: cover;
       border-radius: 50%;
-    }
-
-    input, button {
-      margin-top: 10px;
-      padding: 8px;
-      width: 100%;
-      box-sizing: border-box;
-      font-size: 16px;
-    }
-
-    #videoPreview {
-      display: none;
-    }
-
-    @media (max-width: 768px) {
-      input, button {
-        width: 100%;
-      }
+      object-fit: cover;
     }
   </style>
 </head>
 <body>
-  <h2>Mobile Face Recognition App</h2>
-  <div class="main-content">
-    <div class="left-column">
+  <h2>Face Recognition</h2>
+  <div class="container">
+    <div class="video-wrapper">
       <video id="video" autoplay muted playsinline></video>
-      <canvas id="overlay" style="position:absolute; top:0; left:0;"></canvas>
-      <canvas id="snapshotCanvas" style="display:none;"></canvas>
-
-      <input type="file" id="imageUpload" accept="image/*">
-      <input type="text" id="nameInput" placeholder="Enter name to register">
-      <button onclick="registerFace()">Register Face</button>
-      <button onclick="capturePhoto()">Capture from Camera</button>
+      <canvas id="overlay"></canvas>
     </div>
 
-    <div class="right-column">
-      <h3>Registered Faces</h3>
-      <div id="faceList"></div>
-    </div>
+    <input type="file" id="imageUpload" accept="image/*" />
+    <input type="text" id="nameInput" placeholder="Enter name" />
+    <button onclick="registerFace()">Register Face</button>
+    <button onclick="capturePhoto()">Capture from Camera</button>
+
+    <div class="face-list" id="faceList"></div>
   </div>
+
+  <canvas id="snapshotCanvas" style="display:none;"></canvas>
 
   <script>
     const labeledDescriptors = [];
-    let faceMatcher;
-    let displaySize;
+    let faceMatcher = null;
 
-    async function loadModels() {
-      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
-      await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
-      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
-      startVideo();
-    }
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('overlay');
 
-    function startVideo() {
-      const video = document.getElementById('video');
-      navigator.mediaDevices.getUserMedia({ video: {} })
-        .then(stream => {
-          video.srcObject = stream;
-        })
-        .catch(err => console.error("Camera error:", err));
-    }
+    // Start camera immediately
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } })
+      .then(stream => {
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        };
+      })
+      .catch(err => {
+        alert("Error accessing camera: " + err.message);
+        console.error(err);
+      });
 
-    document.getElementById('video').addEventListener('play', () => {
-      const canvas = document.getElementById('overlay');
-      faceapi.matchDimensions(canvas, document.getElementById('video'));
-      displaySize = {
-        width: document.getElementById('video').videoWidth,
-        height: document.getElementById('video').videoHeight
-      };
-      setInterval(detectFaces, 100);
+    video.addEventListener('play', () => {
+      const displaySize = { width: video.videoWidth, height: video.videoHeight };
+      setInterval(async () => {
+        if (!faceMatcher) return;
+
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+          .withFaceLandmarks().withFaceDescriptors();
+
+        const resized = faceapi.resizeResults(detections, displaySize);
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
+        resized.forEach(d => {
+          const best = faceMatcher.findBestMatch(d.descriptor);
+          new faceapi.draw.DrawBox(d.detection.box, { label: best.toString() }).draw(canvas);
+        });
+      }, 300);
     });
 
-    async function detectFaces() {
-      const video = document.getElementById('video');
-      const canvas = document.getElementById('overlay');
-      const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptors();
-
-      const resizedDetections = faceapi.resizeResults(detections, displaySize);
-      canvas.width = displaySize.width;
-      canvas.height = displaySize.height;
-
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      if (faceMatcher) {
-        resizedDetections.forEach(detection => {
-          const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-          const label = bestMatch.label === 'unknown' ? 'Unknown' : bestMatch.label;
-          const box = detection.detection.box;
-          const drawBox = new faceapi.draw.DrawBox(box, {
-            label,
-            lineWidth: 2,
-            boxColor: bestMatch.distance < 0.6 ? 'green' : 'red'
-          });
-          drawBox.draw(canvas);
-        });
-      }
+    async function loadModels() {
+      await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('models');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('models');
     }
 
     async function registerFace() {
-      const input = document.getElementById('imageUpload');
+      const file = document.getElementById('imageUpload').files[0];
       const name = document.getElementById('nameInput').value.trim();
+      if (!file || !name) return alert("Choose image and enter name.");
 
-      if (!input.files.length || !name) {
-        alert("Please select a photo and enter a name.");
-        return;
-      }
-
-      const imgFile = input.files[0];
-      const img = await faceapi.bufferToImage(imgFile);
+      const img = await faceapi.bufferToImage(file);
       const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        alert("No face detected.");
-        return;
-      }
+        .withFaceLandmarks().withFaceDescriptor();
+      if (!detection) return alert("No face detected.");
 
       labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, [detection.descriptor]));
       faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
-      addFaceToList(name, imgFile);
-      input.value = '';
-      document.getElementById('nameInput').value = '';
+      showFace(name, file);
     }
 
-    function addFaceToList(name, file) {
+    function showFace(name, file) {
       const reader = new FileReader();
       reader.onload = () => {
-        const faceItem = document.createElement('div');
-        faceItem.className = 'face-item';
-        faceItem.innerHTML = `<img src="${reader.result}" alt="${name}"><span>${name}</span>`;
-        document.getElementById('faceList').appendChild(faceItem);
+        const item = document.createElement('div');
+        item.className = 'face-item';
+        item.innerHTML = `<img src="${reader.result}"><span>${name}</span>`;
+        document.getElementById('faceList').appendChild(item);
       };
       reader.readAsDataURL(file);
     }
 
     function capturePhoto() {
-      const video = document.getElementById('video');
       const canvas = document.getElementById('snapshotCanvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
       canvas.toBlob(blob => {
-        const file = new File([blob], 'snapshot.png', { type: 'image/png' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        document.getElementById('imageUpload').files = dataTransfer.files;
-        alert("Photo captured. Now enter name and click Register Face.");
+        const file = new File([blob], "snapshot.png", { type: "image/png" });
+        const data = new DataTransfer();
+        data.items.add(file);
+        document.getElementById('imageUpload').files = data.files;
+        alert("Snapshot captured! Enter a name and register.");
       });
     }
 
