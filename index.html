@@ -112,6 +112,30 @@
 
         #registeredFaces {
             display: flex;
+            flex-direction: column; /* Stack groups vertically */
+            gap: 15px; /* Space between groups */
+        }
+
+        .face-group {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #fcfcfc;
+        }
+
+        .face-group h4 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-size: 1.1em;
+            border-bottom: 1px dotted #ccc; 
+            padding-bottom: 5px;
+        }
+
+        .face-items-container {
+            display: flex;
             flex-wrap: wrap;
             gap: 10px; /* Spacing between face items */
             justify-content: center; /* Center items if they don't fill the row */
@@ -122,14 +146,14 @@
             flex-direction: column;
             align-items: center;
             margin: 5px; /* Reduced margin as gap is used */
-            padding: 10px;
+            padding: 8px; /* Slightly reduced padding */
             border: 1px solid #ddd;
             border-radius: 8px;
             text-align: center;
             background: #f8f9fa;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); /* Slightly softer shadow */
             transition: transform 0.2s, box-shadow 0.2s;
-            width: 120px; /* Fixed width for consistency */
+            width: 100px; /* Adjusted width for consistency within groups */
         }
 
         .face-item:hover {
@@ -141,13 +165,11 @@
             border-radius: 50%;
             margin-bottom: 8px;
             object-fit: cover;
-            width: 80px; /* Slightly smaller for the item width */
-            height: 80px;
+            width: 70px; /* Adjusted size within the group */
+            height: 70px;
         }
-        .face-item p {
-            font-size: 0.9em;
-            margin-bottom: 5px;
-            word-break: break-all;
+        .face-item p { /* Hidden as name is in group header */
+            display: none; 
         }
 
         button {
@@ -170,6 +192,19 @@
             background: #6c757d;
             cursor: not-allowed;
         }
+
+        /* Specific delete button styling within face-item */
+        .face-item button {
+            margin-top: 5px;
+            padding: 6px 10px;
+            font-size: 0.8em;
+            background-color: #dc3545; /* Red for delete */
+        }
+
+        .face-item button:hover {
+            background-color: #c82333;
+        }
+
 
         input[type="text"], input[type="file"] {
             margin: 5px;
@@ -329,8 +364,31 @@
         async function loadSavedFaces() {
             const saved = localStorage.getItem('knownFaces');
             if (saved) {
-                const parsedFaces = JSON.parse(saved);
-                // Reconstruct Float32Array descriptors from the array of faces
+                let parsedFaces = JSON.parse(saved);
+
+                // Migration logic: Check if parsedFaces is an object (old format)
+                if (!Array.isArray(parsedFaces)) {
+                    console.warn("Migrating old knownFaces data from object to array format.");
+                    const oldFaces = parsedFaces; // Store the old object
+                    parsedFaces = []; // Initialize as an empty array for new format
+
+                    for (const name in oldFaces) {
+                        if (oldFaces.hasOwnProperty(name) && oldFaces[name].descriptor) {
+                            // Create a unique ID for existing faces during migration
+                            const uniqueId = `${name}_${Date.now()}`; 
+                            parsedFaces.push({
+                                id: uniqueId,
+                                name: oldFaces[name].name,
+                                descriptor: new Float32Array(Object.values(oldFaces[name].descriptor)),
+                                image: oldFaces[name].image
+                            });
+                        }
+                    }
+                    // Overwrite the localStorage with the new array format
+                    localStorage.setItem('knownFaces', JSON.stringify(parsedFaces));
+                }
+
+                // Now parsedFaces is guaranteed to be an array
                 knownFaces = parsedFaces.map(face => {
                     if (face.descriptor) {
                         face.descriptor = new Float32Array(Object.values(face.descriptor));
@@ -451,21 +509,48 @@
 
         async function displayRegisteredFaces() {
             registeredFacesContainer.innerHTML = '';
-            if (knownFaces.length === 0) { // Check array length
+            if (knownFaces.length === 0) {
                 registeredFacesContainer.innerHTML = '<p>No faces registered yet.</p>';
                 return;
             }
 
-            knownFaces.forEach(data => { // Iterate using forEach
-                const div = document.createElement('div');
-                div.className = 'face-item';
+            // 1. Group faces by name
+            const groupedFaces = knownFaces.reduce((acc, face) => {
+                if (!acc[face.name]) {
+                    acc[face.name] = [];
+                }
+                acc[face.name].push(face);
+                return acc;
+            }, {});
+
+            // 2. Sort names alphabetically for consistent display
+            const sortedNames = Object.keys(groupedFaces).sort();
+
+            // 3. Render each group
+            sortedNames.forEach(name => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'face-group'; // Add a class for styling
+
+                const groupHeader = document.createElement('h4');
+                groupHeader.textContent = name;
+                groupDiv.appendChild(groupHeader);
+
+                const groupItemsContainer = document.createElement('div');
+                groupItemsContainer.className = 'face-items-container'; // Container for individual face items
                 
-                div.innerHTML = `
-                    <img src="${data.image}" alt="${data.name}" width="80" height="80">
-                    <p>${data.name}</p>
-                    <button onclick="deleteFace('${data.id}')">Delete</button>
-                `;
-                registeredFacesContainer.appendChild(div);
+                groupedFaces[name].forEach(data => {
+                    const div = document.createElement('div');
+                    div.className = 'face-item';
+                    
+                    div.innerHTML = `
+                        <img src="${data.image}" alt="${data.name}" width="80" height="80">
+                        <button onclick="deleteFace('${data.id}')">Delete</button>
+                    `;
+                    groupItemsContainer.appendChild(div);
+                });
+
+                groupDiv.appendChild(groupItemsContainer);
+                registeredFacesContainer.appendChild(groupDiv);
             });
         }
 
@@ -476,11 +561,11 @@
                 return; 
             }
 
-            if (confirm(`Are you sure you want to delete ${faceToDelete.name}?`)) {
+            if (confirm(`Are you sure you want to delete ${faceToDelete.name} (this specific image)?`)) {
                 knownFaces = knownFaces.filter(face => face.id !== idToDelete); // Filter out the deleted face
                 localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
                 displayRegisteredFaces();
-                modelStatusEl.textContent = `${faceToDelete.name} deleted.`;
+                modelStatusEl.textContent = `${faceToDelete.name}'s image deleted.`;
             }
         }
 
