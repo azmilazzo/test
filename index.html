@@ -6,9 +6,10 @@
     <title>Luna Voice Assistant</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
-    <script src="./piper.js"></script>
+    <script src="./piper.js" type="module"></script>
 
     <style>
+        /* ... (CSS remains the same) ... */
         :root {
             --primary: #2c3e50;
             --secondary: #3498db;
@@ -18,8 +19,8 @@
             --text: #ffffff;
             --text-secondary: #b3b3b3;
             --speaking: #27ae60;
-            --listening: #c0392b;
-            --loading-tts: #f39c12;
+            --listening: #c0392b; /* Added for clarity */
+            --loading-tts: #f39c12; /* Added for TTS loading status */
         }
 
         body {
@@ -28,7 +29,7 @@
             padding: 0;
             background: var(--bg);
             color: var(--text);
-            -webkit-overflow-scrolling: touch;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         }
 
         #settings-btn {
@@ -105,7 +106,7 @@
             margin-bottom: 5px;
         }
 
-        input, button, textarea, select {
+        input, button, textarea, select { /* Include select here */
             padding: 12px;
             background: #333;
             border: 1px solid #444;
@@ -113,7 +114,7 @@
             margin: 5px 0;
             width: 100%;
             color: var(--text);
-            box-sizing: border-box;
+            box-sizing: border-box; /* Ensure padding doesn't affect width */
         }
 
         button {
@@ -121,7 +122,7 @@
             color: white;
             cursor: pointer;
             transition: opacity 0.2s;
-            border: none;
+            border: none; /* Removed default button border */
         }
 
         button:hover:not(:disabled) {
@@ -133,14 +134,14 @@
         }
 
         #messages {
-            flex-grow: 1;
+            flex-grow: 1; /* Allow messages to take available space */
             overflow-y: auto;
             border: 1px solid #444;
             border-radius: 8px;
             padding: 15px;
             margin: 15px 0;
-            scrollbar-width: thin;
-            scrollbar-color: var(--secondary) var(--surface);
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: var(--secondary) var(--surface); /* Firefox */
         }
         #messages::-webkit-scrollbar {
             width: 8px;
@@ -161,7 +162,7 @@
             border-radius: 8px;
             max-width: 80%;
             background: #2a2a2a;
-            word-wrap: break-word;
+            word-wrap: break-word; /* Prevent long words from overflowing */
         }
 
         .user-message {
@@ -179,19 +180,19 @@
             display: flex;
             gap: 10px;
             align-items: center;
-            flex-wrap: wrap;
+            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
         }
         .controls button, .controls select {
-            flex: 1;
-            min-width: 120px;
+            flex: 1; /* Distribute space evenly */
+            min-width: 120px; /* Ensure buttons don't get too small */
         }
 
         #voice-select {
             background: #333;
             color: var(--text);
             padding: 8px;
-            border-radius: 8px;
-            display: none;
+            border-radius: 8px; /* Consistent with other inputs */
+            display: none; /* Hide native voice select as we're using Piper now */
         }
 
         .loading {
@@ -213,7 +214,7 @@
             border-radius: 25px;
             z-index: 1001;
             animation: slideIn 0.3s ease-out;
-            white-space: nowrap;
+            white-space: nowrap; /* Prevent breaking on small screens */
             font-size: 0.9em;
         }
 
@@ -231,20 +232,20 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            font-size: 1.8em;
+            font-size: 1.8em; /* Make mic icon larger */
         }
 
         .voice-status.listening {
-            background: var(--listening);
+            background: var(--listening); /* Red for listening */
             animation: pulse 1.5s infinite;
         }
 
         .voice-status.speaking {
-            background: var(--speaking);
+            background: var(--speaking); /* Green for speaking */
             animation: pulse 1.5s infinite;
         }
         .voice-status.loading-tts {
-            background: var(--loading-tts);
+            background: var(--loading-tts); /* Orange for loading TTS */
             animation: pulse 1.5s infinite;
         }
 
@@ -261,7 +262,7 @@
             text-align: center;
             transition: opacity 0.3s ease;
             color: var(--text);
-            z-index: 990;
+            z-index: 990; /* Below settings panel */
         }
 
         @keyframes pulse {
@@ -290,20 +291,20 @@
             }
 
             #messages {
-                height: calc(100vh - 180px);
+                height: calc(100vh - 180px); /* Adjust height for smaller screens */
                 margin-top: 10px;
             }
             .error {
-                bottom: 80px;
-                width: calc(100% - 40px);
+                bottom: 80px; /* Move up slightly on smaller screens */
+                width: calc(100% - 40px); /* Fill width with some padding */
                 box-sizing: border-box;
             }
             .controls {
-                flex-direction: column;
+                flex-direction: column; /* Stack buttons vertically */
             }
             .controls button, .controls select {
                 width: 100%;
-                min-width: unset;
+                min-width: unset; /* Remove min-width override */
             }
         }
     </style>
@@ -389,10 +390,10 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         let currentAudioSource = null;
 
         // Piper TTS Specific variables
-        let ttsSession = null; // ONNX Runtime session for the voice model
-        let ttsConfig = null;  // Voice model configuration (from .json)
-        let piperPhonemizer = null; // For phonemizing text
-        let audioContext = null; // Single AudioContext for all audio (beeps and TTS)
+        let ttsSession = null;
+        let ttsConfig = null;
+        let piperPhonemizer = null;
+        let audioContext = null;
 
         const STORAGE_KEY = 'debugOpenRouterKey';
 
@@ -779,8 +780,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                                 ttsConfig.inference.length_scale,
                                 ttsConfig.inference.noise_w
                             ]), [3]),
-                            // If your model has speakers, add speaker_id, e.g., ttsConfig.speaker_id_map['amy']
-                            // 'speaker_id': new ort.Tensor('int64', BigInt64Array.from([0]), [1]) // Assuming single speaker model or speaker 0
+                            // 'speaker_id': new ort.Tensor('int64', BigInt64Array.from([0]), [1]) // Uncomment if your model has speakers
                         };
 
                         console.log("Running ONNX inference...");
@@ -881,32 +881,27 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         async function loadPiperTTSModelsAndPhonemizer() {
             updateVoiceStatus('loading-tts');
 
-            // Relative URLs for Amy (low quality) voice model from your own repository
             const modelUrl = './en_US-amy-low.onnx';
             const configUrl = './en_US-amy-low.onnx.json';
             const espeakNgDataPath = './espeak-ng-data/';
 
             try {
-                // Check if Piper object is available from the loaded piper.js
                 if (typeof Piper === 'undefined' || !Piper.Phonemizer || !Piper.InferenceSession) {
-                    throw new Error("Piper.js library not loaded or exposed 'Piper' object correctly.");
+                    throw new Error("Piper.js library not loaded or exposed 'Piper' object correctly. Ensure it is loaded as type='module'.");
                 }
 
-                // Load the ONNX model using Piper.InferenceSession
                 ttsSession = await Piper.InferenceSession.create(modelUrl, {
                     executionProviders: ['wasm'],
-                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/', // ONNX Runtime WASM files CDN
-                    logSeverityLevel: 3, // Log only errors
+                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/',
+                    logSeverityLevel: 3,
                 });
 
-                // Fetch and parse the config JSON
                 const configResponse = await fetch(configUrl);
                 if (!configResponse.ok) {
                     throw new Error(`Failed to fetch config: ${configResponse.status} ${configResponse.statusText}`);
                 }
                 ttsConfig = await configResponse.json();
 
-                // Initialize the phonemizer
                 piperPhonemizer = await Piper.Phonemizer.create(espeakNgDataPath);
 
                 console.log('Piper TTS model, config, and phonemizer loaded successfully!');
@@ -1048,7 +1043,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     }
                     if (!ttsSession || !ttsConfig || !piperPhonemizer) {
                         showError("Voice features are enabled, but TTS models are still loading or failed. Please wait.");
-                        loadPiperTTSModelsAndPhonemizer();
+                        loadPiperTTSModelsAndPhonemizer(); // Try loading again if enabled later
                     }
                 } else {
                     stopRecognition();
