@@ -718,7 +718,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'deepseek/deepseek-r1-distill-qwen-32b:free', // Using a free model for demonstration
+                        model: 'deepseek/deepseek-v3-0324:free', // Using a free model for demonstration
                         messages: [
                             { role: "system", content: document.getElementById('system-prompt').value },
                             ...conversationHistory,
