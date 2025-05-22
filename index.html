@@ -1,523 +1,203 @@
-.video-container:before {
-            content: "Camera preview area";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #6c757d;
-            font-size: 18px;
-            pointer-events: none;
-            display: block;
-            z-index: 0;
-        }<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Local Face Recognition System</title>
-    <!-- Load face-api.js directly -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Mobile Face Recognition</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 10px;
+    }
+
+    .main-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .left-column, .right-column {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    video, canvas {
+      width: 100%;
+      height: auto;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+    }
+
+    .face-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .face-item img {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    input, button {
+      margin-top: 10px;
+      padding: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+
+    #videoPreview {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      input, button {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Local Face Recognition System</h1>
-        
-        <!-- Model status -->
-        <div class="status">
-            <p id="modelStatus">Loading models... please wait</p>
-        </div>
-        
-        <!-- Camera troubleshooting -->
-        <div class="camera-status">
-            <button id="retryCameraBtn" onclick="startVideo()" style="display:none;">Retry Camera</button>
-            <p id="cameraStatus"></p>
-        </div>
-        
-        <div class="main-content">
-            <!-- Left column for registration and faces -->
-            <div class="left-column">
-                <!-- Image Registration Section -->
-                <div class="registration">
-                    <h3>Register New Face</h3>
-                    <input type="file" id="imageUpload" accept="image/*">
-                    <input type="text" id="personName" placeholder="Person's name">
-                    <button id="registerBtn" disabled onclick="registerFace()">Register Face</button>
-                </div>
+  <h2>Mobile Face Recognition App</h2>
+  <div class="main-content">
+    <div class="left-column">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="overlay" style="position:absolute; top:0; left:0;"></canvas>
+      <canvas id="snapshotCanvas" style="display:none;"></canvas>
 
-                <!-- Registered Faces Section -->
-                <div class="known-faces">
-                    <h3>Registered Faces</h3>
-                    <div id="registeredFaces"></div>
-                </div>
-            </div>
-            
-            <!-- Right column for live recognition -->
-            <div class="right-column">
-                <!-- Live Recognition Section -->
-                <div class="recognition">
-                    <h3>Live Recognition</h3>
-                    <div class="video-container">
-                        <video id="video" width="480" height="360" autoplay muted></video>
-                        <canvas id="canvas" width="480" height="360"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+      <input type="file" id="imageUpload" accept="image/*">
+      <input type="text" id="nameInput" placeholder="Enter name to register">
+      <button onclick="registerFace()">Register Face</button>
+      <button onclick="capturePhoto()">Capture from Camera</button>
     </div>
 
-    <script>
-        let knownFaces = {};
-        let modelsLoaded = false;
+    <div class="right-column">
+      <h3>Registered Faces</h3>
+      <div id="faceList"></div>
+    </div>
+  </div>
 
-        // Load models from CDN instead of local path
-        async function loadModels() {
-            try {
-                document.getElementById('modelStatus').textContent = 'Loading face detection models...';
-                
-                // Load all required models from public CDN
-                await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
-                
-                document.getElementById('modelStatus').textContent = 'Models loaded successfully!';
-                document.getElementById('registerBtn').disabled = false;
-                modelsLoaded = true;
-                
-                // Now we can load saved faces
-                await loadSavedFaces();
-                
-                return true;
-            } catch (error) {
-                console.error('Error loading models:', error);
-                document.getElementById('modelStatus').textContent = 'Error loading models: ' + error.message;
-                return false;
-            }
-        }
+  <script>
+    const labeledDescriptors = [];
+    let faceMatcher;
+    let displaySize;
 
-        // Load saved faces from localStorage on startup
-        async function loadSavedFaces() {
-            const saved = localStorage.getItem('knownFaces');
-            if (saved) {
-                knownFaces = JSON.parse(saved);
-                await displayRegisteredFaces();
-            }
-        }
+    async function loadModels() {
+      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      await faceapi.nets.faceRecognitionNet.loadFromUri('/models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+      startVideo();
+    }
 
-        // Register new face
-        async function registerFace() {
-            if (!modelsLoaded) {
-                alert('Please wait for models to load completely');
-                return;
-            }
-            
-            const imageFile = document.getElementById('imageUpload').files[0];
-            const personName = document.getElementById('personName').value;
+    function startVideo() {
+      const video = document.getElementById('video');
+      navigator.mediaDevices.getUserMedia({ video: {} })
+        .then(stream => {
+          video.srcObject = stream;
+        })
+        .catch(err => console.error("Camera error:", err));
+    }
 
-            if (!imageFile || !personName) {
-                alert('Please select an image and enter a name');
-                return;
-            }
+    document.getElementById('video').addEventListener('play', () => {
+      const canvas = document.getElementById('overlay');
+      faceapi.matchDimensions(canvas, document.getElementById('video'));
+      displaySize = {
+        width: document.getElementById('video').videoWidth,
+        height: document.getElementById('video').videoHeight
+      };
+      setInterval(detectFaces, 100);
+    });
 
-            try {
-                // Convert image to base64
-                const base64Image = await convertImageToBase64(imageFile);
-                
-                // Create image element from base64
-                const img = await createImageFromBase64(base64Image);
-                
-                // Process face detection
-                const detection = await faceapi.detectSingleFace(img)
-                    .withFaceLandmarks()
-                    .withFaceDescriptor();
+    async function detectFaces() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('overlay');
+      const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptors();
 
-                if (detection) {
-                    // Store face data
-                    knownFaces[personName] = {
-                        name: personName,
-                        descriptor: Array.from(detection.descriptor),
-                        image: base64Image
-                    };
+      const resizedDetections = faceapi.resizeResults(detections, displaySize);
+      canvas.width = displaySize.width;
+      canvas.height = displaySize.height;
 
-                    // Save to localStorage
-                    localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
-                    
-                    // Update display
-                    await displayRegisteredFaces();
-                    
-                    // Clear inputs
-                    document.getElementById('imageUpload').value = '';
-                    document.getElementById('personName').value = '';
-                    
-                    alert(`${personName} registered successfully!`);
-                } else {
-                    alert('No face detected in the image. Please try a clearer photo.');
-                }
-            } catch (error) {
-                console.error('Error registering face:', error);
-                alert('Error processing image: ' + error.message);
-            }
-        }
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Convert image file to base64
-        function convertImageToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
-        
-        // Create image element from base64 string
-        function createImageFromBase64(base64Image) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = base64Image;
-            });
-        }
-
-        // Display registered faces
-        async function displayRegisteredFaces() {
-            const container = document.getElementById('registeredFaces');
-            container.innerHTML = '';
-
-            for (const [name, data] of Object.entries(knownFaces)) {
-                const div = document.createElement('div');
-                div.className = 'face-item';
-                
-                div.innerHTML = `
-                    <img src="${data.image}" alt="${name}" width="100">
-                    <p>${name}</p>
-                    <button onclick="deleteFace('${name}')">Delete</button>
-                `;
-                
-                container.appendChild(div);
-            }
-        }
-
-        // Delete registered face
-        function deleteFace(name) {
-            delete knownFaces[name];
-            localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
-            displayRegisteredFaces();
-        }
-
-        // Start video stream
-        async function startVideo() {
-            const video = document.getElementById('video');
-            const statusEl = document.getElementById('modelStatus');
-            
-            try {
-                statusEl.textContent = "Requesting camera access...";
-                
-                // Check if mediaDevices is supported
-                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                    throw new Error("Browser doesn't support mediaDevices API");
-                }
-                
-                // Try to get user media with more basic settings first
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: true,
-                    audio: false
-                });
-                
-                video.srcObject = stream;
-                
-                // Log success
-                console.log("Camera stream started successfully");
-                statusEl.textContent = "Camera connected! Models loaded successfully.";
-                
-                // Make video visible with a border to confirm it's there
-                video.style.border = "3px solid green";
-                
-                // Explicitly play the video
-                video.play().then(() => {
-                    console.log("Video playback started");
-                    // Start face detection after confirming video is playing
-                    detectFaces();
-                }).catch(e => {
-                    console.error("Error playing video:", e);
-                    statusEl.textContent = "Error starting video playback: " + e.message;
-                });
-                
-            } catch (err) {
-                console.error("Error accessing webcam:", err);
-                statusEl.textContent = "Camera error: " + err.message;
-                
-                // Show more detailed error for debugging
-                if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                    alert("Camera access was denied. Please check your browser permissions and ensure you've allowed camera access for this site.");
-                } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-                    alert("No camera detected. Please connect a camera and refresh the page.");
-                } else {
-                    alert("Cannot access webcam: " + err.message + "\n\nPlease check that your camera is connected and that you've given permission to use it.");
-                }
-            }
-        }
-
-        // Live face detection
-        async function detectFaces() {
-            if (!modelsLoaded) return;
-            
-            const video = document.getElementById('video');
-            const canvas = document.getElementById('canvas');
-            const displaySize = { width: video.width, height: video.height };
-            faceapi.matchDimensions(canvas, displaySize);
-
-            // Create face matcher from known faces
-            const labeledDescriptors = [];
-            for (const [name, data] of Object.entries(knownFaces)) {
-                if (data.descriptor && data.descriptor.length > 0) {
-                    labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(
-                        name, 
-                        [new Float32Array(data.descriptor)]
-                    ));
-                }
-            }
-            
-            // Only create matcher if we have face data
-            const faceMatcher = labeledDescriptors.length > 0 ? 
-                new faceapi.FaceMatcher(labeledDescriptors, 0.6) : null;
-            
-            // Check if video is actually playing and has dimensions
-            if (video.readyState < 2) {
-                console.log("Video not ready yet, waiting...");
-                setTimeout(detectFaces, 500);
-                return;
-            }
-            
-            console.log("Starting face detection loop");
-            
-            // Detection loop
-            const detectionInterval = setInterval(async () => {
-                if (video.paused || video.ended) {
-                    console.log("Video paused or ended");
-                    return;
-                }
-                
-                try {
-                    if (video.readyState === 4) {
-                        // Detect all faces with landmarks and descriptors
-                        const detections = await faceapi.detectAllFaces(video)
-                            .withFaceLandmarks()
-                            .withFaceDescriptors();
-
-                        // Clear previous drawings
-                        const ctx = canvas.getContext('2d');
-                        ctx.clearRect(0, 0, canvas.width, canvas.height);
-                        
-                        // Handle detections
-                        if (detections && detections.length > 0) {
-                            console.log(`Detected ${detections.length} faces`);
-                            const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                            
-                            // Match against known faces if we have any
-                            if (faceMatcher) {
-                                resizedDetections.forEach(detection => {
-                                    const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
-                                    const box = detection.detection.box;
-                                    const drawBox = new faceapi.draw.DrawBox(box, { 
-                                        label: bestMatch.toString(),
-                                        lineWidth: 2,
-                                        boxColor: bestMatch.distance < 0.6 ? 'green' : 'red'
-                                    });
-                                    drawBox.draw(canvas);
-                                });
-                            } else {
-                                // Just draw boxes if no known faces
-                                faceapi.draw.drawDetections(canvas, resizedDetections);
-                            }
-                        }
-                    }
-                } catch (err) {
-                    console.error("Error in detection:", err);
-                }
-            }, 100);
-            
-            // Add cleanup function in case we need to stop
-            video.addEventListener('pause', () => clearInterval(detectionInterval));
-            video.addEventListener('ended', () => clearInterval(detectionInterval));
-        }
-
-        // Initialize application
-        window.addEventListener('DOMContentLoaded', async () => {
-            // First make sure face-api.js is fully loaded
-            if (typeof faceapi === 'undefined') {
-                document.getElementById('modelStatus').textContent = 'Error: face-api.js not loaded properly';
-                document.getElementById('cameraStatus').textContent = 'Cannot start camera until face-api.js is loaded';
-                document.getElementById('retryCameraBtn').style.display = 'inline-block';
-                return;
-            }
-            
-            // Then load models
-            try {
-                await loadModels();
-                // Models loaded successfully, now try to start video
-                await startVideo();
-            } catch (error) {
-                console.error("Error during initialization:", error);
-                document.getElementById('modelStatus').textContent = 'Error during initialization: ' + error.message;
-                document.getElementById('retryCameraBtn').style.display = 'inline-block';
-            }
+      if (faceMatcher) {
+        resizedDetections.forEach(detection => {
+          const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+          const label = bestMatch.label === 'unknown' ? 'Unknown' : bestMatch.label;
+          const box = detection.detection.box;
+          const drawBox = new faceapi.draw.DrawBox(box, {
+            label,
+            lineWidth: 2,
+            boxColor: bestMatch.distance < 0.6 ? 'green' : 'red'
+          });
+          drawBox.draw(canvas);
         });
-    </script>
+      }
+    }
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            color: #2c3e50;
-        }
+    async function registerFace() {
+      const input = document.getElementById('imageUpload');
+      const name = document.getElementById('nameInput').value.trim();
 
-        .status {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: #f0f0f0;
-            border-radius: 8px;
-        }
+      if (!input.files.length || !name) {
+        alert("Please select a photo and enter a name.");
+        return;
+      }
 
-        .registration {
-            margin-bottom: 20px;
-            padding: 20px;
-            background: #e9ecef;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+      const imgFile = input.files[0];
+      const img = await faceapi.bufferToImage(imgFile);
+      const detection = await faceapi.detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
 
-        .camera-status {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        #retryCameraBtn {
-            background-color: #dc3545;
-        }
-        
-        #retryCameraBtn:hover {
-            background-color: #bb2d3b;
-        }
-        
-        .video-container {
-            position: relative;
-            width: 720px;
-            height: 560px;
-            margin: 20px auto;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            background-color: #f8f9fa;
-        }
+      if (!detection) {
+        alert("No face detected.");
+        return;
+      }
 
-        video, canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
+      labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(name, [detection.descriptor]));
+      faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+      addFaceToList(name, imgFile);
+      input.value = '';
+      document.getElementById('nameInput').value = '';
+    }
 
-        .known-faces {
-            margin: 20px 0;
-            padding: 20px;
-            background: #e9ecef;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+    function addFaceToList(name, file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const faceItem = document.createElement('div');
+        faceItem.className = 'face-item';
+        faceItem.innerHTML = `<img src="${reader.result}" alt="${name}"><span>${name}</span>`;
+        document.getElementById('faceList').appendChild(faceItem);
+      };
+      reader.readAsDataURL(file);
+    }
 
-        #registeredFaces {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: flex-start;
-        }
+    function capturePhoto() {
+      const video = document.getElementById('video');
+      const canvas = document.getElementById('snapshotCanvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        .face-item {
-            display: inline-block;
-            margin: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            text-align: center;
-            background: white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'snapshot.png', { type: 'image/png' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        document.getElementById('imageUpload').files = dataTransfer.files;
+        alert("Photo captured. Now enter name and click Register Face.");
+      });
+    }
 
-        .face-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .face-item img {
-            border-radius: 50%;
-            margin-bottom: 5px;
-            object-fit: cover;
-            width: 100px;
-            height: 100px;
-        }
-
-        button {
-            padding: 8px 16px;
-            margin: 5px;
-            border: none;
-            border-radius: 4px;
-            background: #0d6efd;
-            color: white;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        button:hover {
-            background: #0b5ed7;
-        }
-        
-        button:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-
-        input {
-            margin: 5px;
-            padding: 8px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            width: 200px;
-        }
-        
-        input[type="file"] {
-            width: auto;
-        }
-        
-        h3 {
-            color: #2c3e50;
-            margin-top: 0;
-        }
-        
-        @media (max-width: 768px) {
-            .video-container {
-                width: 100%;
-                height: auto;
-            }
-            
-            video, canvas {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-        }
-    </style>
+    loadModels();
+  </script>
 </body>
 </html>
