@@ -5,29 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Luna Voice Assistant</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
-    <script type="module">
-        // Import directly from the CDN. This exposes 'Piper' object globally.
-        import * as Piper from 'https://cdn.jsdelivr.net/npm/@piper-lab/piper-js@0.1.0/dist/index.mjs';
 
-        // Make it accessible globally or via a specific property on window
-        window.PiperJS = Piper;
+    <script src="https://cdn.jsdelivr.net/npm/@rust-ai/piper-web-tts@latest/dist/browser/index.umd.js"></script>
 
-        // You'll still need to provide the path to espeak-ng-data for Piper.js
-        window.initPiperPhonemizer = async (espeakNgDataPath) => {
-            if (!window.PiperJS || !window.PiperJS.Phonemizer) {
-                throw new Error("Piper.js Phonemizer not loaded correctly from CDN.");
-            }
-            try {
-                // Piper.js Phonemizer.create expects the path to the espeak-ng-data folder
-                const phonemizer = await window.PiperJS.Phonemizer.create(espeakNgDataPath);
-                return phonemizer;
-            } catch (e) {
-                console.error("Failed to initialize Piper Phonemizer:", e);
-                throw e; // Propagate error
-            }
-        };
-    </script>
     <style>
+        /* ... (CSS remains the same) ... */
         :root {
             --primary: #2c3e50;
             --secondary: #3498db;
@@ -324,7 +306,8 @@
                 width: 100%;
                 min-width: unset; /* Remove min-width override */
             }
-        </style>
+        }
+    </style>
 </head>
 <body>
     <button id="settings-btn" aria-label="Settings">⚙️</button>
@@ -407,7 +390,8 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         // Piper TTS Specific variables
         let ttsSession = null;
         let ttsConfig = null;
-        let piperPhonemize = null;
+        // let piperPhonemize = null; // No longer needed with piper-web-tts abstraction
+        let piperTTS = null; // NEW: Holds the piper-web-tts instance
         let audioContext = null; // Single AudioContext for all audio (beeps and TTS)
 
         const STORAGE_KEY = 'debugOpenRouterKey';
@@ -600,6 +584,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             const gainNode = audioContext.createGain();
 
             oscillator.connect(gainNode);
+            gainNode.connect(audioNode); // Connect to audioNode to ensure it plays
             gainNode.connect(audioContext.destination);
 
             oscillator.type = 'sine';
@@ -794,8 +779,8 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 };
 
                 if (isVoiceEnabled) {
-                    // --- Piper TTS Integration ---
-                    if (!ttsSession || !ttsConfig || !piperPhonemize) {
+                    // --- NEW: Piper TTS Integration with piper-web-tts ---
+                    if (!piperTTS) {
                         showError("TTS model not loaded. Please wait or refresh.");
                         handleSpeechEnd();
                         return;
@@ -804,48 +789,17 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     document.getElementById('voice-status').classList.add('speaking');
 
                     try {
-                        // 1. Phonemize the text
-                        // PiperPhonemize.phonemize returns an array of phoneme strings.
-                        // We then map these strings to their corresponding IDs from ttsConfig.phoneme_id_map.
-                        const phonemeStrings = piperPhonemize.phonemize(botMessage, ttsConfig.phoneme_id_map);
-                        const phonemeIds = phonemeStrings.map(p => ttsConfig.phoneme_id_map[p][0]);
+                        // `piperTTS.synthesize` will handle phonemization and inference
+                        // It returns an AudioBuffer, which is perfect for Web Audio API
+                        const audioBuffer = await piperTTS.synthesize(botMessage);
 
-                        const inputTensor = new ort.Tensor('int64', BigInt64Array.from(phonemeIds), [1, phonemeIds.length]);
-
-                        // 2. Prepare inputs for the ONNX model
-                        const feeds = {
-                            'input': inputTensor,
-                            'input_lengths': new ort.Tensor('int64', BigInt64Array.from([phonemeIds.length]), [1]),
-                            'scales': new ort.Tensor('float32', new Float32Array([
-                                ttsConfig.inference.noise_scale,
-                                ttsConfig.inference.length_scale,
-                                ttsConfig.inference.noise_w // This should be in the config for VITS models
-                            ]), [3]),
-                            // If your model has speakers, add speaker_id, e.g., ttsConfig.speaker_id_map['amy']
-                            // 'speaker_id': new ort.Tensor('int64', BigInt64Array.from([0]), [1]) // Assuming single speaker model or speaker 0
-                        };
-
-                        // 3. Run inference
-                        console.log("Running ONNX inference...");
-                        const results = await ttsSession.run(feeds);
-                        const audioData = results.output.data; // This is a Float32Array of audio samples
-
-                        // 4. Play audio using Web Audio API
                         if (!audioContext || audioContext.state === 'suspended') {
                              audioContext = new (window.AudioContext || window.webkitAudioContext)();
                              await audioContext.resume();
                         }
 
-                        const sampleRate = ttsConfig.audio.sample_rate; // Get sample rate from config
-                        const buffer = audioContext.createBuffer(1, audioData.length, sampleRate);
-                        const channel = buffer.getChannelData(0);
-
-                        for (let i = 0; i < audioData.length; i++) {
-                            channel[i] = audioData[i];
-                        }
-
                         const source = audioContext.createBufferSource();
-                        source.buffer = buffer;
+                        source.buffer = audioBuffer;
                         source.connect(audioContext.destination);
                         currentAudioSource = source; // Store reference to current audio source
 
@@ -922,38 +876,27 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             }
         }
 
-        // --- Piper TTS Model Loading ---
+        // --- NEW: Piper TTS Model Loading with piper-web-tts ---
         async function loadPiperTTSModelsAndPhonemizer() {
             updateVoiceStatus('loading-tts'); // Indicate loading of TTS model
 
-            // **UPDATED:** Relative URLs for Amy (low quality) voice model from your own repository
+            // Relative URLs for Amy (low quality) voice model from your own repository
             const modelUrl = './en_US-amy-low.onnx'; // Assuming directly in root
             const configUrl = './en_US-amy-low.onnx.json'; // Assuming directly in root
+            const espeakNgDataPath = './espeak-ng-data/'; // Path to your espeak-ng-data folder
 
             try {
-                // Load the ONNX model
-                ttsSession = await ort.InferenceSession.create(modelUrl, {
-                    executionProviders: ['wasm'], // Prefer WASM for broad compatibility
-                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/', // Point to ONNX Runtime WASM files on CDN
-                    logSeverityLevel: 3, // Only log errors
+                // Initialize piper-web-tts
+                // `window.piperTTS` is exposed by the UMD script
+                piperTTS = await window.piperWebTTS.create({
+                    modelUrl: modelUrl,
+                    configUrl: configUrl,
+                    espeakNgDataUrl: espeakNgDataPath, // It expects the folder URL
+                    useWebWorkers: true, // Recommended for better performance and UI responsiveness
+                    ortOptions: {
+                        wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/',
+                    }
                 });
-
-                // Load the config JSON
-                const response = await fetch(configUrl);
-                ttsConfig = await response.json();
-
-                // Initialize AudioContext if not already
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-
-                // Initialize Piper Phonemizer using the globally available function
-                // Make sure `espeak-ng-data` are accessible in a subfolder relative to your HTML.
-                // The path './espeak-ng-data/' is relative to your index.html
-                piperPhonemize = await window.initPiperPhonemizer('./espeak-ng-data/');
 
                 console.log('Piper TTS model and phonemizer loaded successfully!');
                 updateVoiceStatus('inactive'); // Go back to idle mic status
@@ -1096,7 +1039,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     if (document.visibilityState === 'visible') {
                         startRecognition();
                     }
-                    if (!ttsSession || !ttsConfig || !piperPhonemize) {
+                    if (!piperTTS) { // Changed check from ttsSession to piperTTS
                         showError("Voice features are enabled, but TTS models are still loading or failed. Please wait.");
                         loadPiperTTSModelsAndPhonemizer(); // Try loading again if not ready
                     }
