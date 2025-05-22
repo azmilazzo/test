@@ -6,10 +6,9 @@
     <title>Luna Voice Assistant</title>
     <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/ort.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/@rust-ai/piper-web-tts@latest/dist/browser/index.umd.js"></script>
+    <script src="./piper.js"></script>
 
     <style>
-        /* ... (CSS remains the same) ... */
         :root {
             --primary: #2c3e50;
             --secondary: #3498db;
@@ -19,8 +18,8 @@
             --text: #ffffff;
             --text-secondary: #b3b3b3;
             --speaking: #27ae60;
-            --listening: #c0392b; /* Added for clarity */
-            --loading-tts: #f39c12; /* Added for TTS loading status */
+            --listening: #c0392b;
+            --loading-tts: #f39c12;
         }
 
         body {
@@ -29,7 +28,7 @@
             padding: 0;
             background: var(--bg);
             color: var(--text);
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            -webkit-overflow-scrolling: touch;
         }
 
         #settings-btn {
@@ -106,7 +105,7 @@
             margin-bottom: 5px;
         }
 
-        input, button, textarea, select { /* Include select here */
+        input, button, textarea, select {
             padding: 12px;
             background: #333;
             border: 1px solid #444;
@@ -114,7 +113,7 @@
             margin: 5px 0;
             width: 100%;
             color: var(--text);
-            box-sizing: border-box; /* Ensure padding doesn't affect width */
+            box-sizing: border-box;
         }
 
         button {
@@ -122,7 +121,7 @@
             color: white;
             cursor: pointer;
             transition: opacity 0.2s;
-            border: none; /* Removed default button border */
+            border: none;
         }
 
         button:hover:not(:disabled) {
@@ -134,14 +133,14 @@
         }
 
         #messages {
-            flex-grow: 1; /* Allow messages to take available space */
+            flex-grow: 1;
             overflow-y: auto;
             border: 1px solid #444;
             border-radius: 8px;
             padding: 15px;
             margin: 15px 0;
-            scrollbar-width: thin; /* Firefox */
-            scrollbar-color: var(--secondary) var(--surface); /* Firefox */
+            scrollbar-width: thin;
+            scrollbar-color: var(--secondary) var(--surface);
         }
         #messages::-webkit-scrollbar {
             width: 8px;
@@ -162,7 +161,7 @@
             border-radius: 8px;
             max-width: 80%;
             background: #2a2a2a;
-            word-wrap: break-word; /* Prevent long words from overflowing */
+            word-wrap: break-word;
         }
 
         .user-message {
@@ -180,19 +179,19 @@
             display: flex;
             gap: 10px;
             align-items: center;
-            flex-wrap: wrap; /* Allow items to wrap on smaller screens */
+            flex-wrap: wrap;
         }
         .controls button, .controls select {
-            flex: 1; /* Distribute space evenly */
-            min-width: 120px; /* Ensure buttons don't get too small */
+            flex: 1;
+            min-width: 120px;
         }
 
         #voice-select {
             background: #333;
             color: var(--text);
             padding: 8px;
-            border-radius: 8px; /* Consistent with other inputs */
-            display: none; /* Hide native voice select as we're using Piper now */
+            border-radius: 8px;
+            display: none;
         }
 
         .loading {
@@ -214,7 +213,7 @@
             border-radius: 25px;
             z-index: 1001;
             animation: slideIn 0.3s ease-out;
-            white-space: nowrap; /* Prevent breaking on small screens */
+            white-space: nowrap;
             font-size: 0.9em;
         }
 
@@ -232,20 +231,20 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-            font-size: 1.8em; /* Make mic icon larger */
+            font-size: 1.8em;
         }
 
         .voice-status.listening {
-            background: var(--listening); /* Red for listening */
+            background: var(--listening);
             animation: pulse 1.5s infinite;
         }
 
         .voice-status.speaking {
-            background: var(--speaking); /* Green for speaking */
+            background: var(--speaking);
             animation: pulse 1.5s infinite;
         }
         .voice-status.loading-tts {
-            background: var(--loading-tts); /* Orange for loading TTS */
+            background: var(--loading-tts);
             animation: pulse 1.5s infinite;
         }
 
@@ -262,7 +261,7 @@
             text-align: center;
             transition: opacity 0.3s ease;
             color: var(--text);
-            z-index: 990; /* Below settings panel */
+            z-index: 990;
         }
 
         @keyframes pulse {
@@ -291,20 +290,20 @@
             }
 
             #messages {
-                height: calc(100vh - 180px); /* Adjust height for smaller screens */
+                height: calc(100vh - 180px);
                 margin-top: 10px;
             }
             .error {
-                bottom: 80px; /* Move up slightly on smaller screens */
-                width: calc(100% - 40px); /* Fill width with some padding */
+                bottom: 80px;
+                width: calc(100% - 40px);
                 box-sizing: border-box;
             }
             .controls {
-                flex-direction: column; /* Stack buttons vertically */
+                flex-direction: column;
             }
             .controls button, .controls select {
                 width: 100%;
-                min-width: unset; /* Remove min-width override */
+                min-width: unset;
             }
         }
     </style>
@@ -359,13 +358,15 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
     <div id="chat-container">
         <div class="controls">
             <button id="toggle-voice">🔊 Enable Voice</button>
-            <select id="voice-select" disabled></select> <button id="cancel-button" onclick="cancelRequest()">Cancel</button>
+            <select id="voice-select" disabled></select>
+            <button id="cancel-button" onclick="cancelRequest()">Cancel</button>
         </div>
 
         <div id="messages"></div>
         <div class="loading" id="loading">Luna is thinking...</div>
 
-        <div style="margin-top: auto;"> <input type="text" id="user-input"
+        <div style="margin-top: auto;">
+            <input type="text" id="user-input"
                     placeholder="Type your message..." disabled>
             <button onclick="sendMessage()" id="send-btn" disabled>Send</button>
         </div>
@@ -373,25 +374,24 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
 
     <script>
         const WAKE_WORD = "hey luna";
-        const WAKE_WORD_CONFIDENCE = 0.7; // Lowered slightly for potentially less clear mobile mic
-        const SESSION_TIMEOUT_DURATION = 7000; // 7 seconds
-        const AUDIO_CONTEXT_TIMEOUT = 500; // Short delay for beep sound
+        const WAKE_WORD_CONFIDENCE = 0.7;
+        const SESSION_TIMEOUT_DURATION = 7000;
+        const AUDIO_CONTEXT_TIMEOUT = 500;
 
         let recognition = null;
-        let isRecognitionActive = false; // Tracks if recognition is currently running
+        let isRecognitionActive = false;
         let isAwaitingCommand = false;
         let sessionTimeout = null;
         let timerInterval = null;
         let isVoiceEnabled = false;
         let controller = null;
         let conversationHistory = [];
-        let currentAudioSource = null; // To keep track of current audio playback for cancellation
+        let currentAudioSource = null;
 
         // Piper TTS Specific variables
-        let ttsSession = null;
-        let ttsConfig = null;
-        // let piperPhonemize = null; // No longer needed with piper-web-tts abstraction
-        let piperTTS = null; // NEW: Holds the piper-web-tts instance
+        let ttsSession = null; // ONNX Runtime session for the voice model
+        let ttsConfig = null;  // Voice model configuration (from .json)
+        let piperPhonemizer = null; // For phonemizing text
         let audioContext = null; // Single AudioContext for all audio (beeps and TTS)
 
         const STORAGE_KEY = 'debugOpenRouterKey';
@@ -413,7 +413,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             }
 
             if (recognition) {
-                recognition.stop(); // Stop any existing recognition instance
+                recognition.stop();
                 recognition = null;
             }
 
@@ -426,7 +426,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 const results = Array.from(event.results);
                 const lastResult = results[results.length - 1];
 
-                // Only process final results with sufficient confidence
                 if (lastResult.isFinal && lastResult[0].confidence > WAKE_WORD_CONFIDENCE) {
                     const transcript = lastResult[0].transcript.toLowerCase().trim();
 
@@ -442,29 +441,26 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 console.error('Recognition error:', event.error);
                 isRecognitionActive = false;
                 isAwaitingCommand = false;
-                clearTimeout(sessionTimeout); // Clear session timeout on error
-                clearInterval(timerInterval); // Clear timer interval on error
+                clearTimeout(sessionTimeout);
+                clearInterval(timerInterval);
                 updateVoiceStatus('inactive');
                 document.getElementById('wake-word-indicator').style.display = 'none';
 
                 switch(event.error) {
                     case 'no-speech':
-                        // If no speech for a while, recognition stops. Restart if active.
-                        if (document.visibilityState === 'visible' && isRecognitionActive && isVoiceEnabled) { // Only restart if voice is enabled
+                        if (document.visibilityState === 'visible' && isRecognitionActive && isVoiceEnabled) {
                             setTimeout(() => {
-                                if (recognition && document.visibilityState === 'visible' && isVoiceEnabled) { // Double check before restarting
+                                if (recognition && document.visibilityState === 'visible' && isVoiceEnabled) {
                                     recognition.start();
                                 }
-                            }, 500); // Short delay before restarting
+                            }, 500);
                         }
                         break;
                     case 'audio-capture':
                         showError("Microphone not found or cannot be accessed.");
-                        // No automatic restart for critical errors
                         break;
                     case 'not-allowed':
                         showError("Microphone access denied. Please allow microphone access in browser settings.");
-                        // No automatic restart for critical errors
                         break;
                     default:
                         showError(`Recognition error: ${event.error}`);
@@ -473,9 +469,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
 
             recognition.onend = () => {
                 isRecognitionActive = false;
-                // Only attempt to restart if the page is visible, voice is enabled, and we intend to be listening
-                if (document.visibilityState === 'visible' && !isAwaitingCommand && isVoiceEnabled && !currentAudioSource) { // Also check if TTS is speaking
-                    // Small delay before restart to prevent rapid on/off cycling
+                if (document.visibilityState === 'visible' && !isAwaitingCommand && isVoiceEnabled && !currentAudioSource) {
                     setTimeout(() => startRecognition(), 500);
                 }
             };
@@ -483,22 +477,19 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             recognition.onstart = () => {
                 isRecognitionActive = true;
                 if (!isAwaitingCommand) {
-                    updateVoiceStatus('inactive'); // Show idle mic icon when listening for wake word
+                    updateVoiceStatus('inactive');
                 }
             };
 
-            // Request microphone permission and start recognition
             navigator.permissions.query({ name: 'microphone' }).then(permission => {
                 if (permission.state === 'granted') {
-                    // Start only if voice is enabled initially
                     if (isVoiceEnabled) {
                         startRecognition();
                     }
                 } else if (permission.state === 'prompt') {
-                    // Prompt user for permission by starting recognition (if voice enabled)
                     if (isVoiceEnabled) {
                         showError("Please allow microphone access when prompted.");
-                        startRecognition(); // This will trigger the permission prompt
+                        startRecognition();
                     }
                 } else {
                     showError("Microphone access denied. Cannot use voice features.");
@@ -533,13 +524,12 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             }
         }
 
-        // --- Page Visibility API to control mic ---
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
                 console.log('Page is visible.');
-                if (isVoiceEnabled) { // Only start if voice features are generally enabled
+                if (isVoiceEnabled) {
                     console.log('Voice is enabled, attempting to start recognition.');
-                    initVoiceRecognition(); // Re-initialize or restart
+                    initVoiceRecognition();
                 }
             } else {
                 console.log('Page is hidden. Stopping recognition.');
@@ -552,21 +542,17 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             }
         });
 
-
-        // --- Wake Word & Command Handling ---
         function handleWakeWordDetected() {
             clearTimeout(sessionTimeout);
             clearInterval(timerInterval);
             isAwaitingCommand = true;
-            updateVoiceStatus('listening'); // Indicate active listening for a command
+            updateVoiceStatus('listening');
             document.getElementById('wake-word-indicator').style.display = 'block';
 
-            // Play a short beep sound
             if (audioContext === null) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
             if (audioContext && audioContext.state === 'suspended') {
-                 // Attempt to resume audio context if suspended (common on mobile)
                 audioContext.resume().then(() => {
                     playBeep();
                 }).catch(e => console.error("Could not resume AudioContext:", e));
@@ -578,21 +564,20 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         }
 
         function playBeep() {
-            if (!audioContext) return; // Should be initialized by now
+            if (!audioContext) return;
 
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
             oscillator.connect(gainNode);
-            gainNode.connect(audioNode); // Connect to audioNode to ensure it plays
             gainNode.connect(audioContext.destination);
 
             oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800 Hz
-            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime); // Volume
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
 
             oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + AUDIO_CONTEXT_TIMEOUT / 1000); // Stop after AUDIO_CONTEXT_TIMEOUT
+            oscillator.stop(audioContext.currentTime + AUDIO_CONTEXT_TIMEOUT / 1000);
 
             gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + AUDIO_CONTEXT_TIMEOUT / 1000);
         }
@@ -600,19 +585,17 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         function handleUserCommand(transcript) {
             clearTimeout(sessionTimeout);
             clearInterval(timerInterval);
-            isAwaitingCommand = false; // Reset awaiting command flag
-            updateVoiceStatus('inactive'); // Go back to idle mic status
+            isAwaitingCommand = false;
+            updateVoiceStatus('inactive');
             document.getElementById('wake-word-indicator').style.display = 'none';
 
             const command = transcript.replace(WAKE_WORD, '').trim();
             if (command) {
                 document.getElementById('user-input').value = command;
-                sendMessage(); // Send the command
+                sendMessage();
             } else {
-                // If only wake word detected but no actual command, restart session timeout
                 showError("No command detected. Say 'Hey Luna' again or type your message.");
                 updateVoiceStatus('inactive');
-                // Restart recognition if voice is enabled to listen for next wake word
                 if (isVoiceEnabled && document.visibilityState === 'visible') {
                     startRecognition();
                 }
@@ -634,7 +617,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 updateVoiceStatus('inactive');
                 document.getElementById('wake-word-indicator').style.display = 'none';
                 showError("Session timed out. Say 'Hey Luna' to continue.");
-                // Restart recognition if voice is enabled to listen for next wake word
                 if (isVoiceEnabled && document.visibilityState === 'visible') {
                     startRecognition();
                 }
@@ -651,8 +633,8 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
         function updateVoiceStatus(state) {
             const status = document.getElementById('voice-status');
             const micIcon = document.getElementById('mic-icon');
-            status.classList.remove('listening', 'speaking', 'error', 'loading-tts'); // Clear previous states
-            micIcon.textContent = '🎤'; // Default icon
+            status.classList.remove('listening', 'speaking', 'error', 'loading-tts');
+            micIcon.textContent = '🎤';
 
             const computedStyle = getComputedStyle(document.documentElement);
 
@@ -669,7 +651,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     break;
                 case 'loading-tts':
                     status.classList.add('loading-tts');
-                    micIcon.textContent = '🔄'; // Spinning arrow
+                    micIcon.textContent = '🔄';
                     status.title = 'Loading voice model...';
                     break;
                 case 'error':
@@ -677,7 +659,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     micIcon.textContent = '❌';
                     status.title = 'Error - Click to retry mic';
                     break;
-                case 'inactive': // Wake word listening state
+                case 'inactive':
                 default:
                     status.style.backgroundColor = '#333';
                     micIcon.textContent = '🎤';
@@ -686,12 +668,11 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             }
         }
 
-        // Tap the mic status to manually restart listening (useful if recognition stalls)
         document.getElementById('voice-status').addEventListener('click', () => {
             if (isVoiceEnabled) {
                 console.log("Mic status clicked. Restarting recognition.");
                 stopRecognition();
-                if (currentAudioSource) { // Cancel current TTS playback if active
+                if (currentAudioSource) {
                     currentAudioSource.stop();
                     currentAudioSource = null;
                 }
@@ -705,7 +686,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 showError("Voice features are disabled. Enable them to use microphone.");
             }
         });
-
 
         // --- Message & API Interaction ---
         async function sendMessage() {
@@ -764,7 +744,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
 
                 const handleSpeechEnd = () => {
                     document.getElementById('voice-status').classList.remove('speaking');
-                    currentAudioSource = null; // Clear the audio source once done
+                    currentAudioSource = null;
                     if (isVoiceEnabled && document.visibilityState === 'visible') {
                         if (!isAwaitingCommand && !isRecognitionActive) {
                             startRecognition();
@@ -779,8 +759,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 };
 
                 if (isVoiceEnabled) {
-                    // --- NEW: Piper TTS Integration with piper-web-tts ---
-                    if (!piperTTS) {
+                    if (!ttsSession || !ttsConfig || !piperPhonemizer) {
                         showError("TTS model not loaded. Please wait or refresh.");
                         handleSpeechEnd();
                         return;
@@ -789,19 +768,42 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                     document.getElementById('voice-status').classList.add('speaking');
 
                     try {
-                        // `piperTTS.synthesize` will handle phonemization and inference
-                        // It returns an AudioBuffer, which is perfect for Web Audio API
-                        const audioBuffer = await piperTTS.synthesize(botMessage);
+                        const phonemeIds = piperPhonemizer.phonemize(botMessage, ttsConfig.phoneme_id_map);
+                        const inputTensor = new ort.Tensor('int64', BigInt64Array.from(phonemeIds), [1, phonemeIds.length]);
+
+                        const feeds = {
+                            'input': inputTensor,
+                            'input_lengths': new ort.Tensor('int64', BigInt64Array.from([phonemeIds.length]), [1]),
+                            'scales': new ort.Tensor('float32', new Float32Array([
+                                ttsConfig.inference.noise_scale,
+                                ttsConfig.inference.length_scale,
+                                ttsConfig.inference.noise_w
+                            ]), [3]),
+                            // If your model has speakers, add speaker_id, e.g., ttsConfig.speaker_id_map['amy']
+                            // 'speaker_id': new ort.Tensor('int64', BigInt64Array.from([0]), [1]) // Assuming single speaker model or speaker 0
+                        };
+
+                        console.log("Running ONNX inference...");
+                        const results = await ttsSession.run(feeds);
+                        const audioData = results.output.data;
 
                         if (!audioContext || audioContext.state === 'suspended') {
                              audioContext = new (window.AudioContext || window.webkitAudioContext)();
                              await audioContext.resume();
                         }
 
+                        const sampleRate = ttsConfig.audio.sample_rate;
+                        const buffer = audioContext.createBuffer(1, audioData.length, sampleRate);
+                        const channel = buffer.getChannelData(0);
+
+                        for (let i = 0; i < audioData.length; i++) {
+                            channel[i] = audioData[i];
+                        }
+
                         const source = audioContext.createBufferSource();
-                        source.buffer = audioBuffer;
+                        source.buffer = buffer;
                         source.connect(audioContext.destination);
-                        currentAudioSource = source; // Store reference to current audio source
+                        currentAudioSource = source;
 
                         source.onended = () => {
                             console.log('Piper speech finished.');
@@ -821,11 +823,10 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                         handleSpeechEnd();
                     }
                 } else {
-                    handleSpeechEnd(); // If voice is disabled
+                    handleSpeechEnd();
                 }
 
             } catch (error) {
-                // If request was aborted, don't show an error, just log.
                 if (error.name === 'AbortError') {
                     console.log('Fetch aborted by user.');
                     addMessage('bot', `Request cancelled.`);
@@ -864,7 +865,7 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 controller.abort();
                 controller = null;
             }
-            if (currentAudioSource) { // Cancel current Piper TTS playback
+            if (currentAudioSource) {
                 currentAudioSource.stop();
                 currentAudioSource = null;
             }
@@ -876,36 +877,46 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             }
         }
 
-        // --- NEW: Piper TTS Model Loading with piper-web-tts ---
+        // --- Piper TTS Model Loading with the local piper.js ---
         async function loadPiperTTSModelsAndPhonemizer() {
-            updateVoiceStatus('loading-tts'); // Indicate loading of TTS model
+            updateVoiceStatus('loading-tts');
 
             // Relative URLs for Amy (low quality) voice model from your own repository
-            const modelUrl = './en_US-amy-low.onnx'; // Assuming directly in root
-            const configUrl = './en_US-amy-low.onnx.json'; // Assuming directly in root
-            const espeakNgDataPath = './espeak-ng-data/'; // Path to your espeak-ng-data folder
+            const modelUrl = './en_US-amy-low.onnx';
+            const configUrl = './en_US-amy-low.onnx.json';
+            const espeakNgDataPath = './espeak-ng-data/';
 
             try {
-                // Initialize piper-web-tts
-                // `window.piperTTS` is exposed by the UMD script
-                piperTTS = await window.piperWebTTS.create({
-                    modelUrl: modelUrl,
-                    configUrl: configUrl,
-                    espeakNgDataUrl: espeakNgDataPath, // It expects the folder URL
-                    useWebWorkers: true, // Recommended for better performance and UI responsiveness
-                    ortOptions: {
-                        wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/',
-                    }
+                // Check if Piper object is available from the loaded piper.js
+                if (typeof Piper === 'undefined' || !Piper.Phonemizer || !Piper.InferenceSession) {
+                    throw new Error("Piper.js library not loaded or exposed 'Piper' object correctly.");
+                }
+
+                // Load the ONNX model using Piper.InferenceSession
+                ttsSession = await Piper.InferenceSession.create(modelUrl, {
+                    executionProviders: ['wasm'],
+                    wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web/dist/', // ONNX Runtime WASM files CDN
+                    logSeverityLevel: 3, // Log only errors
                 });
 
-                console.log('Piper TTS model and phonemizer loaded successfully!');
-                updateVoiceStatus('inactive'); // Go back to idle mic status
+                // Fetch and parse the config JSON
+                const configResponse = await fetch(configUrl);
+                if (!configResponse.ok) {
+                    throw new Error(`Failed to fetch config: ${configResponse.status} ${configResponse.statusText}`);
+                }
+                ttsConfig = await configResponse.json();
+
+                // Initialize the phonemizer
+                piperPhonemizer = await Piper.Phonemizer.create(espeakNgDataPath);
+
+                console.log('Piper TTS model, config, and phonemizer loaded successfully!');
+                updateVoiceStatus('inactive');
                 return true;
 
             } catch (error) {
                 console.error('Failed to load Piper TTS model or phonemizer:', error);
                 showError(`Failed to load TTS components: ${error.message}. Check console for details.`);
-                updateVoiceStatus('error'); // Show error state
+                updateVoiceStatus('error');
                 return false;
             }
         }
@@ -1004,7 +1015,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
 
         // --- Initialization ---
         async function initializeApp() {
-            // Load voice enabled state from localStorage first
             const savedVoiceState = localStorage.getItem('isVoiceEnabled');
             if (savedVoiceState === 'true') {
                 isVoiceEnabled = true;
@@ -1014,7 +1024,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 document.getElementById('toggle-voice').textContent = "🔊 Enable Voice";
             }
 
-            // Hide the native voice select element as it's no longer used
             document.getElementById('voice-select').style.display = 'none';
 
             document.getElementById('api-key').value = localStorage.getItem(STORAGE_KEY) || '';
@@ -1022,10 +1031,8 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             updateUIState();
 
             // Load Piper TTS models and phonemizer when the app initializes
-            // This happens in the background. User can still type while loading.
             await loadPiperTTSModelsAndPhonemizer();
 
-            // Initialize recognition based on saved state and visibility
             initVoiceRecognition();
 
             document.getElementById('toggle-voice').addEventListener('click', () => {
@@ -1033,20 +1040,20 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
                 const button = document.getElementById('toggle-voice');
                 button.textContent = isVoiceEnabled ? "🔇 Disable Voice" : "🔊 Enable Voice";
 
-                localStorage.setItem('isVoiceEnabled', isVoiceEnabled); // Save state
+                localStorage.setItem('isVoiceEnabled', isVoiceEnabled);
 
                 if (isVoiceEnabled) {
                     if (document.visibilityState === 'visible') {
                         startRecognition();
                     }
-                    if (!piperTTS) { // Changed check from ttsSession to piperTTS
+                    if (!ttsSession || !ttsConfig || !piperPhonemizer) {
                         showError("Voice features are enabled, but TTS models are still loading or failed. Please wait.");
-                        loadPiperTTSModelsAndPhonemizer(); // Try loading again if not ready
+                        loadPiperTTSModelsAndPhonemizer();
                     }
                 } else {
                     stopRecognition();
                     if (currentAudioSource) {
-                        currentAudioSource.stop(); // Stop any ongoing TTS playback
+                        currentAudioSource.stop();
                         currentAudioSource = null;
                     }
                     clearTimeout(sessionTimeout);
@@ -1058,7 +1065,6 @@ You are Luna, a friendly voice assistant. Keep responses concise for voice synth
             });
         }
 
-        // Run initialization when DOM is ready
         document.addEventListener('DOMContentLoaded', initializeApp);
     </script>
 </body>
