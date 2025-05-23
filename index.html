@@ -12,15 +12,47 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Courier New', 'Lucida Console', monospace;
+            background: #000000;
             height: 100vh;
-            color: #333;
+            color: #00FF00; /* Bright Green */
             overflow: hidden;
             margin: 0;
             padding: 0;
             -webkit-text-size-adjust: 100%;
             -webkit-font-smoothing: antialiased;
+            position: relative; /* For scan lines pseudo-element */
+        }
+
+        body::before {
+            content: "";
+            position: fixed; /* Use fixed to cover the whole viewport, even if body content scrolls (though overflow is hidden here) */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                rgba(0, 255, 0, 0.03) 50%, /* Very faint green lines */
+                transparent 50%
+            );
+            background-size: 100% 4px; /* Adjust line thickness and spacing */
+            z-index: -1; /* Place it behind all content */
+            pointer-events: none; /* Ensure it doesn't interfere with interactions */
+            opacity: 0.3; /* Further reduce visibility */
+        }
+
+        @keyframes rainStream {
+            0% {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.3; /* Fade in */
+            }
+            100% {
+                transform: translateY(100vh); /* Move down the full height of the viewport */
+                opacity: 0; /* Fade out */
+            }
         }
 
         .app-container {
@@ -29,21 +61,56 @@
             flex-direction: column;
             max-width: 800px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: transparent; /* Or a very dark, slightly translucent green/gray */
+            /* backdrop-filter: blur(10px); */ /* Removed for Matrix theme */
             position: relative;
-            overflow: hidden;
+            overflow: hidden; /* Crucial to contain the pseudo-elements if they are positioned absolutely to the container */
+        }
+
+        .app-container::before { /* For the raining code effect */
+            content: "01010101010101010101010101010101010101010101010101"; /* Example stream */
+            position: absolute;
+            top: 0;
+            left: 10%; /* Position one stream */
+            font-size: 10px;
+            color: rgba(0, 255, 0, 0.1); /* Very faint green */
+            writing-mode: vertical-rl; /* Characters fall downwards */
+            text-orientation: mixed;
+            white-space: nowrap;
+            animation: rainStream 10s linear infinite;
+            animation-delay: 0s;
+            z-index: -1; 
+            pointer-events: none;
+            font-family: 'Courier New', 'Lucida Console', monospace; /* Ensure Matrix font */
+        }
+
+        .app-container::after {
+            content: "11100010101010101010101010101010101010101010101010";  /* Different content */
+            position: absolute;
+            top: 0;
+            left: 75%; /* Different position */
+            font-size: 11px; /* Slightly different size */
+            color: rgba(0, 255, 0, 0.09); /* Slightly different faintness */
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            white-space: nowrap;
+            animation: rainStream 12s linear infinite; /* Different duration */
+            animation-delay: -6s; /* Different delay, start partway */
+            z-index: -1; 
+            pointer-events: none;
+            font-family: 'Courier New', 'Lucida Console', monospace;
         }
 
         /* Header */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #003300; /* Dark Green */
+            color: #00FF00; /* Bright Green */
             padding: 15px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            /* box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); */ /* Removed for Matrix theme */
+            border-bottom: 1px solid #00FF00; /* Thin bright green border */
             min-height: 60px;
             flex-shrink: 0;
             position: relative;
@@ -76,14 +143,15 @@
             position: relative;
             width: 50px;
             height: 24px;
-            background: rgba(255, 255, 255, 0.3);
+            background: #002200; /* Darker Green/Black */
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
+            border: 1px solid #00FF00;
         }
 
         .toggle-switch.active {
-            background: rgba(255, 255, 255, 0.8);
+            background: #004400; /* Darker Green */
         }
 
         .toggle-slider {
@@ -92,22 +160,23 @@
             left: 2px;
             width: 20px;
             height: 20px;
-            background: white;
+            background: #008800; /* Dimmer green or dark gray */
             border-radius: 50%;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); */ /* Removed */
         }
 
         .toggle-switch.active .toggle-slider {
             transform: translateX(26px);
+            background: #00FF00; /* Bright Green */
         }
 
         .settings-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            background: #000000; /* Black */
+            border: 1px solid #00FF00; /* Bright Green */
+            color: #00FF00; /* Bright Green */
             padding: 10px 12px;
-            border-radius: 8px;
+            border-radius: 8px; /* Minimal rounding, can be set to 0 for sharper edges */
             cursor: pointer;
             font-size: 0.9em;
             transition: all 0.3s ease;
@@ -119,11 +188,14 @@
         }
 
         .settings-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: #00FF00; /* Bright Green */
+            color: #000000; /* Black */
         }
 
         .settings-btn:active {
             transform: scale(0.95);
+            background: #39FF14; /* Slightly different green for active */
+            color: #000000;
         }
 
         /* Chat Area */
@@ -132,6 +204,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            background: transparent; /* Ensure it's dark */
         }
 
         .chat-messages {
@@ -141,6 +214,9 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            background: #001100; /* Very dark green, almost black */
+            position: relative; 
+            z-index: 1; /* This ensures .chat-messages (and its children) are above .app-container's pseudo-elements */
         }
 
         .message {
@@ -164,25 +240,26 @@
 
         .message.user {
             align-self: flex-end;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 6px;
+            background: #002200; /* Darker green or dark gray/black */
+            color: #00FF00; /* Bright Green */
+            border-bottom-right-radius: 6px; /* Keep minimal rounding or set to 0 */
+            border: 1px solid #00FF00; /* Optional: thin bright green border */
         }
 
         .message.assistant {
             align-self: flex-start;
-            background: #f7fafc;
-            color: #2d3748;
-            border: 1px solid #e2e8f0;
-            border-bottom-left-radius: 6px;
+            background: #001800; /* Slightly different shade of dark green */
+            color: #00FF00; /* Bright Green */
+            border: 1px solid #00FF00; /* Optional: thin bright green border */
+            border-bottom-left-radius: 6px; /* Keep minimal rounding or set to 0 */
             position: relative;
         }
 
         .message.system {
             align-self: center;
-            background: rgba(255, 193, 7, 0.1);
-            color: #856404;
-            border: 1px solid rgba(255, 193, 7, 0.3);
+            background: #002b00; /* Dark, with a subtle green tint */
+            color: #39FF14; /* A slightly dimmer or different shade of green */
+            border: 1px solid #00FF00; /* Thin bright green border */
             font-size: 0.9em;
             max-width: 90%;
             text-align: center;
@@ -193,28 +270,33 @@
             align-items: center;
             gap: 8px;
             margin-top: 8px;
-            opacity: 0.7;
+            opacity: 0.7; /* Keep or adjust as needed */
+            filter: brightness(150%); /* Make icons brighter green */
         }
 
         .control-btn {
-            background: none;
-            border: none;
+            background: none; /* Or #000000 */
+            border: 1px solid #00FF00; /* Bright Green */
+            color: #00FF00; /* Bright Green */
             cursor: pointer;
             padding: 4px;
-            border-radius: 4px;
+            border-radius: 4px; /* Minimal rounding or 0 */
             font-size: 0.8em;
             transition: all 0.2s ease;
         }
 
         .control-btn:hover {
-            background: rgba(0, 0, 0, 0.1);
+            background: #00FF00; /* Bright Green */
+            color: #000000; /* Black */
         }
 
         /* Input Area */
         .input-container {
             padding: 20px;
-            background: white;
-            border-top: 1px solid #e2e8f0;
+            background: #001100; /* Dark, matching overall theme */
+            border-top: 1px solid #00FF00; /* Bright Green */
+            position: relative; 
+            z-index: 1; /* This ensures .input-container (and its children) are above .app-container's pseudo-elements */
         }
 
         .input-wrapper {
@@ -229,28 +311,34 @@
             min-height: 44px;
             max-height: 120px;
             padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 22px;
+            border: 2px solid #00FF00; /* Bright Green */
+            border-radius: 0; /* Sharp edges */
             font-size: 16px;
             resize: none;
-            font-family: inherit;
+            font-family: inherit; /* Already monospace from body */
             line-height: 1.4;
             transition: all 0.3s ease;
+            background: #000000; /* Black */
+            color: #00FF00; /* Bright Green */
+        }
+
+        .message-input::placeholder {
+            color: #008800; /* Dimmer green */
         }
 
         .message-input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #39FF14; /* Brighter Green */
+            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.3); /* Green glow */
         }
 
         .send-btn {
             width: 44px;
             height: 44px;
-            border: none;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            border: 1px solid #00FF00;
+            border-radius: 0; /* Sharp edges */
+            background: #00FF00; /* Bright Green */
+            color: #000000; /* Black icon/text */
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -262,11 +350,14 @@
 
         .send-btn:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            background: #39FF14;
+            border-color: #39FF14;
+            /* box-shadow: 0 4px 12px rgba(0, 255, 0, 0.3); */ /* Optional green shadow */
         }
 
         .send-btn:disabled {
             opacity: 0.5;
+            background: #008800; /* Dimmer green */
             cursor: not-allowed;
             transform: none;
         }
@@ -278,27 +369,31 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.8); /* Semi-transparent black overlay */
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 1000; /* Modal should be on top of everything */
             padding: 20px;
         }
 
         .modal-content {
-            background: white;
-            border-radius: 16px;
+            background: #000000; /* Black or very dark green */
+            border-radius: 0; /* Sharp edges, or minimal like 4px */
             padding: 30px;
             width: 100%;
             max-width: 400px;
             max-height: 80vh;
             overflow-y: auto;
+            border: 1px solid #00FF00; /* Thin, bright green */
+            color: #00FF00; /* Bright Green text */
+            position: relative; /* Ensure modal content is above any potential pseudo elements on .modal itself */
+            z-index: 1001;
         }
 
         .modal h2 {
             margin-bottom: 20px;
-            color: #2d3748;
+            color: #00FF00; /* Bright Green */
             text-align: center;
         }
 
@@ -310,22 +405,24 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #4a5568;
+            color: #00FF00; /* Bright Green */
         }
 
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
+            border: 2px solid #00FF00; /* Bright Green */
+            border-radius: 0; /* Sharp edges */
             font-size: 16px;
             transition: all 0.3s ease;
+            background: #001100; /* Very dark green */
+            color: #00FF00; /* Bright Green */
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #39FF14; /* Brighter Green */
+            box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.3); /* Green glow */
         }
 
         .modal-buttons {
@@ -337,8 +434,8 @@
         .btn {
             flex: 1;
             padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
+            border: 1px solid #00FF00; /* Bright Green */
+            border-radius: 0; /* Sharp edges */
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -346,14 +443,21 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #00FF00; /* Bright Green */
+            color: #000000; /* Black */
+        }
+        .btn-primary:hover {
+            background: #39FF14;
+            border-color: #39FF14;
         }
 
         .btn-secondary {
-            background: #f7fafc;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
+            background: #000000; /* Black */
+            color: #00FF00; /* Bright Green */
+            border: 1px solid #00FF00; /* Bright Green */
+        }
+        .btn-secondary:hover {
+            background: #002200; /* Dark Green on hover */
         }
 
         .btn:hover {
@@ -366,10 +470,10 @@
             align-items: center;
             gap: 8px;
             padding: 12px 16px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            border-bottom-left-radius: 6px;
+            background: #001800; /* Dark green, similar to assistant messages */
+            border: 1px solid #00FF00; /* Bright green border */
+            border-radius: 18px; /* Can be kept or sharpened */
+            border-bottom-left-radius: 6px; /* Can be kept or sharpened */
             align-self: flex-start;
             max-width: 80px;
         }
@@ -382,7 +486,7 @@
         .typing-dot {
             width: 8px;
             height: 8px;
-            background: #a0aec0;
+            background: #00FF00; /* Bright Green */
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
@@ -393,6 +497,27 @@
 
         .typing-dot:nth-child(3) {
             animation-delay: 0.4s;
+        }
+
+        /* Custom Scrollbars for Matrix Theme */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #001100; /* Very dark green */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00FF00; /* Bright Green */
+            border-radius: 0; /* Sharp edges */
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #39FF14; /* Brighter Green */
+        }
+        /* For Firefox */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: #00FF00 #001100; /* thumb and track */
         }
 
         @keyframes typing {
@@ -409,34 +534,33 @@
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .app-container {
-                height: 100vh;
-                border-radius: 0;
+                height: 100vh; /* Ensure full height */
+                border-radius: 0; /* Remove border radius for full screen */
             }
 
             .header {
-                padding: 15px 15px;
-                min-height: 65px;
+                padding: 12px 15px; /* Adjusted padding */
+                min-height: 60px; /* Slightly reduced min-height */
                 flex-wrap: nowrap;
             }
 
             .header h1 {
-                font-size: 1.2em;
+                font-size: 1.3em; /* Adjusted font size */
                 margin-right: 10px;
             }
 
             .header-controls {
-                gap: 12px;
-                flex-shrink: 0;
+                gap: 10px; /* Reduced gap */
             }
 
             .tts-toggle {
-                font-size: 0.8em;
-                white-space: nowrap;
+                font-size: 0.85em; /* Adjusted font size */
             }
 
             .toggle-switch {
                 width: 45px;
                 height: 22px;
+                /* Ensure border and slider are visible with Matrix theme */
             }
 
             .toggle-slider {
@@ -445,13 +569,13 @@
             }
 
             .toggle-switch.active .toggle-slider {
-                transform: translateX(23px);
+                transform: translateX(23px); /* Keep if visually correct */
             }
 
             .settings-btn {
-                font-size: 0.8em;
+                font-size: 0.85em; /* Adjusted font size */
                 padding: 8px 10px;
-                min-width: 50px;
+                min-width: 55px; /* Ensure tapability */
             }
 
             .chat-messages {
@@ -459,42 +583,90 @@
             }
 
             .message {
-                max-width: 85%;
-                font-size: 0.95em;
+                max-width: 90%; /* Slightly increased max-width for better use of space */
+                font-size: 0.95em; /* Keep font size for readability */
+                padding: 10px 14px; /* Adjust padding */
+            }
+            
+            .message.user, .message.assistant, .message.system {
+                /* Reverting to sharper corners, closer to original desktop, or minimal radius if needed */
+                /* border-radius: 10px; */ /* Removed from previous mobile adjustment for theme consistency */
+                /* Original message border-radius: 18px, with specific corners at 6px. */
+                /* Let's keep the main message radius and adjust if it looks off, rather than a blanket 10px. */
+                /* No change here means it inherits desktop .message border-radius: 18px which is fine. */
             }
 
             .input-container {
-                padding: 15px;
+                padding: 10px 15px; /* Reduced padding */
+            }
+            
+            .input-wrapper {
+                gap: 10px;
+            }
+
+            .message-input {
+                padding: 10px 14px; /* Adjust padding */
+                font-size: 15px; /* Ensure readability */
+            }
+
+            .send-btn {
+                width: 40px; /* Ensure tappable size */
+                height: 40px;
+                font-size: 1.1em;
             }
 
             .modal-content {
-                margin: 10px;
+                margin: 10px; /* Ensure it doesn't touch screen edges */
                 padding: 20px;
+                max-height: 90vh; /* Ensure visibility on smaller screens */
+            }
+
+            .form-group input {
+                padding: 10px;
+                font-size: 15px;
+            }
+
+            .btn {
+                padding: 10px 15px;
+                font-size: 15px;
+            }
+            
+            .control-btn {
+                padding: 7px; /* Ensure tap target size - slightly more padding */
+                font-size: 0.9em;
             }
         }
 
         @media (max-width: 480px) {
             .header {
-                padding: 12px 12px;
-                min-height: 60px;
+                padding: 10px 12px; /* Further reduced padding */
+                min-height: 55px;
             }
 
             .header h1 {
-                font-size: 1.1em;
+                font-size: 1.0em; /* Smaller title */
                 margin-right: 8px;
+                 white-space: nowrap; /* Prevent title from wrapping */
+                overflow: hidden;
+                text-overflow: ellipsis; /* Add ellipsis if title is too long */
             }
 
             .header-controls {
-                gap: 10px;
+                gap: 8px; /* Smaller gap */
+            }
+            
+            .tts-toggle span {
+                display: none; /* Hide emoji/text for TTS toggle on very small screens for space */
+            }
+            
+            .tts-toggle {
+                gap: 5px; /* Reduce gap when text is hidden */
             }
 
-            .tts-toggle span {
-                display: none; /* Hide emoji on very small screens */
-            }
 
             .settings-btn {
-                font-size: 0.75em;
-                padding: 6px 8px;
+                font-size: 0.8em;
+                padding: 7px 9px;
                 min-width: 45px;
             }
 
@@ -509,7 +681,67 @@
             }
 
             .toggle-switch.active .toggle-slider {
-                transform: translateX(20px);
+                transform: translateX(20px); /* Adjust if needed */
+            }
+
+            .chat-messages {
+                padding: 10px;
+            }
+
+            .message {
+                max-width: 92%; /* Allow slightly more width */
+                font-size: 0.9em; /* Slightly smaller for very small screens if needed */
+                padding: 8px 12px;
+                border-radius: 12px; /* Slightly smaller radius for smaller messages */
+            }
+             .message.user {
+                border-bottom-right-radius: 4px; /* Sharper corner for user */
+            }
+            .message.assistant {
+                border-bottom-left-radius: 4px; /* Sharper corner for assistant */
+            }
+
+
+            .input-container {
+                padding: 8px 10px;
+            }
+            
+            .message-input {
+                padding: 9px 12px;
+                font-size: 14px;
+                max-height: 100px; /* Adjust max height */
+            }
+
+            .send-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 1.0em; /* Adjusted from 1em to 1.0em for clarity, no actual change */
+            }
+            
+            .modal-content {
+                padding: 15px;
+                max-width: calc(100% - 20px); /* ensure some margin from screen edge */
+            }
+            
+            .modal h2 {
+                font-size: 1.15em; /* Slightly adjust */
+            }
+
+            .form-group label {
+                font-size: 0.85em; /* Slightly adjust */
+            }
+            .form-group input {
+                padding: 8px 10px; /* Adjust padding */
+                font-size: 14px;
+            }
+            .btn { /* Modal buttons */
+                padding: 10px 10px; /* Adjust padding for smaller screens */
+                font-size: 14px;
+                /* flex-basis: 0; */ /* Allow buttons to shrink if needed */
+            }
+            .control-btn {
+                padding: 6px; /* Fine-tuned padding for message controls */
+                font-size: 0.8em;
             }
         }
 
