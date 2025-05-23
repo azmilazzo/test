@@ -2,356 +2,67 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>AI Chat - Matrix Mode</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat with Amy TTS</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
-
-        :root {
-            /* Base Theme Variables (Matrix - default) */
-            --matrix-bg-color: #0D0D0D;
-            --matrix-primary-text-color: #00FF41;
-            --matrix-secondary-text-color: #999999;
-            --matrix-accent-color: #00FF41;
-            --matrix-accent-darker-color: #00B82E;
-            --matrix-border-color: #00B82E;
-            --matrix-header-bg-color: rgba(10, 20, 10, 0.8);
-            --matrix-modal-bg-color: rgba(0, 0, 0, 0.9);
-            --matrix-input-bg-color: #1A1A1A;
-            --matrix-button-bg-color: transparent;
-            --matrix-button-hover-bg-color: #00B82E;
-            --matrix-button-text-color: #00FF41;
-            --matrix-button-hover-text-color: #0D0D0D;
-            --matrix-message-user-bg-color: rgba(0, 50, 0, 0.5);
-            --matrix-message-assistant-bg-color: rgba(10, 25, 10, 0.6);
-            --matrix-message-system-color: #00B82E;
-            --matrix-scrollbar-thumb-color: #00FF41;
-            --matrix-scrollbar-track-color: #0D0D0D;
-            --matrix-header-title-text-shadow: 0 0 5px var(--matrix-accent-color);
-            --matrix-control-btn-text-shadow: 0 0 3px var(--matrix-accent-color);
-            --matrix-header-text-color: #00FF41; 
-            --matrix-message-text-shadow: 0 0 2px var(--matrix-primary-text-color);
-
-
-            /* Default Theme Setup (Matrix) - these are what the elements will use */
-            --bg-color: var(--matrix-bg-color);
-            --primary-text-color: var(--matrix-primary-text-color);
-            --secondary-text-color: var(--matrix-secondary-text-color);
-            --accent-color: var(--matrix-accent-color);
-            --accent-color-darker: var(--matrix-accent-darker-color);
-            --border-color: var(--matrix-border-color);
-            --header-bg: var(--matrix-header-bg-color);
-            --header-text: var(--matrix-header-text-color); 
-            --modal-bg: var(--matrix-modal-bg-color);
-            --input-bg: var(--matrix-input-bg-color);
-            --button-bg: var(--matrix-button-bg-color);
-            --button-hover-bg: var(--matrix-button-hover-bg-color);
-            --button-text-color: var(--matrix-button-text-color);
-            --button-hover-text-color: var(--matrix-button-hover-text-color);
-            --message-user-bg: var(--matrix-message-user-bg-color);
-            --message-assistant-bg: var(--matrix-message-assistant-bg-color);
-            --message-system-color: var(--matrix-message-system-color);
-            --scrollbar-thumb: var(--matrix-scrollbar-thumb-color);
-            --scrollbar-track: var(--matrix-scrollbar-track-color);
-            --header-title-text-shadow-active: var(--matrix-header-title-text-shadow);
-            --control-btn-text-shadow-active: var(--matrix-control-btn-text-shadow);
-            --message-text-shadow-active: var(--matrix-message-text-shadow);
-            
-            --input-message-placeholder-color: #999999; 
-            --modal-input-placeholder-color: #999999; 
-        }
-
-        /* Light Mode Theme Variable Overrides */
-        body.light-mode {
-            --bg-color: #F0F0F0; 
-            --primary-text-color: #333333; 
-            --secondary-text-color: #555555;
-            --accent-color: #007ACC; 
-            --accent-color-darker: #005FAA;
-            --border-color: #CCCCCC;
-            --header-bg: #E5E5E5;
-            --header-text: #333333; 
-            --modal-bg: rgba(250, 250, 250, 0.95);
-            --input-bg: #FFFFFF;
-            --button-bg: #F0F0F0;
-            --button-hover-bg: #DDDDDD;
-            --button-text-color: #333333;
-            --button-hover-text-color: #111111;
-            --message-user-bg: #DDF8FF; 
-            --message-assistant-bg: #FFFFFF; 
-            --message-system-color: #777777;
-            --scrollbar-thumb: #AAAAAA;
-            --scrollbar-track: #F0F0F0;
-            --header-title-text-shadow-active: none;
-            --control-btn-text-shadow-active: none;
-            --message-text-shadow-active: none;
-            --input-message-placeholder-color: #a0aec0;
-            --modal-input-placeholder-color: #a0aec0;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-<<<<<<< feat/mobile-dark-mode-ui
-        body {
-            font-family: 'Roboto Mono', 'Courier New', Courier, monospace;
-            background-color: var(--bg-color);
-            color: var(--primary-text-color);
-            line-height: 1.6;
-            overflow-x: hidden; 
-        }
-        
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--scrollbar-track);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--scrollbar-thumb);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--accent-color-darker); 
-=======
-
-        :root {
-            /* Light Theme Variables */
-            --body-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --app-container-bg: rgba(255, 255, 255, 0.95);
-            --text-color-primary: #333;
-            --text-color-secondary: #2d3748;
-            --text-color-tertiary: #4a5568;
-            --text-color-inverted: white;
-            --text-color-system-message: #856404;
-            --header-text: white; 
-
-
-            --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --header-shadow: rgba(0, 0, 0, 0.1);
-
-            --toggle-switch-bg: rgba(255, 255, 255, 0.3);
-            --toggle-switch-active-bg: rgba(255, 255, 255, 0.8);
-            --toggle-slider-bg: white;
-            --toggle-slider-shadow: rgba(0, 0, 0, 0.2);
-
-            --settings-btn-bg: rgba(255, 255, 255, 0.2);
-            --settings-btn-border: rgba(255, 255, 255, 0.3);
-            --settings-btn-hover-bg: rgba(255, 255, 255, 0.3);
-
-            --user-message-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --assistant-message-bg: #f7fafc;
-            --assistant-message-border: #e2e8f0;
-            --system-message-bg: rgba(255, 193, 7, 0.1);
-            --system-message-border: rgba(255, 193, 7, 0.3);
-            
-            --control-btn-hover-bg: rgba(0, 0, 0, 0.1);
-
-            --input-container-bg: white;
-            --input-container-border-top: #e2e8f0;
-            --message-input-border: #e2e8f0;
-            --message-input-focus-border: #667eea;
-            --message-input-focus-shadow: rgba(102, 126, 234, 0.1);
-            --message-input-text: #333; 
-            --message-input-bg: white;
-
-            --send-btn-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --send-btn-hover-shadow: rgba(102, 126, 234, 0.3);
-
-            --modal-overlay-bg: rgba(0, 0, 0, 0.5);
-            --modal-content-bg: white;
-            --modal-input-border: #e2e8f0;
-            --modal-input-focus-border: #667eea;
-            --modal-input-focus-shadow: rgba(102, 126, 234, 0.1);
-            --modal-input-text: #333;
-            --modal-input-bg: white;
-
-
-            --btn-primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --btn-secondary-bg: #f7fafc;
-            --btn-secondary-border: #e2e8f0;
-
-            --typing-indicator-bg: #f7fafc;
-            --typing-indicator-border: #e2e8f0;
-            --typing-dot-bg: #a0aec0;
-            
-            --link-color: #667eea; 
-
-            /* Placeholder colors */
-            --input-message-placeholder-color: #a0aec0;
-            --modal-input-placeholder-color: #a0aec0;
-        }
-
-        body.dark-mode {
-            /* Dark Theme Variable Overrides */
-            --body-bg: linear-gradient(135deg, #232743 0%, #301a3a 100%);
-            --app-container-bg: rgba(28, 28, 46, 0.9); 
-            --text-color-primary: #e0e0e0;
-            --text-color-secondary: #c0c0c0; 
-            --text-color-tertiary: #9090a0; 
-            --text-color-inverted: #1e1e1e; 
-            --header-text: #e0e0e0; 
-            --text-color-system-message: #f0e68c; 
-
-            --header-bg: linear-gradient(135deg, #3c4082 0%, #4f306b 100%);
-            --header-shadow: rgba(0, 0, 0, 0.3);
-
-            --toggle-switch-bg: rgba(255, 255, 255, 0.1);
-            --toggle-switch-active-bg: rgba(128, 134, 236, 0.7); 
-            --toggle-slider-bg: #d0d0d0;
-            --toggle-slider-shadow: rgba(0, 0, 0, 0.4);
-
-            --settings-btn-bg: rgba(255, 255, 255, 0.1);
-            --settings-btn-border: rgba(255, 255, 255, 0.2);
-            --settings-btn-hover-bg: rgba(255, 255, 255, 0.15);
-
-            --user-message-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
-            --assistant-message-bg: #2c2c44;
-            --assistant-message-border: #40405c;
-            --system-message-bg: rgba(80, 70, 30, 0.5); 
-            --system-message-border: rgba(100, 90, 50, 0.7);
-            
-            --control-btn-hover-bg: rgba(255, 255, 255, 0.15);
-
-            --input-container-bg: #1e1e2f;
-            --input-container-border-top: #30304a;
-            --message-input-border: #40405c;
-            --message-input-focus-border: #8086ec; 
-            --message-input-focus-shadow: rgba(128, 134, 236, 0.2);
-            --message-input-text: #e0e0e0;
-            --message-input-bg: #2c2c44;
-            --input-message-placeholder-color: var(--text-color-tertiary);
-
-
-            --send-btn-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
-            --send-btn-hover-shadow: rgba(74, 85, 199, 0.4);
-
-            --modal-overlay-bg: rgba(0, 0, 0, 0.7); 
-            --modal-content-bg: #2c2c44;
-            --modal-input-border: #40405c;
-            --modal-input-focus-border: #8086ec;
-            --modal-input-focus-shadow: rgba(128, 134, 236, 0.2);
-            --modal-input-text: #e0e0e0;
-            --modal-input-bg: #1e1e2f;
-            --modal-input-placeholder-color: var(--text-color-tertiary);
-
-            --btn-primary-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
-            --btn-secondary-bg: #3c3c58;
-            --btn-secondary-border: #50506c;
-
-            --typing-indicator-bg: #2c2c44;
-            --typing-indicator-border: #40405c;
-            --typing-dot-bg: #70708c;
-
-            --link-color: #8086ec;
-        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: var(--body-bg);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             height: 100vh;
-            color: var(--text-color-primary);
+            color: #333;
             overflow: hidden;
             margin: 0;
             padding: 0;
             -webkit-text-size-adjust: 100%;
             -webkit-font-smoothing: antialiased;
->>>>>>> main
         }
 
         .app-container {
+            height: 100vh;
             display: flex;
             flex-direction: column;
-<<<<<<< feat/mobile-dark-mode-ui
-            height: 100vh; 
-            max-width: 800px; 
-            margin: 0 auto;  
-            border-left: 1px solid var(--border-color);
-            border-right: 1px solid var(--border-color);
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-right: env(safe-area-inset-right, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            padding-left: env(safe-area-inset-left, 0px);
-=======
             max-width: 800px;
             margin: 0 auto;
-            background: var(--app-container-bg);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
->>>>>>> main
         }
 
+        /* Header */
         .header {
-<<<<<<< feat/mobile-dark-mode-ui
-=======
-            background: var(--header-bg);
-            color: var(--header-text); 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 15px 20px;
->>>>>>> main
             display: flex;
-            justify-content: space-between;
-<<<<<<< feat/mobile-dark-mode-ui
             align-items: center;
-            padding: 10px 15px;
-            background-color: var(--header-bg);
-            border-bottom: 1px solid var(--border-color);
-            flex-shrink: 0;
-=======
-            box-shadow: 0 2px 10px var(--header-shadow);
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             min-height: 60px;
             flex-shrink: 0;
             position: relative;
             z-index: 100;
-            flex-wrap: nowrap; /* Default to no-wrap */
->>>>>>> main
         }
-        .header-title {
+
+        .header h1 {
             font-size: 1.5em;
-<<<<<<< feat/mobile-dark-mode-ui
-            font-weight: bold;
-            text-shadow: var(--header-title-text-shadow-active);
-=======
             font-weight: 600;
             margin: 0;
-            flex: 1 1 auto; 
-            min-width: 0; 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            margin-right: 10px; 
->>>>>>> main
+            flex: 1;
+            min-width: 0;
         }
+
         .header-controls {
             display: flex;
-<<<<<<< feat/mobile-dark-mode-ui
-            gap: 10px;
-        }
-        .control-btn {
-            background: var(--button-bg);
-            color: var(--button-text-color);
-            border: 1px solid var(--border-color);
-            padding: 8px 10px;
-            cursor: pointer;
-            font-size: 1em; 
-            transition: background-color 0.3s, color 0.3s, box-shadow 0.3s, transform 0.1s;
-            text-shadow: var(--control-btn-text-shadow-active);
-        }
-        .control-btn:hover {
-            background-color: var(--button-hover-bg);
-            color: var(--button-hover-text-color);
-            box-shadow: 0 0 10px var(--accent-color);
-        }
-        .control-btn:active {
-            transform: scale(0.97); 
-            box-shadow: 0 0 3px var(--accent-color); /* Slightly reduced shadow on click */
-            border-color: var(--accent-color); /* Brighter border on click */
-=======
             align-items: center;
             gap: 15px;
-            flex-shrink: 0; 
+            flex-shrink: 0;
         }
 
         .tts-toggle {
@@ -365,14 +76,14 @@
             position: relative;
             width: 50px;
             height: 24px;
-            background: var(--toggle-switch-bg);
+            background: rgba(255, 255, 255, 0.3);
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .toggle-switch.active {
-            background: var(--toggle-switch-active-bg);
+            background: rgba(255, 255, 255, 0.8);
         }
 
         .toggle-slider {
@@ -381,10 +92,10 @@
             left: 2px;
             width: 20px;
             height: 20px;
-            background: var(--toggle-slider-bg);
+            background: white;
             border-radius: 50%;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px var(--toggle-slider-shadow);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .toggle-switch.active .toggle-slider {
@@ -392,9 +103,9 @@
         }
 
         .settings-btn {
-            background: var(--settings-btn-bg);
-            border: 1px solid var(--settings-btn-border);
-            color: var(--header-text); 
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
             padding: 10px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -408,90 +119,86 @@
         }
 
         .settings-btn:hover {
-            background: var(--settings-btn-hover-bg);
->>>>>>> main
-        }
-        .tts-toggle-btn.tts-disabled #ttsIcon {
-            opacity: 0.5;
+            background: rgba(255, 255, 255, 0.3);
         }
 
+        .settings-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Chat Area */
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
 
         .chat-messages {
             flex: 1;
-            padding: 15px;
             overflow-y: auto;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-        }
-        
-        @keyframes fadeInMessage {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            gap: 15px;
         }
 
         .message {
-            padding: 10px 15px;
-            border: 1px solid var(--border-color);
-            max-width: 90%;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
             word-wrap: break-word;
-            animation: fadeInMessage 0.3s ease-out forwards; /* Subtle message animation */
+            animation: messageSlide 0.3s ease-out;
         }
-        .message p { 
-            margin-bottom: 5px; 
-            text-shadow: var(--message-text-shadow-active);
-        } 
-        .message:last-child { margin-bottom: auto; }
 
-        .user-message {
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
             align-self: flex-end;
-<<<<<<< feat/mobile-dark-mode-ui
-            background-color: var(--message-user-bg);
-            border-left-width: 3px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
         }
-        .assistant-message {
-            align-self: flex-start;
-            background-color: var(--message-assistant-bg);
-=======
-            background: var(--user-message-bg);
-            color: var(--text-color-inverted); 
-        }
-        body.dark-mode .message.user {
-             color: var(--text-color-primary); 
-        }
-
 
         .message.assistant {
             align-self: flex-start;
-            background: var(--assistant-message-bg);
-            color: var(--text-color-secondary);
-            border: 1px solid var(--assistant-message-border);
+            background: #f7fafc;
+            color: #2d3748;
+            border: 1px solid #e2e8f0;
             border-bottom-left-radius: 6px;
             position: relative;
->>>>>>> main
         }
-        .system-message {
+
+        .message.system {
             align-self: center;
-<<<<<<< feat/mobile-dark-mode-ui
-=======
-            background: var(--system-message-bg);
-            color: var(--text-color-system-message);
-            border: 1px solid var(--system-message-border);
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.3);
             font-size: 0.9em;
             max-width: 90%;
->>>>>>> main
             text-align: center;
-            color: var(--message-system-color);
-            font-size: 0.9em;
-            border: none;
-<<<<<<< feat/mobile-dark-mode-ui
-            background: none;
         }
-        .typing-indicator {
-            align-self: flex-start;
-            color: var(--secondary-text-color); 
-            font-style: italic;
-=======
+
+        .message-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
             cursor: pointer;
             padding: 4px;
             border-radius: 4px;
@@ -500,256 +207,158 @@
         }
 
         .control-btn:hover {
-            background: var(--control-btn-hover-bg);
+            background: rgba(0, 0, 0, 0.1);
         }
 
         /* Input Area */
         .input-container {
             padding: 20px;
-            background: var(--input-container-bg);
-            border-top: 1px solid var(--input-container-border-top);
->>>>>>> main
+            background: white;
+            border-top: 1px solid #e2e8f0;
         }
 
-        .input-area {
+        .input-wrapper {
             display: flex;
-            padding: 15px;
-            border-top: 1px solid var(--border-color);
-            background-color: var(--header-bg); 
-            gap: 10px;
+            align-items: flex-end;
+            gap: 12px;
+            max-width: 100%;
         }
+
         .message-input {
             flex: 1;
-<<<<<<< feat/mobile-dark-mode-ui
-            padding: 10px;
-            background-color: var(--input-bg);
-            color: var(--primary-text-color);
-            border: 1px solid var(--border-color);
-            font-family: inherit;
-            font-size: 1em;
-            resize: none; 
-            min-height: 40px; 
-            max-height: 120px; 
-            overflow-y: auto; 
-=======
             min-height: 44px;
             max-height: 120px;
             padding: 12px 16px;
-            border: 2px solid var(--message-input-border);
+            border: 2px solid #e2e8f0;
             border-radius: 22px;
             font-size: 16px;
             resize: none;
             font-family: inherit;
             line-height: 1.4;
             transition: all 0.3s ease;
-            background-color: var(--message-input-bg);
-            color: var(--message-input-text);
->>>>>>> main
-        }
-        .message-input::placeholder {
-            color: var(--input-message-placeholder-color);
-        }
-        .message-input:focus {
-            outline: none;
-<<<<<<< feat/mobile-dark-mode-ui
-            border-color: var(--accent-color);
-            box-shadow: 0 0 8px var(--accent-color);
-=======
-            border-color: var(--message-input-focus-border);
-            box-shadow: 0 0 0 3px var(--message-input-focus-shadow);
->>>>>>> main
-        }
-        .send-btn {
-            background: var(--accent-color);
-            color: var(--matrix-bg); 
-            border: none;
-<<<<<<< feat/mobile-dark-mode-ui
-            padding: 0 15px;
-            font-weight: bold;
-            transition: background-color 0.3s, box-shadow 0.3s, transform 0.1s; 
-=======
-            border-radius: 50%;
-            background: var(--send-btn-bg);
-            color: var(--text-color-inverted); 
-        }
-        body.dark-mode .send-btn {
-            color: var(--text-color-primary); 
         }
 
-        .send-btn { 
->>>>>>> main
+        .message-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2em;
+            transition: all 0.3s ease;
             flex-shrink: 0;
         }
-<<<<<<< feat/mobile-dark-mode-ui
-        body.light-mode .send-btn {
-            color: #FFFFFF; 
-=======
-
 
         .send-btn:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px var(--send-btn-hover-shadow);
->>>>>>> main
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
-        .send-btn:hover {
-            background-color: var(--accent-color-darker);
-            box-shadow: 0 0 10px var(--accent-color);
-        }
-        .send-btn:active {
-            transform: scale(0.97); 
-            box-shadow: 0 0 5px var(--accent-color); 
-        }
-        .send-btn span { display: block; transform: translateY(1px); } 
 
-        .modal-overlay {
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Modal */
+        .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-<<<<<<< feat/mobile-dark-mode-ui
-            background-color: rgba(0, 20, 0, 0.7); 
-=======
-            background: var(--modal-overlay-bg);
->>>>>>> main
+            background: rgba(0, 0, 0, 0.5);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            padding: 20px;
         }
-<<<<<<< feat/mobile-dark-mode-ui
-        body.light-mode .modal-overlay { 
-             background-color: rgba(0, 0, 0, 0.5);
-=======
 
         .modal-content {
-            background: var(--modal-content-bg);
+            background: white;
             border-radius: 16px;
             padding: 30px;
             width: 100%;
             max-width: 400px;
             max-height: 80vh;
             overflow-y: auto;
->>>>>>> main
         }
 
-        .modal-content {
-            background-color: var(--modal-bg);
-            padding: 25px;
-            border: 1px solid var(--border-color);
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 0 15px var(--accent-color);
-        }
-        .modal-title {
-            font-size: 1.8em;
+        .modal h2 {
             margin-bottom: 20px;
-<<<<<<< feat/mobile-dark-mode-ui
-=======
-            color: var(--text-color-secondary);
->>>>>>> main
+            color: #2d3748;
             text-align: center;
-            text-shadow: var(--header-title-text-shadow-active);
         }
+
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
+
         .form-group label {
             display: block;
-<<<<<<< feat/mobile-dark-mode-ui
-            margin-bottom: 5px;
-            color: var(--primary-text-color);
-=======
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--text-color-tertiary);
->>>>>>> main
+            color: #4a5568;
         }
-        .modal-input {
+
+        .form-group input {
             width: 100%;
-<<<<<<< feat/mobile-dark-mode-ui
-            padding: 10px;
-            background-color: var(--input-bg);
-            color: var(--primary-text-color);
-            border: 1px solid var(--border-color);
-            font-family: inherit;
-=======
             padding: 12px;
-            border: 2px solid var(--modal-input-border);
+            border: 2px solid #e2e8f0;
             border-radius: 8px;
             font-size: 16px;
             transition: all 0.3s ease;
-            background-color: var(--modal-input-bg);
-            color: var(--modal-input-text);
         }
-        .form-group input::placeholder {
-            color: var(--modal-input-placeholder-color);
->>>>>>> main
-        }
-        .modal-input:focus {
+
+        .form-group input:focus {
             outline: none;
-<<<<<<< feat/mobile-dark-mode-ui
-            border-color: var(--accent-color);
-            box-shadow: 0 0 8px var(--accent-color);
-=======
-            border-color: var(--modal-input-focus-border);
-            box-shadow: 0 0 0 3px var(--modal-input-focus-shadow);
->>>>>>> main
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
+
         .modal-buttons {
             display: flex;
-            justify-content: flex-end; 
-            gap: 10px;
-            margin-top: 25px;
+            gap: 12px;
+            margin-top: 30px;
         }
-        .modal-btn {
-            background: var(--button-bg);
-            color: var(--button-text-color);
-            border: 1px solid var(--border-color);
-            padding: 10px 15px;
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background-color 0.3s, color 0.3s, box-shadow 0.3s, transform 0.1s; 
+            transition: all 0.3s ease;
         }
-<<<<<<< feat/mobile-dark-mode-ui
-        .modal-btn:hover {
-            background-color: var(--button-hover-bg);
-            color: var(--button-hover-text-color);
-            box-shadow: 0 0 10px var(--accent-color);
-        }
-        .modal-btn:active {
-            transform: scale(0.97); 
-            box-shadow: 0 0 5px var(--accent-color); 
-            border-color: var(--accent-color);
-=======
 
         .btn-primary {
-            background: var(--btn-primary-bg);
-            color: var(--text-color-inverted); 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
-        body.dark-mode .btn-primary {
-            color: var(--text-color-primary); 
-        }
-
 
         .btn-secondary {
-            background: var(--btn-secondary-bg);
-            color: var(--text-color-tertiary);
-            border: 2px solid var(--btn-secondary-border);
->>>>>>> main
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
         }
-        .modal-btn.save-btn { 
-            background-color: var(--accent-color);
-            color: var(--matrix-bg); 
+
+        .btn:hover {
+            transform: translateY(-1px);
         }
-<<<<<<< feat/mobile-dark-mode-ui
-        body.light-mode .modal-btn.save-btn {
-             color: #FFFFFF; 
-=======
 
         /* Loading indicator */
         .typing-indicator {
@@ -757,197 +366,48 @@
             align-items: center;
             gap: 8px;
             padding: 12px 16px;
-            background: var(--typing-indicator-bg);
-            border: 1px solid var(--typing-indicator-border);
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 18px;
             border-bottom-left-radius: 6px;
             align-self: flex-start;
             max-width: 80px;
->>>>>>> main
         }
-        .modal-btn.save-btn:hover {
-            background-color: var(--accent-color-darker);
+
+        .typing-dots {
+            display: flex;
+            gap: 4px;
         }
-<<<<<<< feat/mobile-dark-mode-ui
-        body.light-mode .modal-btn.save-btn:hover {
-            color: #FFFFFF; 
-=======
 
         .typing-dot {
             width: 8px;
             height: 8px;
-            background: var(--typing-dot-bg);
+            background: #a0aec0;
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
 
         .typing-dot:nth-child(2) {
             animation-delay: 0.2s;
->>>>>>> main
         }
 
-
-        .hidden {
-            display: none !important;
-        }
-        
-        .theme-toggle-btn {
-            background: var(--settings-btn-bg, rgba(255, 255, 255, 0.2));
-            border: 1px solid var(--settings-btn-border, rgba(255, 255, 255, 0.3));
-            color: var(--header-text, white); 
-            padding: 10px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1.2em;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-            min-width: 44px;
-            height: 44px; 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1; 
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
         }
 
-        .theme-toggle-btn:hover {
-            background: var(--settings-btn-hover-bg, rgba(255, 255, 255, 0.3));
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
         }
 
-        .theme-toggle-btn:active {
-            transform: scale(0.95);
-        }
-
-        /* Mobile Responsiveness */
+        /* Mobile optimizations */
         @media (max-width: 768px) {
-<<<<<<< feat/mobile-dark-mode-ui
-           .app-container {
-               border-left: none;
-               border-right: none;
-           }
-           .header {
-               padding: 8px 10px;
-           }
-           .header-title {
-               font-size: 1.3em;
-           }
-           .control-btn {
-               padding: 6px 8px;
-               font-size: 0.9em;
-           }
-           .chat-messages {
-               padding: 10px;
-           }
-           .message {
-               padding: 8px 12px;
-               max-width: 95%;
-           }
-           .input-area {
-               padding: 10px;
-               gap: 8px;
-           }
-           .message-input {
-               padding: 8px;
-               min-height: 38px;
-           }
-           .send-btn {
-               padding: 0 12px;
-               font-size: 1.1em;
-           }
-           .modal-content {
-               padding: 20px;
-               width: 95%;
-           }
-           .modal-title {
-               font-size: 1.5em;
-           }
-        }
-
-       @media (max-width: 480px) {
-           .header {
-               flex-wrap: wrap; 
-               gap: 5px; 
-               padding: 10px; 
-           }
-           .header-title {
-               font-size: 1.2em;
-               width: 100%; 
-               text-align: center; 
-               margin-bottom: 5px; 
-           }
-           .header-controls {
-               justify-content: center; 
-               width: 100%;
-               gap: 8px;
-           }
-           .control-btn {
-               padding: 7px 9px; 
-               font-size: 1em;
-           }
-           .chat-messages {
-               padding: 8px;
-           }
-           .message {
-               font-size: 0.95em;
-           }
-           .input-area {
-               padding: 8px;
-           }
-           .message-input {
-               font-size: 0.95em;
-           }
-           .send-btn {
-               padding: 0 10px;
-               font-size: 1em;
-           }
-           .modal-title {
-               font-size: 1.3em;
-           }
-           .modal-buttons {
-               flex-direction: column; 
-               gap: 12px;
-           }
-           .modal-btn {
-               width: 100%;
-           }
-       }
-
-        @media (max-width: 360px) {
-            .header-title {
-                font-size: 1.1em;
-            }
-            .control-btn {
-                font-size: 0.9em;
-                padding: 6px 8px;
-            }
-            .message {
-                font-size: 0.9em;
-            }
-            .input-area {
-                gap: 5px;
-            }
-            .message-input {
-                font-size: 0.9em;
-            }
-        }
-
-    </style>
-</head>
-<body>
-    <div class="app-container" id="appContainer">
-        <!-- Header Section -->
-        <header class="header" id="header">
-            <h1 class="header-title" id="headerTitle">AI CHAT_ //</h1>
-            <div class="header-controls" id="headerControls">
-                <button class="control-btn tts-toggle-btn" id="ttsToggleBtn" title="Toggle TTS">
-                    <span id="ttsIcon">🔊</span> 
-                </button>
-                <button class="control-btn theme-toggle-btn" id="themeToggleBtn" title="Toggle Theme">
-                    <span id="themeIcon">☀️</span> 
-                </button>
-                <button class="control-btn settings-btn" id="settingsBtn" title="API Settings">
-                    <span>⚙️</span> 
-                </button>
-=======
             .app-container {
                 height: 100vh;
                 border-radius: 0;
@@ -956,270 +416,106 @@
             .header {
                 padding: 15px 15px;
                 min-height: 65px;
+                flex-wrap: nowrap;
             }
 
             .header h1 {
-                font-size: 1.2em; 
+                font-size: 1.2em;
+                margin-right: 10px;
             }
 
             .header-controls {
-                gap: 10px; 
+                gap: 12px;
+                flex-shrink: 0;
             }
 
             .tts-toggle {
-                font-size: 0.8em; 
-            }
-            .tts-toggle span { 
-                margin-right: 5px;
+                font-size: 0.8em;
+                white-space: nowrap;
             }
 
-            .toggle-switch { 
-                width: 50px;
-                height: 26px;
-            }
-
-            .toggle-slider { 
-                width: 22px;
+            .toggle-switch {
+                width: 45px;
                 height: 22px;
             }
 
+            .toggle-slider {
+                width: 18px;
+                height: 18px;
+            }
+
             .toggle-switch.active .toggle-slider {
-                transform: translateX(24px); 
-            }
-            body.dark-mode .toggle-switch.active { 
-                background: var(--toggle-switch-active-bg);
-            }
-            body.dark-mode .toggle-slider {
-                background: var(--toggle-slider-bg);
+                transform: translateX(23px);
             }
 
-
-            .settings-btn, .theme-toggle-btn {
-                font-size: 0.85em; 
-                padding: 10px 10px; 
-                min-width: 55px; 
-            }
-            .theme-toggle-btn {
+            .settings-btn {
+                font-size: 0.8em;
                 padding: 8px 10px;
-                font-size: 1.1em;
-                min-width: 40px; 
-                height: 42px; 
-                width: 42px; 
+                min-width: 50px;
             }
-
-            body.dark-mode .settings-btn, body.dark-mode .theme-toggle-btn {
-                color: var(--header-text); 
-                background: var(--settings-btn-bg);
-                border-color: var(--settings-btn-border);
-            }
-            body.dark-mode .settings-btn:hover, body.dark-mode .theme-toggle-btn:hover {
-                background: var(--settings-btn-hover-bg);
-            }
-
 
             .chat-messages {
-                padding: 15px 10px; 
+                padding: 15px;
             }
 
             .message {
-                max-width: 90%; 
-                font-size: 0.95em; 
-                padding: 10px 14px; 
+                max-width: 85%;
+                font-size: 0.95em;
             }
-             .message.user, .message.assistant { 
-                margin-left: 5px;
-                margin-right: 5px;
-            }
-
 
             .input-container {
-                padding: 10px; 
-            }
-            .input-wrapper {
-                gap: 8px; 
-            }
-            .message-input {
-                padding: 10px 14px; 
-                font-size: 15px; 
-            }
-            .send-btn { 
-                width: 42px;
-                height: 42px;
-                font-size: 1.1em;
+                padding: 15px;
             }
 
             .modal-content {
-                margin: 20px; 
-                padding: 25px; 
-                max-height: 90vh; 
-            }
-            .modal-buttons { 
-                flex-direction: column;
-            }
-            .modal-buttons .btn {
-                width: 100%;
-            }
-            body.dark-mode .modal-content {
-                box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
+                margin: 10px;
+                padding: 20px;
             }
         }
 
-        /* Targeting very small screens like 393px width */
-        @media (max-width: 400px) {
+        @media (max-width: 480px) {
             .header {
-                padding: 8px 10px; 
-                min-height: 48px; 
-                flex-wrap: wrap; 
-                justify-content: space-between; 
-                gap: 5px; 
+                padding: 12px 12px;
+                min-height: 60px;
             }
 
             .header h1 {
-                font-size: 0.95em; /* Drastically reduced font size */
-                margin-right: 0; 
-                margin-bottom: 5px; 
-                flex-basis: 100%; 
-                text-align: center; 
-                order: 1; 
+                font-size: 1.1em;
+                margin-right: 8px;
             }
 
             .header-controls {
-                gap: 5px; 
-                flex-basis: 100%; 
-                justify-content: center; 
-                order: 2; 
+                gap: 10px;
             }
 
-            .tts-toggle span { 
-                font-size: 0.9em; 
-            }
-            .tts-toggle .toggle-switch { 
-                width: 36px; 
-                height: 18px;
-            }
-            .tts-toggle .toggle-slider {
-                width: 14px;
-                height: 14px;
-            }
-            .tts-toggle.active .toggle-slider {
-                transform: translateX(18px); 
-            }
-
-            .settings-btn, .theme-toggle-btn {
-                font-size: 0.7em; /* Smaller font for buttons */
-                padding: 4px 6px; 
-            }
-             .theme-toggle-btn {
-                font-size: 0.8em; /* Slightly larger icon */
-                height: 32px;
-                width: 32px;
-            }
-            .settings-btn {
-                 min-width: 45px; 
-                 height: 32px;
-            }
-        }
-
-
-        @media (max-width: 480px) { /* Existing 480px query, ensure it doesn't conflict heavily with 400px */
-            /* Check if any rules here need to be adjusted if they were too general */
-            /* For instance, header h1 font-size was 1.0em, now 0.95em at 400px */
-             .header h1 { /* Ensure it's not larger than the 400px setting */
-                font-size: clamp(0.95em, 2.5vw, 1.0em); /* Use clamp for responsive font */
-            }
-            .header-controls { /* Ensure gap is not larger than 400px setting */
-                gap: clamp(5px, 2vw, 8px);
-            }
-             .settings-btn, .theme-toggle-btn { /* Ensure font-size is not larger than 400px setting */
-                font-size: clamp(0.7em, 2vw, 0.8em);
-            }
-        }
-        
-        /* Landscape on small devices - more aggressive */
-        @media (max-height: 450px) and (orientation: landscape) and (max-width: 900px) {
-            .header {
-                padding: 5px 8px; 
-                min-height: 40px; 
-                flex-wrap: nowrap; 
-                gap: 8px; 
-            }
-            .header h1 {
-                font-size: 0.9em; 
-                margin-bottom: 0; 
-                flex-basis: auto; 
-                text-align: left; 
-                margin-right: 8px; 
-            }
-            .header-controls {
-                gap: 5px; 
-                flex-basis: auto; 
-                justify-content: flex-end; 
-            }
-            .settings-btn, .theme-toggle-btn, .tts-toggle {
-                font-size: 0.65em; 
-                padding: 4px 5px;
-            }
-            .theme-toggle-btn {
-                 height: 30px;
-                 width: 30px;
-                 font-size: 0.75em;
-            }
-             .settings-btn {
-                min-width: 40px; 
-            }
             .tts-toggle span {
-                font-size: 0.9em;
+                display: none; /* Hide emoji on very small screens */
             }
-            .tts-toggle .toggle-switch {
-                width: 30px; 
+
+            .settings-btn {
+                font-size: 0.75em;
+                padding: 6px 8px;
+                min-width: 45px;
+            }
+
+            .toggle-switch {
+                width: 40px;
+                height: 20px;
+            }
+
+            .toggle-slider {
+                width: 16px;
                 height: 16px;
             }
-            .tts-toggle .toggle-slider {
-                width: 12px;
-                height: 12px;
-                top: 2px;
-                left: 2px;
-            }
-            .tts-toggle.active .toggle-slider {
-                transform: translateX(14px); 
-            }
 
-            .chat-messages {
-                padding: 5px;
-            }
-            .input-container {
-                padding: 5px;
-                 gap: 5px;
-            }
-             .input-wrapper {
-                gap: 5px;
-            }
-            .message-input {
-                min-height: 36px;
-                max-height: 60px; 
-                padding: 6px 8px;
-                font-size: 13px;
-            }
-            .send-btn {
-                width: 36px;
-                height: 36px;
+            .toggle-switch.active .toggle-slider {
+                transform: translateX(20px);
             }
         }
-
 
         .hidden {
             display: none;
         }
-
-        /* Specific dark mode adjustments for elements that might need it */
-        body.dark-mode .message.assistant .control-btn {
-            color: var(--text-color-tertiary); 
-        }
-        body.dark-mode .message.assistant .control-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: var(--text-color-primary);
-        }
-
     </style>
 </head>
 <body>
@@ -1234,7 +530,6 @@
                         <div class="toggle-slider"></div>
                     </div>
                 </div>
-                <button class="theme-toggle-btn" id="themeToggleBtn">🌙</button>
                 <button class="settings-btn" id="settingsBtn">⚙️ API</button>
             </div>
         </div>
@@ -1260,145 +555,179 @@
                         ➤
                     </button>
                 </div>
->>>>>>> main
             </div>
-        </header>
-
-        <!-- Chat Messages Area -->
-        <main class="chat-messages" id="chatMessages">
-            <!-- Messages will be added here by JavaScript -->
-        </main>
-
-        <!-- Input Area -->
-        <footer class="input-area" id="inputArea">
-            <textarea 
-                id="messageInput" 
-                class="message-input" 
-                placeholder="Enter command..."
-                rows="1"
-            ></textarea>
-            <button id="sendBtn" class="send-btn" title="Send Message">
-                <span>&gt;</span>
-            </button>
-        </footer>
+        </div>
     </div>
 
     <!-- Settings Modal -->
-    <div id="settingsModal" class="modal-overlay hidden">
+    <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
-            <h2 class="modal-title">CONFIG_SYS // API</h2>
+            <h2>⚙️ API Configuration</h2>
             <div class="form-group">
                 <label for="apiKeyInput">OpenRouter API Key:</label>
                 <input 
                     type="password" 
                     id="apiKeyInput" 
-                    class="modal-input"
                     placeholder="sk-or-..."
                     autocomplete="off"
                 >
             </div>
             <div class="form-group">
-                <label for="systemPromptInput">System Prompt (Override):</label>
+                <label for="systemPromptInput">System Prompt (Optional):</label>
                 <input 
                     type="text" 
                     id="systemPromptInput" 
-                    class="modal-input"
-                    placeholder="Initializing default AI persona..."
+                    placeholder="You are a helpful assistant..."
+                    value="You are Amy, a helpful and friendly AI assistant. Respond naturally and conversationally."
                 >
             </div>
             <div class="modal-buttons">
-                <button class="modal-btn cancel-btn" id="cancelBtn">ABORT</button>
-                <button class="modal-btn save-btn" id="saveBtn">SAVE_CONFIG</button>
+                <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                <button class="btn btn-primary" id="saveBtn">Save</button>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // App State (using in-memory storage)
+        // VITS-Web TTS Class
+        class VITSWeb {
+            constructor() {
+                this.isInitialized = false;
+                this.audioContext = null;
+            }
+
+            async initialize() {
+                if (this.isInitialized) return;
+                try {
+                    this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    this.isInitialized = true;
+                    return true;
+                } catch (error) {
+                    console.error('Failed to initialize VITS:', error);
+                    return false;
+                }
+            }
+
+            async synthesize(text) {
+                if (!this.isInitialized) {
+                    await this.initialize();
+                }
+
+                return new Promise((resolve, reject) => {
+                    if (!('speechSynthesis' in window)) {
+                        reject(new Error('Speech synthesis not supported'));
+                        return;
+                    }
+
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    
+                    // Find Amy-like voice
+                    const voices = speechSynthesis.getVoices();
+                    const preferredVoices = [
+                        'Google US English',
+                        'Microsoft Zira - English (United States)',
+                        'Samantha',
+                        'Alex',
+                        'Victoria'
+                    ];
+
+                    let selectedVoice = null;
+                    for (const preferred of preferredVoices) {
+                        selectedVoice = voices.find(voice => 
+                            voice.name.includes(preferred) || 
+                            (voice.lang.includes('en') && voice.name.toLowerCase().includes('female'))
+                        );
+                        if (selectedVoice) break;
+                    }
+
+                    if (!selectedVoice) {
+                        selectedVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+                    }
+
+                    if (selectedVoice) {
+                        utterance.voice = selectedVoice;
+                    }
+
+                    utterance.rate = 0.9;
+                    utterance.pitch = 1.1;
+                    utterance.volume = 0.8;
+
+                    utterance.onend = () => resolve();
+                    utterance.onerror = (event) => reject(new Error(`TTS failed: ${event.error}`));
+
+                    speechSynthesis.speak(utterance);
+                });
+            }
+
+            stop() {
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                }
+            }
+        }
+
+        // App State (using in-memory storage instead of localStorage)
         const appState = {
             apiKey: '',
-            systemPrompt: 'You are a helpful AI programmed in the Matrix style.',
+            systemPrompt: 'You are Amy, a helpful and friendly AI assistant. Respond naturally and conversationally.',
             ttsEnabled: true,
-            messages: [],
-<<<<<<< feat/mobile-dark-mode-ui
-            theme: 'matrix' // 'matrix' or 'light'
-=======
-            theme: 'light' // Default to light, will be updated by system preference
->>>>>>> main
+            messages: []
         };
 
-        // DOM Elements
+        // Initialize components
+        const vits = new VITSWeb();
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
-        const ttsToggleBtn = document.getElementById('ttsToggleBtn');
-        const ttsIcon = document.getElementById('ttsIcon');
-        const themeToggleBtn = document.getElementById('themeToggleBtn');
-        const themeIcon = document.getElementById('themeIcon');
+        const ttsToggle = document.getElementById('ttsToggle');
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsModal = document.getElementById('settingsModal');
         const apiKeyInput = document.getElementById('apiKeyInput');
         const systemPromptInput = document.getElementById('systemPromptInput');
         const saveBtn = document.getElementById('saveBtn');
         const cancelBtn = document.getElementById('cancelBtn');
-        const themeToggleBtn = document.getElementById('themeToggleBtn'); 
-
-
-        // Theme Management
-        function updateTheme(mode) {
-            document.body.classList.toggle('dark-mode', mode === 'dark');
-            themeToggleBtn.textContent = mode === 'dark' ? '☀️' : '🌙';
-            appState.theme = mode;
-        }
-
-        function toggleTheme() {
-            const newMode = appState.theme === 'light' ? 'dark' : 'light';
-            updateTheme(newMode);
-        }
-
-        function initializeTheme() {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const initialMode = appState.messages.length === 0 && prefersDark ? 'dark' : appState.theme; 
-            updateTheme(initialMode);
-        }
-        // END OF THEME MANAGEMENT FUNCTIONS
-
-        // --- TTS Placeholder ---
-        const mockTTS = {
-            synthesize: async (text) => console.log(`TTS (mock): ${text}`),
-            stop: () => console.log("TTS (mock): stop")
-        };
-        // --- End TTS Placeholder ---
 
         // Message Management
         function addMessage(content, role, speak = false) {
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${role}-message`; 
-            
-            const paragraph = document.createElement('p');
-            paragraph.textContent = content; 
-            messageDiv.appendChild(paragraph);
+            messageDiv.className = `message ${role}`;
+            messageDiv.innerHTML = content;
+
+            // Add controls for assistant messages
+            if (role === 'assistant') {
+                const controlsDiv = document.createElement('div');
+                controlsDiv.className = 'message-controls';
+                controlsDiv.innerHTML = `
+                    <button class="control-btn" onclick="speakMessage(this)" title="Speak">🔊</button>
+                    <button class="control-btn" onclick="copyMessage(this)" title="Copy">📋</button>
+                `;
+                messageDiv.appendChild(controlsDiv);
+            }
 
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
 
+            // Auto-speak if TTS is enabled
             if (speak && appState.ttsEnabled && role === 'assistant') {
-                mockTTS.synthesize(content);
+                speakText(content);
             }
-            if (role === 'user' || role === 'assistant') {
-                 appState.messages.push({ role, content });
-            }
+
+            // Store message
+            appState.messages.push({ role, content });
         }
 
         function showTypingIndicator() {
-            let typingDiv = document.getElementById('typingIndicator');
-            if (!typingDiv) {
-                typingDiv = document.createElement('div');
-                typingDiv.className = 'message assistant-message typing-indicator'; 
-                typingDiv.id = 'typingIndicator';
-                typingDiv.innerHTML = '<p>AI is typing...</p>'; 
-                chatMessages.appendChild(typingDiv);
-            }
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typingIndicator';
+            typingDiv.innerHTML = `
+                <div class="typing-dots">
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                    <div class="typing-dot"></div>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
@@ -1409,18 +738,97 @@
             }
         }
 
-        // API Integration (Mock for now)
-        async function getAiResponse(userMessage) {
-            if (!appState.apiKey && !userMessage.toLowerCase().includes("demo")) { 
-                 addMessage("API_KEY_MISSING: Please configure your OpenRouter API key in settings.", 'system');
-                 throw new Error('API Key Missing');
+        // TTS Functions
+        async function speakText(text) {
+            try {
+                await vits.synthesize(text);
+            } catch (error) {
+                console.error('TTS Error:', error);
             }
-            
-            return new Promise(resolve => {
-                setTimeout(() => {
-                    resolve(`AI_RESPONSE_TO: "${userMessage}"`);
-                }, 1000);
+        }
+
+        window.speakMessage = function(btn) {
+            const messageContent = btn.closest('.message').textContent;
+            speakText(messageContent);
+        };
+
+        window.copyMessage = function(btn) {
+            const messageContent = btn.closest('.message').textContent;
+            navigator.clipboard.writeText(messageContent).then(() => {
+                btn.textContent = '✓';
+                setTimeout(() => btn.textContent = '📋', 1000);
             });
+        };
+
+        // OpenRouter API Integration
+        async function sendToDeepSeek(userMessage) {
+            if (!appState.apiKey) {
+                throw new Error('Please configure your OpenRouter API key first');
+            }
+
+            const messages = [
+                { role: 'system', content: appState.systemPrompt },
+                ...appState.messages.slice(-10), // Keep last 10 messages for context
+                { role: 'user', content: userMessage }
+            ];
+
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${appState.apiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': window.location.origin || 'https://claude.ai',
+                        'X-Title': 'AI Chat with Amy TTS',
+                        'Origin': window.location.origin || 'https://claude.ai'
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek/deepseek-chat-v3-0324:free',
+                        messages: messages,
+                        temperature: 0.7,
+                        max_tokens: 1000,
+                        stream: false
+                    })
+                });
+
+                if (!response.ok) {
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error?.message || errorMessage;
+                    } catch (e) {
+                        // If we can't parse error JSON, use the default message
+                    }
+                    throw new Error(errorMessage);
+                }
+
+                const data = await response.json();
+                return data.choices[0].message.content;
+
+            } catch (error) {
+                // Handle different types of errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('❌ CORS Error: This app needs to be run from your own server or localhost to access the OpenRouter API. The Claude.ai preview environment blocks external API calls for security reasons.');
+                } else if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                    throw new Error('❌ Network Error: Unable to connect to OpenRouter API. Please check your internet connection and try again.');
+                } else {
+                    throw error; // Re-throw other errors as-is
+                }
+            }
+        }
+
+        // Demo/Fallback Response Function
+        function getDemoResponse(userMessage) {
+            const responses = [
+                "I'm Amy, your AI assistant! However, I'm currently running in demo mode because external API calls are restricted in this preview environment.",
+                "That's an interesting question! To get real AI responses, you'll need to download this code and run it on your own server or localhost.",
+                "I'd love to help you with that! Unfortunately, I can only provide demo responses here. For full functionality, please run this app from your own environment.",
+                "Great question! This is a demo response since we can't access the OpenRouter API from this preview. Copy the code to use it with real AI responses!",
+                "I understand what you're asking! This preview shows how the chat interface works, but you'll need to run it locally for actual AI conversations."
+            ];
+            
+            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+            return randomResponse + `\n\n💡 **How to use with real AI:**\n1. Copy this HTML code\n2. Save it as a .html file\n3. Open it in your browser\n4. Add your OpenRouter API key\n5. Enjoy full AI conversations!`;
         }
 
         // Chat Functions
@@ -1428,92 +836,97 @@
             const message = messageInput.value.trim();
             if (!message) return;
 
-            addMessage(`> ${message}`, 'user'); 
+            // Add user message
+            addMessage(message, 'user');
             messageInput.value = '';
             adjustTextareaHeight();
-            sendBtn.disabled = true;
+
+            // Show typing indicator
             showTypingIndicator();
+            sendBtn.disabled = true;
 
             try {
-                const response = await getAiResponse(message);
-                addMessage(response, 'assistant', true);
-            } catch (error) {
-                console.error("Error getting AI response:", error);
-            } finally {
+                let response;
+                
+                if (appState.apiKey) {
+                    // Try to get real AI response
+                    try {
+                        response = await sendToDeepSeek(message);
+                    } catch (error) {
+                        // If API fails, provide helpful error message and demo response
+                        hideTypingIndicator();
+                        addMessage(error.message, 'system');
+                        
+                        // Show demo response after error
+                        showTypingIndicator();
+                        setTimeout(() => {
+                            hideTypingIndicator();
+                            const demoResponse = getDemoResponse(message);
+                            addMessage(demoResponse, 'assistant', true);
+                        }, 1500);
+                        return;
+                    }
+                } else {
+                    // No API key, provide demo response
+                    response = getDemoResponse(message);
+                }
+                
+                // Hide typing and add response
                 hideTypingIndicator();
+                addMessage(response, 'assistant', true);
+                
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage(`❌ Unexpected Error: ${error.message}`, 'system');
+            } finally {
                 sendBtn.disabled = false;
                 messageInput.focus();
             }
         }
 
-        // UI Event Handlers & Functions
+        // UI Event Handlers
         function adjustTextareaHeight() {
-            messageInput.style.height = 'auto'; 
-            let scrollHeight = messageInput.scrollHeight;
-            const maxHeight = parseInt(window.getComputedStyle(messageInput).maxHeight, 10) || 120;
-            messageInput.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
         }
 
         function toggleTTS() {
             appState.ttsEnabled = !appState.ttsEnabled;
-            if (ttsIcon) ttsIcon.textContent = appState.ttsEnabled ? '🔊' : '🔇';
-            if (ttsToggleBtn) ttsToggleBtn.classList.toggle('tts-disabled', !appState.ttsEnabled); 
-            console.log("TTS Enabled: ", appState.ttsEnabled);
+            ttsToggle.classList.toggle('active', appState.ttsEnabled);
+            
             if (!appState.ttsEnabled) {
-                mockTTS.stop();
+                vits.stop();
             }
         }
 
-        function updateTheme(mode) { 
-            document.body.classList.toggle('light-mode', mode === 'light');
-            if (themeIcon) themeIcon.textContent = mode === 'light' ? '🌙' : '☀️'; // Sun for Matrix (dark), Moon for Light
-            appState.theme = mode;
-            console.log("Theme set to: ", appState.theme);
+        function showSettings() {
+            apiKeyInput.value = appState.apiKey;
+            systemPromptInput.value = appState.systemPrompt;
+            settingsModal.classList.remove('hidden');
         }
 
-        function toggleTheme() {
-            const newMode = appState.theme === 'light' ? 'matrix' : 'light'; 
-            updateTheme(newMode);
-        }
-        
-        function initializeTheme() {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            let initialMode = appState.theme; // Default to 'matrix'
-            // Only switch to 'light' if no history AND system prefers light
-            if (appState.messages.length === 0 && !prefersDark) { 
-                initialMode = 'light'; 
-            }
-            // Otherwise, it's either 'matrix' by default, or system prefers dark with no history.
-            updateTheme(initialMode);
-        }
-
-
-        function showSettingsModal() {
-            if(apiKeyInput) apiKeyInput.value = appState.apiKey;
-            if(systemPromptInput) systemPromptInput.value = appState.systemPrompt;
-            if(settingsModal) settingsModal.classList.remove('hidden');
-        }
-
-        function hideSettingsModal() {
-            if(settingsModal) settingsModal.classList.add('hidden');
+        function hideSettings() {
+            settingsModal.classList.add('hidden');
         }
 
         function saveSettings() {
-            const newApiKey = apiKeyInput.value.trim();
-            const newSystemPrompt = systemPromptInput.value.trim();
-
-            if (newApiKey !== appState.apiKey) {
-                appState.apiKey = newApiKey;
-                addMessage("API_KEY_UPDATED.", 'system');
+            appState.apiKey = apiKeyInput.value.trim();
+            appState.systemPrompt = systemPromptInput.value.trim() || 'You are Amy, a helpful and friendly AI assistant.';
+            
+            hideSettings();
+            
+            if (appState.apiKey) {
+                addMessage('✅ API key configured successfully! You can now chat with me.', 'system');
             }
-<<<<<<< feat/mobile-dark-mode-ui
-            if (newSystemPrompt && newSystemPrompt !== appState.systemPrompt) {
-                appState.systemPrompt = newSystemPrompt;
-                addMessage("SYSTEM_PROMPT_UPDATED.", 'system');
-            } else if (!newSystemPrompt && appState.systemPrompt !== 'You are a helpful AI programmed in the Matrix style.') {
-                appState.systemPrompt = 'You are a helpful AI programmed in the Matrix style.';
-                addMessage("SYSTEM_PROMPT_RESET_TO_DEFAULT.", 'system');
-=======
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
         });
         messageInput.addEventListener('input', adjustTextareaHeight);
 
@@ -1521,65 +934,26 @@
         settingsBtn.addEventListener('click', showSettings);
         saveBtn.addEventListener('click', saveSettings);
         cancelBtn.addEventListener('click', hideSettings);
-        themeToggleBtn.addEventListener('click', toggleTheme); 
-
 
         // Modal click outside to close
         settingsModal.addEventListener('click', (e) => {
             if (e.target === settingsModal) {
                 hideSettings();
->>>>>>> main
             }
-            
-            hideSettingsModal();
-        }
+        });
 
-        // Initializer
+        // Initialize app
         function init() {
-            if (ttsIcon) ttsIcon.textContent = appState.ttsEnabled ? '🔊' : '🔇';
-            if (ttsToggleBtn) ttsToggleBtn.classList.toggle('tts-disabled', !appState.ttsEnabled);
+            // Set initial TTS state
+            ttsToggle.classList.toggle('active', appState.ttsEnabled);
             
-            if (sendBtn) sendBtn.addEventListener('click', sendMessage);
-            if (messageInput) {
-                messageInput.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                    }
-                });
-                messageInput.addEventListener('input', adjustTextareaHeight);
+            // Load voices
+            if (speechSynthesis.onvoiceschanged !== undefined) {
+                speechSynthesis.onvoiceschanged = () => {
+                    console.log('Voices loaded:', speechSynthesis.getVoices().length);
+                };
             }
-            if (ttsToggleBtn) ttsToggleBtn.addEventListener('click', toggleTTS);
-            if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
-            if (settingsBtn) settingsBtn.addEventListener('click', showSettingsModal);
-            if (saveBtn) saveBtn.addEventListener('click', saveSettings);
-            if (cancelBtn) cancelBtn.addEventListener('click', hideSettingsModal);
-            if (settingsModal) {
-                settingsModal.addEventListener('click', (e) => {
-                    if (e.target === settingsModal) { 
-                        hideSettingsModal();
-                    }
-                });
-            }
-
-            const exampleUserMessage = chatMessages.querySelector('.user-message');
-            if(exampleUserMessage) exampleUserMessage.remove();
-            const exampleAssistantMessage = chatMessages.querySelector('.assistant-message');
-            if(exampleAssistantMessage) exampleAssistantMessage.remove();
             
-<<<<<<< feat/mobile-dark-mode-ui
-            const initialSystemMessage = chatMessages.querySelector('.system-message');
-            if (initialSystemMessage) initialSystemMessage.remove();
-
-
-            addMessage("AI_SYSTEM_ONLINE. Awaiting input.", 'system');
-            if (!appState.apiKey) {
-                addMessage("WARNING: OpenRouter API Key not set. Access limited. Configure in API Settings [⚙️]. Type 'demo' to test.", 'system');
-            }
-            adjustTextareaHeight(); 
-            if(messageInput) messageInput.focus();
-            initializeTheme(); // Initialize theme after other UI setup
-=======
             // Focus input
             messageInput.focus();
             
@@ -1589,12 +963,8 @@
                     addMessage('🔑 Click the "API" button to configure your OpenRouter API key and start chatting!\n\n⚠️ **Note**: This preview environment has CORS restrictions. For full functionality:\n1. Copy this HTML code\n2. Save as a .html file\n3. Open in your browser\n4. Add your API key\n\nYou can still try the demo responses and TTS features here!', 'system');
                 }
             }, 1000);
-
-            initializeTheme(); 
->>>>>>> main
         }
 
-        // Run initializer
         init();
     </script>
 </body>
