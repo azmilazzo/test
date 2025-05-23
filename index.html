@@ -114,11 +114,12 @@
 
         // Dynamically import the vits-web library to catch potential load errors
         try {
-            tts = await import('https://unpkg.com/@diffusionstudio/vits-web@latest');
-            console.log('vits-web library loaded successfully.');
+            // Using app.unpkg.com and specifying version 1.0.3 as requested
+            tts = await import('https://app.unpkg.com/@diffusionstudio/vits-web@1.0.3');
+            console.log('vits-web library loaded successfully from app.unpkg.com@1.0.3.');
         } catch (error) {
             console.error('Failed to load vits-web library:', error);
-            document.getElementById('status').textContent = 'Error: Could not load TTS library. Your browser might not support it, or there\'s a network issue.';
+            document.getElementById('status').textContent = 'Error: Could not load TTS library. Your browser might not support it, or there\'s a network issue. (Attempted app.unpkg.com@1.0.3)';
             document.getElementById('speakButton').disabled = true;
         }
 
