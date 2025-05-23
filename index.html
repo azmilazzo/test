@@ -11,11 +11,142 @@
             box-sizing: border-box;
         }
 
+        :root {
+            /* Light Theme Variables */
+            --body-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --app-container-bg: rgba(255, 255, 255, 0.95);
+            --text-color-primary: #333;
+            --text-color-secondary: #2d3748;
+            --text-color-tertiary: #4a5568;
+            --text-color-inverted: white;
+            --text-color-system-message: #856404;
+            --header-text: white; 
+
+
+            --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --header-shadow: rgba(0, 0, 0, 0.1);
+
+            --toggle-switch-bg: rgba(255, 255, 255, 0.3);
+            --toggle-switch-active-bg: rgba(255, 255, 255, 0.8);
+            --toggle-slider-bg: white;
+            --toggle-slider-shadow: rgba(0, 0, 0, 0.2);
+
+            --settings-btn-bg: rgba(255, 255, 255, 0.2);
+            --settings-btn-border: rgba(255, 255, 255, 0.3);
+            --settings-btn-hover-bg: rgba(255, 255, 255, 0.3);
+
+            --user-message-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --assistant-message-bg: #f7fafc;
+            --assistant-message-border: #e2e8f0;
+            --system-message-bg: rgba(255, 193, 7, 0.1);
+            --system-message-border: rgba(255, 193, 7, 0.3);
+            
+            --control-btn-hover-bg: rgba(0, 0, 0, 0.1);
+
+            --input-container-bg: white;
+            --input-container-border-top: #e2e8f0;
+            --message-input-border: #e2e8f0;
+            --message-input-focus-border: #667eea;
+            --message-input-focus-shadow: rgba(102, 126, 234, 0.1);
+            --message-input-text: #333; 
+            --message-input-bg: white;
+
+            --send-btn-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --send-btn-hover-shadow: rgba(102, 126, 234, 0.3);
+
+            --modal-overlay-bg: rgba(0, 0, 0, 0.5);
+            --modal-content-bg: white;
+            --modal-input-border: #e2e8f0;
+            --modal-input-focus-border: #667eea;
+            --modal-input-focus-shadow: rgba(102, 126, 234, 0.1);
+            --modal-input-text: #333;
+            --modal-input-bg: white;
+
+
+            --btn-primary-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --btn-secondary-bg: #f7fafc;
+            --btn-secondary-border: #e2e8f0;
+
+            --typing-indicator-bg: #f7fafc;
+            --typing-indicator-border: #e2e8f0;
+            --typing-dot-bg: #a0aec0;
+            
+            --link-color: #667eea; 
+
+            /* Placeholder colors */
+            --input-message-placeholder-color: #a0aec0;
+            --modal-input-placeholder-color: #a0aec0;
+        }
+
+        body.dark-mode {
+            /* Dark Theme Variable Overrides */
+            --body-bg: linear-gradient(135deg, #232743 0%, #301a3a 100%);
+            --app-container-bg: rgba(28, 28, 46, 0.9); 
+            --text-color-primary: #e0e0e0;
+            --text-color-secondary: #c0c0c0; 
+            --text-color-tertiary: #9090a0; 
+            --text-color-inverted: #1e1e1e; 
+            --header-text: #e0e0e0; 
+            --text-color-system-message: #f0e68c; 
+
+            --header-bg: linear-gradient(135deg, #3c4082 0%, #4f306b 100%);
+            --header-shadow: rgba(0, 0, 0, 0.3);
+
+            --toggle-switch-bg: rgba(255, 255, 255, 0.1);
+            --toggle-switch-active-bg: rgba(128, 134, 236, 0.7); 
+            --toggle-slider-bg: #d0d0d0;
+            --toggle-slider-shadow: rgba(0, 0, 0, 0.4);
+
+            --settings-btn-bg: rgba(255, 255, 255, 0.1);
+            --settings-btn-border: rgba(255, 255, 255, 0.2);
+            --settings-btn-hover-bg: rgba(255, 255, 255, 0.15);
+
+            --user-message-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
+            --assistant-message-bg: #2c2c44;
+            --assistant-message-border: #40405c;
+            --system-message-bg: rgba(80, 70, 30, 0.5); 
+            --system-message-border: rgba(100, 90, 50, 0.7);
+            
+            --control-btn-hover-bg: rgba(255, 255, 255, 0.15);
+
+            --input-container-bg: #1e1e2f;
+            --input-container-border-top: #30304a;
+            --message-input-border: #40405c;
+            --message-input-focus-border: #8086ec; 
+            --message-input-focus-shadow: rgba(128, 134, 236, 0.2);
+            --message-input-text: #e0e0e0;
+            --message-input-bg: #2c2c44;
+            --input-message-placeholder-color: var(--text-color-tertiary);
+
+
+            --send-btn-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
+            --send-btn-hover-shadow: rgba(74, 85, 199, 0.4);
+
+            --modal-overlay-bg: rgba(0, 0, 0, 0.7); 
+            --modal-content-bg: #2c2c44;
+            --modal-input-border: #40405c;
+            --modal-input-focus-border: #8086ec;
+            --modal-input-focus-shadow: rgba(128, 134, 236, 0.2);
+            --modal-input-text: #e0e0e0;
+            --modal-input-bg: #1e1e2f;
+            --modal-input-placeholder-color: var(--text-color-tertiary);
+
+            --btn-primary-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
+            --btn-secondary-bg: #3c3c58;
+            --btn-secondary-border: #50506c;
+
+            --typing-indicator-bg: #2c2c44;
+            --typing-indicator-border: #40405c;
+            --typing-dot-bg: #70708c;
+
+            --link-color: #8086ec;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--body-bg);
             height: 100vh;
-            color: #333;
+            color: var(--text-color-primary);
             overflow: hidden;
             margin: 0;
             padding: 0;
@@ -29,7 +160,7 @@
             flex-direction: column;
             max-width: 800px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--app-container-bg);
             backdrop-filter: blur(10px);
             position: relative;
             overflow: hidden;
@@ -37,32 +168,37 @@
 
         /* Header */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--header-bg);
+            color: var(--header-text); 
             padding: 15px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px var(--header-shadow);
             min-height: 60px;
             flex-shrink: 0;
             position: relative;
             z-index: 100;
+            flex-wrap: nowrap; /* Default to no-wrap */
         }
 
         .header h1 {
             font-size: 1.5em;
             font-weight: 600;
             margin: 0;
-            flex: 1;
-            min-width: 0;
+            flex: 1 1 auto; 
+            min-width: 0; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px; 
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex-shrink: 0;
+            flex-shrink: 0; 
         }
 
         .tts-toggle {
@@ -76,14 +212,14 @@
             position: relative;
             width: 50px;
             height: 24px;
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--toggle-switch-bg);
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
         .toggle-switch.active {
-            background: rgba(255, 255, 255, 0.8);
+            background: var(--toggle-switch-active-bg);
         }
 
         .toggle-slider {
@@ -92,10 +228,10 @@
             left: 2px;
             width: 20px;
             height: 20px;
-            background: white;
+            background: var(--toggle-slider-bg);
             border-radius: 50%;
             transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 4px var(--toggle-slider-shadow);
         }
 
         .toggle-switch.active .toggle-slider {
@@ -103,9 +239,9 @@
         }
 
         .settings-btn {
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            color: white;
+            background: var(--settings-btn-bg);
+            border: 1px solid var(--settings-btn-border);
+            color: var(--header-text); 
             padding: 10px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -119,7 +255,7 @@
         }
 
         .settings-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: var(--settings-btn-hover-bg);
         }
 
         .settings-btn:active {
@@ -164,25 +300,28 @@
 
         .message.user {
             align-self: flex-end;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-bottom-right-radius: 6px;
+            background: var(--user-message-bg);
+            color: var(--text-color-inverted); 
         }
+        body.dark-mode .message.user {
+             color: var(--text-color-primary); 
+        }
+
 
         .message.assistant {
             align-self: flex-start;
-            background: #f7fafc;
-            color: #2d3748;
-            border: 1px solid #e2e8f0;
+            background: var(--assistant-message-bg);
+            color: var(--text-color-secondary);
+            border: 1px solid var(--assistant-message-border);
             border-bottom-left-radius: 6px;
             position: relative;
         }
 
         .message.system {
             align-self: center;
-            background: rgba(255, 193, 7, 0.1);
-            color: #856404;
-            border: 1px solid rgba(255, 193, 7, 0.3);
+            background: var(--system-message-bg);
+            color: var(--text-color-system-message);
+            border: 1px solid var(--system-message-border);
             font-size: 0.9em;
             max-width: 90%;
             text-align: center;
@@ -207,14 +346,14 @@
         }
 
         .control-btn:hover {
-            background: rgba(0, 0, 0, 0.1);
+            background: var(--control-btn-hover-bg);
         }
 
         /* Input Area */
         .input-container {
             padding: 20px;
-            background: white;
-            border-top: 1px solid #e2e8f0;
+            background: var(--input-container-bg);
+            border-top: 1px solid var(--input-container-border-top);
         }
 
         .input-wrapper {
@@ -229,19 +368,24 @@
             min-height: 44px;
             max-height: 120px;
             padding: 12px 16px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--message-input-border);
             border-radius: 22px;
             font-size: 16px;
             resize: none;
             font-family: inherit;
             line-height: 1.4;
             transition: all 0.3s ease;
+            background-color: var(--message-input-bg);
+            color: var(--message-input-text);
+        }
+        .message-input::placeholder {
+            color: var(--input-message-placeholder-color);
         }
 
         .message-input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--message-input-focus-border);
+            box-shadow: 0 0 0 3px var(--message-input-focus-shadow);
         }
 
         .send-btn {
@@ -249,8 +393,14 @@
             height: 44px;
             border: none;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--send-btn-bg);
+            color: var(--text-color-inverted); 
+        }
+        body.dark-mode .send-btn {
+            color: var(--text-color-primary); 
+        }
+
+        .send-btn { 
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -260,9 +410,10 @@
             flex-shrink: 0;
         }
 
+
         .send-btn:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 4px 12px var(--send-btn-hover-shadow);
         }
 
         .send-btn:disabled {
@@ -278,7 +429,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: var(--modal-overlay-bg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -287,7 +438,7 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--modal-content-bg);
             border-radius: 16px;
             padding: 30px;
             width: 100%;
@@ -298,7 +449,7 @@
 
         .modal h2 {
             margin-bottom: 20px;
-            color: #2d3748;
+            color: var(--text-color-secondary);
             text-align: center;
         }
 
@@ -310,22 +461,27 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #4a5568;
+            color: var(--text-color-tertiary);
         }
 
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #e2e8f0;
+            border: 2px solid var(--modal-input-border);
             border-radius: 8px;
             font-size: 16px;
             transition: all 0.3s ease;
+            background-color: var(--modal-input-bg);
+            color: var(--modal-input-text);
+        }
+        .form-group input::placeholder {
+            color: var(--modal-input-placeholder-color);
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--modal-input-focus-border);
+            box-shadow: 0 0 0 3px var(--modal-input-focus-shadow);
         }
 
         .modal-buttons {
@@ -346,14 +502,18 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--btn-primary-bg);
+            color: var(--text-color-inverted); 
+        }
+        body.dark-mode .btn-primary {
+            color: var(--text-color-primary); 
         }
 
+
         .btn-secondary {
-            background: #f7fafc;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
+            background: var(--btn-secondary-bg);
+            color: var(--text-color-tertiary);
+            border: 2px solid var(--btn-secondary-border);
         }
 
         .btn:hover {
@@ -366,8 +526,8 @@
             align-items: center;
             gap: 8px;
             padding: 12px 16px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
+            background: var(--typing-indicator-bg);
+            border: 1px solid var(--typing-indicator-border);
             border-radius: 18px;
             border-bottom-left-radius: 6px;
             align-self: flex-start;
@@ -382,7 +542,7 @@
         .typing-dot {
             width: 8px;
             height: 8px;
-            background: #a0aec0;
+            background: var(--typing-dot-bg);
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
@@ -405,6 +565,32 @@
                 opacity: 1;
             }
         }
+        
+        .theme-toggle-btn {
+            background: var(--settings-btn-bg, rgba(255, 255, 255, 0.2));
+            border: 1px solid var(--settings-btn-border, rgba(255, 255, 255, 0.3));
+            color: var(--header-text, white); 
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 44px;
+            height: 44px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1; 
+        }
+
+        .theme-toggle-btn:hover {
+            background: var(--settings-btn-hover-bg, rgba(255, 255, 255, 0.3));
+        }
+
+        .theme-toggle-btn:active {
+            transform: scale(0.95);
+        }
 
         /* Mobile optimizations */
         @media (max-width: 768px) {
@@ -416,106 +602,270 @@
             .header {
                 padding: 15px 15px;
                 min-height: 65px;
-                flex-wrap: nowrap;
             }
 
             .header h1 {
-                font-size: 1.2em;
-                margin-right: 10px;
+                font-size: 1.2em; 
             }
 
             .header-controls {
-                gap: 12px;
-                flex-shrink: 0;
+                gap: 10px; 
             }
 
             .tts-toggle {
-                font-size: 0.8em;
-                white-space: nowrap;
+                font-size: 0.8em; 
+            }
+            .tts-toggle span { 
+                margin-right: 5px;
             }
 
-            .toggle-switch {
-                width: 45px;
+            .toggle-switch { 
+                width: 50px;
+                height: 26px;
+            }
+
+            .toggle-slider { 
+                width: 22px;
                 height: 22px;
             }
 
-            .toggle-slider {
-                width: 18px;
-                height: 18px;
-            }
-
             .toggle-switch.active .toggle-slider {
-                transform: translateX(23px);
+                transform: translateX(24px); 
+            }
+            body.dark-mode .toggle-switch.active { 
+                background: var(--toggle-switch-active-bg);
+            }
+            body.dark-mode .toggle-slider {
+                background: var(--toggle-slider-bg);
             }
 
-            .settings-btn {
-                font-size: 0.8em;
-                padding: 8px 10px;
-                min-width: 50px;
+
+            .settings-btn, .theme-toggle-btn {
+                font-size: 0.85em; 
+                padding: 10px 10px; 
+                min-width: 55px; 
             }
+            .theme-toggle-btn {
+                padding: 8px 10px;
+                font-size: 1.1em;
+                min-width: 40px; 
+                height: 42px; 
+                width: 42px; 
+            }
+
+            body.dark-mode .settings-btn, body.dark-mode .theme-toggle-btn {
+                color: var(--header-text); 
+                background: var(--settings-btn-bg);
+                border-color: var(--settings-btn-border);
+            }
+            body.dark-mode .settings-btn:hover, body.dark-mode .theme-toggle-btn:hover {
+                background: var(--settings-btn-hover-bg);
+            }
+
 
             .chat-messages {
-                padding: 15px;
+                padding: 15px 10px; 
             }
 
             .message {
-                max-width: 85%;
-                font-size: 0.95em;
+                max-width: 90%; 
+                font-size: 0.95em; 
+                padding: 10px 14px; 
+            }
+             .message.user, .message.assistant { 
+                margin-left: 5px;
+                margin-right: 5px;
             }
 
+
             .input-container {
-                padding: 15px;
+                padding: 10px; 
+            }
+            .input-wrapper {
+                gap: 8px; 
+            }
+            .message-input {
+                padding: 10px 14px; 
+                font-size: 15px; 
+            }
+            .send-btn { 
+                width: 42px;
+                height: 42px;
+                font-size: 1.1em;
             }
 
             .modal-content {
-                margin: 10px;
-                padding: 20px;
+                margin: 20px; 
+                padding: 25px; 
+                max-height: 90vh; 
+            }
+            .modal-buttons { 
+                flex-direction: column;
+            }
+            .modal-buttons .btn {
+                width: 100%;
+            }
+            body.dark-mode .modal-content {
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
             }
         }
 
-        @media (max-width: 480px) {
+        /* Targeting very small screens like 393px width */
+        @media (max-width: 400px) {
             .header {
-                padding: 12px 12px;
-                min-height: 60px;
+                padding: 8px 10px; 
+                min-height: 48px; 
+                flex-wrap: wrap; 
+                justify-content: space-between; 
+                gap: 5px; 
             }
 
             .header h1 {
-                font-size: 1.1em;
-                margin-right: 8px;
+                font-size: 0.95em; /* Drastically reduced font size */
+                margin-right: 0; 
+                margin-bottom: 5px; 
+                flex-basis: 100%; 
+                text-align: center; 
+                order: 1; 
             }
 
             .header-controls {
-                gap: 10px;
+                gap: 5px; 
+                flex-basis: 100%; 
+                justify-content: center; 
+                order: 2; 
             }
 
-            .tts-toggle span {
-                display: none; /* Hide emoji on very small screens */
+            .tts-toggle span { 
+                font-size: 0.9em; 
+            }
+            .tts-toggle .toggle-switch { 
+                width: 36px; 
+                height: 18px;
+            }
+            .tts-toggle .toggle-slider {
+                width: 14px;
+                height: 14px;
+            }
+            .tts-toggle.active .toggle-slider {
+                transform: translateX(18px); 
             }
 
+            .settings-btn, .theme-toggle-btn {
+                font-size: 0.7em; /* Smaller font for buttons */
+                padding: 4px 6px; 
+            }
+             .theme-toggle-btn {
+                font-size: 0.8em; /* Slightly larger icon */
+                height: 32px;
+                width: 32px;
+            }
             .settings-btn {
-                font-size: 0.75em;
-                padding: 6px 8px;
-                min-width: 45px;
-            }
-
-            .toggle-switch {
-                width: 40px;
-                height: 20px;
-            }
-
-            .toggle-slider {
-                width: 16px;
-                height: 16px;
-            }
-
-            .toggle-switch.active .toggle-slider {
-                transform: translateX(20px);
+                 min-width: 45px; 
+                 height: 32px;
             }
         }
+
+
+        @media (max-width: 480px) { /* Existing 480px query, ensure it doesn't conflict heavily with 400px */
+            /* Check if any rules here need to be adjusted if they were too general */
+            /* For instance, header h1 font-size was 1.0em, now 0.95em at 400px */
+             .header h1 { /* Ensure it's not larger than the 400px setting */
+                font-size: clamp(0.95em, 2.5vw, 1.0em); /* Use clamp for responsive font */
+            }
+            .header-controls { /* Ensure gap is not larger than 400px setting */
+                gap: clamp(5px, 2vw, 8px);
+            }
+             .settings-btn, .theme-toggle-btn { /* Ensure font-size is not larger than 400px setting */
+                font-size: clamp(0.7em, 2vw, 0.8em);
+            }
+        }
+        
+        /* Landscape on small devices - more aggressive */
+        @media (max-height: 450px) and (orientation: landscape) and (max-width: 900px) {
+            .header {
+                padding: 5px 8px; 
+                min-height: 40px; 
+                flex-wrap: nowrap; 
+                gap: 8px; 
+            }
+            .header h1 {
+                font-size: 0.9em; 
+                margin-bottom: 0; 
+                flex-basis: auto; 
+                text-align: left; 
+                margin-right: 8px; 
+            }
+            .header-controls {
+                gap: 5px; 
+                flex-basis: auto; 
+                justify-content: flex-end; 
+            }
+            .settings-btn, .theme-toggle-btn, .tts-toggle {
+                font-size: 0.65em; 
+                padding: 4px 5px;
+            }
+            .theme-toggle-btn {
+                 height: 30px;
+                 width: 30px;
+                 font-size: 0.75em;
+            }
+             .settings-btn {
+                min-width: 40px; 
+            }
+            .tts-toggle span {
+                font-size: 0.9em;
+            }
+            .tts-toggle .toggle-switch {
+                width: 30px; 
+                height: 16px;
+            }
+            .tts-toggle .toggle-slider {
+                width: 12px;
+                height: 12px;
+                top: 2px;
+                left: 2px;
+            }
+            .tts-toggle.active .toggle-slider {
+                transform: translateX(14px); 
+            }
+
+            .chat-messages {
+                padding: 5px;
+            }
+            .input-container {
+                padding: 5px;
+                 gap: 5px;
+            }
+             .input-wrapper {
+                gap: 5px;
+            }
+            .message-input {
+                min-height: 36px;
+                max-height: 60px; 
+                padding: 6px 8px;
+                font-size: 13px;
+            }
+            .send-btn {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
 
         .hidden {
             display: none;
         }
+
+        /* Specific dark mode adjustments for elements that might need it */
+        body.dark-mode .message.assistant .control-btn {
+            color: var(--text-color-tertiary); 
+        }
+        body.dark-mode .message.assistant .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color-primary);
+        }
+
     </style>
 </head>
 <body>
@@ -530,6 +880,7 @@
                         <div class="toggle-slider"></div>
                     </div>
                 </div>
+                <button class="theme-toggle-btn" id="themeToggleBtn">🌙</button>
                 <button class="settings-btn" id="settingsBtn">⚙️ API</button>
             </div>
         </div>
@@ -671,7 +1022,8 @@
             apiKey: '',
             systemPrompt: 'You are Amy, a helpful and friendly AI assistant. Respond naturally and conversationally.',
             ttsEnabled: true,
-            messages: []
+            messages: [],
+            theme: 'light' // Default to light, will be updated by system preference
         };
 
         // Initialize components
@@ -686,6 +1038,27 @@
         const systemPromptInput = document.getElementById('systemPromptInput');
         const saveBtn = document.getElementById('saveBtn');
         const cancelBtn = document.getElementById('cancelBtn');
+        const themeToggleBtn = document.getElementById('themeToggleBtn'); 
+
+
+        // Theme Management
+        function updateTheme(mode) {
+            document.body.classList.toggle('dark-mode', mode === 'dark');
+            themeToggleBtn.textContent = mode === 'dark' ? '☀️' : '🌙';
+            appState.theme = mode;
+        }
+
+        function toggleTheme() {
+            const newMode = appState.theme === 'light' ? 'dark' : 'light';
+            updateTheme(newMode);
+        }
+
+        function initializeTheme() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialMode = appState.messages.length === 0 && prefersDark ? 'dark' : appState.theme; 
+            updateTheme(initialMode);
+        }
+        // END OF THEME MANAGEMENT FUNCTIONS
 
         // Message Management
         function addMessage(content, role, speak = false) {
@@ -934,6 +1307,8 @@
         settingsBtn.addEventListener('click', showSettings);
         saveBtn.addEventListener('click', saveSettings);
         cancelBtn.addEventListener('click', hideSettings);
+        themeToggleBtn.addEventListener('click', toggleTheme); 
+
 
         // Modal click outside to close
         settingsModal.addEventListener('click', (e) => {
@@ -963,6 +1338,8 @@
                     addMessage('🔑 Click the "API" button to configure your OpenRouter API key and start chatting!\n\n⚠️ **Note**: This preview environment has CORS restrictions. For full functionality:\n1. Copy this HTML code\n2. Save as a .html file\n3. Open in your browser\n4. Add your API key\n\nYou can still try the demo responses and TTS features here!', 'system');
                 }
             }, 1000);
+
+            initializeTheme(); 
         }
 
         init();
