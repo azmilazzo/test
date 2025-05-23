@@ -111,15 +111,23 @@
 
     <script type="module">
         let tts; // Declare tts variable globally or in a scope accessible by initializeTTSStatus
+        const statusDiv = document.getElementById('status'); // Get status div early
 
         // Dynamically import the vits-web library to catch potential load errors
+        statusDiv.textContent = 'Attempting to load TTS library...';
         try {
             // Using app.unpkg.com and specifying version 1.0.3 as requested
             tts = await import('https://app.unpkg.com/@diffusionstudio/vits-web@1.0.3');
-            console.log('vits-web library loaded successfully from app.unpkg.com@1.0.3.');
+            if (tts) {
+                statusDiv.textContent = 'TTS library loaded successfully.';
+                console.log('vits-web library loaded successfully from app.unpkg.com@1.0.3.');
+            } else {
+                // This case is unlikely if import doesn't throw, but good for robustness
+                throw new Error('Imported TTS library is null or undefined.');
+            }
         } catch (error) {
-            console.error('Failed to load vits-web library:', error);
-            document.getElementById('status').textContent = 'Error: Could not load TTS library. Your browser might not support it, or there\'s a network issue. (Attempted app.unpkg.com@1.0.3)';
+            console.error('Failed to load vits-web library during import:', error);
+            statusDiv.textContent = `Error: Could not load TTS library. (Attempted app.unpkg.com@1.0.3). Reason: ${error.message || error}. Your browser might not support module imports from CDNs, or there's a network issue.`;
             document.getElementById('speakButton').disabled = true;
         }
 
@@ -128,7 +136,6 @@
             // Get references to the HTML elements
             const speakButton = document.getElementById('speakButton');
             const ttsInput = document.getElementById('ttsInput');
-            const statusDiv = document.getElementById('status');
             const audioPlayer = document.getElementById('audioPlayer');
 
             // Define the specific voice model ID for Amy Low
@@ -180,13 +187,15 @@
 
                 } catch (error) {
                     console.error('TTS execution error:', error);
-                    let errorMessage = `An error occurred: ${error.message || error}.`;
+                    let errorMessage = `An error occurred during TTS: ${error.message || error}.`;
                     if (error.name === 'NetworkError' || (error.message && error.message.includes('fetch'))) {
                         errorMessage += ' Please check your internet connection.';
                     } else if (error.message && error.message.includes('WebAssembly')) {
                         errorMessage += ' Your browser might not fully support WebAssembly or Web Workers, which are required.';
                     } else if (error.message && error.message.includes('Origin Private File System')) {
                         errorMessage += ' Your browser might be blocking access to local storage for models.';
+                    } else if (error.message && error.message.includes('Web Worker')) {
+                        errorMessage += ' Web Workers might be blocked or unavailable.';
                     }
                     statusDiv.textContent = `Error: ${errorMessage} Please try again.`;
                 } finally {
@@ -199,10 +208,32 @@
 
             /**
              * Initializes the TTS status on page load.
-             * Checks if the model is already downloaded and updates the status message.
+             * Checks for required browser APIs and model download status.
              */
             async function initializeTTSStatus() {
-                statusDiv.textContent = 'Initializing TTS...';
+                statusDiv.textContent = 'Initializing TTS... Checking browser capabilities...';
+                let capabilities = [];
+
+                // Check for Web Workers
+                if (typeof window.Worker !== 'undefined') {
+                    capabilities.push('Web Workers: Supported');
+                } else {
+                    capabilities.push('Web Workers: NOT Supported');
+                    statusDiv.textContent = 'Error: Web Workers are not supported in your browser. TTS will not work.';
+                    speakButton.disabled = true;
+                    return; // Stop if core API is missing
+                }
+
+                // Check for Origin Private File System
+                if (navigator.storage && navigator.storage.getDirectory) {
+                    capabilities.push('OPFS: Supported');
+                } else {
+                    capabilities.push('OPFS: NOT Supported');
+                    statusDiv.textContent = 'Warning: Origin Private File System (OPFS) not fully supported. Model caching might be affected, but TTS might still work.';
+                }
+                
+                statusDiv.textContent = `Capabilities: ${capabilities.join(' | ')}. Checking model status...`;
+
                 try {
                     const storedVoices = await tts.stored();
                     if (storedVoices.includes(VOICE_ID)) {
@@ -212,7 +243,7 @@
                     }
                 } catch (error) {
                     console.error("Failed to check stored voices on init:", error);
-                    statusDiv.textContent = "Initialization error: Could not check model status. Try speaking or refresh the page.";
+                    statusDiv.textContent = `Initialization error: Could not check model status. Reason: ${error.message || error}. Try speaking or refresh the page.`;
                 }
             }
 
