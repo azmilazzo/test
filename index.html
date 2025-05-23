@@ -127,7 +127,7 @@
             }
         } catch (error) {
             console.error('Failed to load vits-web library during import:', error);
-            statusDiv.textContent = `Error: Could not load TTS library. (Attempted app.unpkg.com@1.0.3). Reason: ${error.message || error}. Your browser might not support module imports from CDNs, or there's a network issue.`;
+            statusDiv.textContent = `Error: Could not load TTS library. (Attempted unpkg.com@1.0.3). Reason: ${error.message || error}. Your browser might not support module imports from CDNs, or there's a network issue.`;
             document.getElementById('speakButton').disabled = true;
         }
 
