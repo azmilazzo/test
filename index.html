@@ -189,124 +189,10 @@
             max-height: 80vh;
             overflow-y: auto;
         }
-        .modal h2 {
-            margin-bottom: 20px;
-            color: #2d3748;
-            text-align: center;
-        }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #4a5568;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        .modal-buttons {
-            display: flex;
-            gap: 12px;
-            margin-top: 30px;
-        }
-        .btn {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .btn-secondary {
-            background: #f7fafc;
-            color: #4a5568;
-            border: 2px solid #e2e8f0;
-        }
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-        /* Loading indicator */
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 12px 16px;
-            background: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 18px;
-            border-bottom-left-radius: 6px;
-            align-self: flex-start;
-            max-width: 80px;
-        }
-        .typing-dots {
-            display: flex;
-            gap: 4px;
-        }
-        .typing-dot {
-            width: 8px;
-            height: 8px;
-            background: #a0aec0;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
-        .typing-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-        .typing-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-        @keyframes typing {
-            0%, 60%, 100% {
-                transform: translateY(0);
-                opacity: 0.4;
-            }
-            30% {
-                transform: translateY(-10px);
-                opacity: 1;
-            }
-        }
         /* Mobile optimizations */
         @media (max-width: 768px) {
             .app-container {
                 border-radius: 0;
-            }
-            .header {
-                padding: 15px 15px;
-                min-height: 65px;
-            }
-            .header h1 {
-                font-size: 1.2em;
-            }
-            .chat-messages {
-                padding: 15px;
-            }
-            .message {
-                max-width: 85%;
-                font-size: 0.95em;
-            }
-            .input-container {
-                padding: 15px;
-            }
-            .modal-content {
-                padding: 20px;
             }
         }
         .hidden {
@@ -382,7 +268,6 @@
     </div>
     <!-- JavaScript -->
     <script type="module">
-        // VITS-Web TTS Class
         class VITSWeb {
             constructor() {
                 this.isInitialized = false;
@@ -445,14 +330,12 @@
                 }
             }
         }
-        // App State
         const appState = {
             apiKey: '',
             systemPrompt: 'You are Amy, a helpful and friendly AI assistant. Respond naturally and conversationally.',
             ttsEnabled: true,
             messages: []
         };
-        // Initialize components
         const vits = new VITSWeb();
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
@@ -464,7 +347,6 @@
         const systemPromptInput = document.getElementById('systemPromptInput');
         const saveBtn = document.getElementById('saveBtn');
         const cancelBtn = document.getElementById('cancelBtn');
-        // Message Management
         function addMessage(content, role, speak = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
@@ -503,7 +385,6 @@
             const typing = document.getElementById('typingIndicator');
             if (typing) typing.remove();
         }
-        // TTS Functions
         async function speakText(text) {
             try {
                 await vits.synthesize(text);
@@ -522,7 +403,6 @@
                 setTimeout(() => btn.textContent = '📋', 1000);
             });
         };
-        // API Integration
         async function sendToDeepSeek(userMessage) {
             if (!appState.apiKey) {
                 throw new Error('Please configure your OpenRouter API key first');
@@ -569,7 +449,6 @@
                 throw error;
             }
         }
-        // Demo Response
         function getDemoResponse(userMessage) {
             const responses = [
                 "I'm Amy, your AI assistant! Configure your API key to use real responses.",
@@ -578,7 +457,6 @@
             ];
             return responses[Math.floor(Math.random() * responses.length)];
         }
-        // Chat Logic
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message) return;
@@ -616,7 +494,6 @@
                 messageInput.focus();
             }
         }
-        // UI Utilities
         function adjustTextareaHeight() {
             messageInput.style.height = 'auto';
             messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
@@ -640,7 +517,6 @@
             hideSettings();
             addMessage('✅ Settings saved!', 'system');
         }
-        // Event Listeners
         sendBtn.addEventListener('click', sendMessage);
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -656,7 +532,6 @@
         settingsModal.addEventListener('click', (e) => {
             if (e.target === settingsModal) hideSettings();
         });
-        // Initialize
         function init() {
             ttsToggle.classList.toggle('active', appState.ttsEnabled);
             messageInput.focus();
