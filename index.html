@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VITS Web TTS - Amy Low</title>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif; /* Using Inter font as per guidelines */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5; /* Light grey background */
+            color: #333;
+            padding: 20px; /* Add some padding for mobile screens */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+            width: 100%; /* Fluid width */
+            max-width: 600px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #2c3e50; /* Darker blue-grey for heading */
+            margin-bottom: 25px;
+            font-size: 1.8em; /* Responsive font size */
+        }
+        p {
+            margin-bottom: 20px;
+            color: #555;
+            line-height: 1.5;
+        }
+        textarea {
+            width: 100%; /* Full width */
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #c0c0c0; /* Lighter border */
+            border-radius: 8px; /* Rounded corners for textarea */
+            font-size: 1em;
+            resize: vertical;
+            min-height: 120px; /* Slightly larger default height */
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db; /* A vibrant blue */
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 25px; /* Pill-shaped button */
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); /* Button shadow */
+        }
+        button:hover {
+            background-color: #2980b9; /* Darker blue on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        #status {
+            margin-top: 25px;
+            font-weight: bold;
+            color: #34495e; /* Darker text for status */
+            min-height: 20px; /* Reserve space to prevent layout shift */
+        }
+        #audioPlayer {
+            margin-top: 25px;
+            width: 100%;
+            border-radius: 8px; /* Rounded corners for audio player */
+            background-color: #ecf0f1; /* Light background for player */
+        }
+
+        /* Responsive adjustments for smaller screens */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            button {
+                padding: 12px 25px;
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>VITS Web TTS (Amy Low)</h1>
+        <p>Enter text to hear it spoken by the "amy-low" model. The model might download on first use.</p>
+        <textarea id="ttsInput" placeholder="Type your text here..." rows="5">Hello, this is a test of the VITS web text-to-speech with the Amy Low voice. I hope you enjoy it!</textarea>
+        <button id="speakButton">Speak</button>
+        <p id="status"></p>
+        <audio id="audioPlayer" controls></audio>
+    </div>
+
+    <script type="module">
+        // Import the vits-web library from unpkg CDN
+        import * as tts from 'https://unpkg.com/@diffusionstudio/vits-web@latest';
+
+        // Get references to the HTML elements
+        const speakButton = document.getElementById('speakButton');
+        const ttsInput = document.getElementById('ttsInput');
+        const statusDiv = document.getElementById('status');
+        const audioPlayer = document.getElementById('audioPlayer');
+
+        // Define the specific voice model ID for Amy Low
+        const VOICE_ID = 'en_US-amy-low';
+
+        /**
+         * Handles the text-to-speech synthesis process.
+         * Downloads the model if not already present and then synthesizes speech.
+         */
+        async function speakText() {
+            const text = ttsInput.value.trim();
+            if (!text) {
+                statusDiv.textContent = 'Please enter some text to speak.';
+                return;
+            }
+
+            speakButton.disabled = true; // Disable button during processing
+            statusDiv.textContent = 'Preparing...';
+            audioPlayer.src = ''; // Clear any previously loaded audio
+
+            try {
+                // Check if the model is already stored. If not, initiate download.
+                const storedVoices = await tts.stored();
+                if (!storedVoices.includes(VOICE_ID)) {
+                    statusDiv.textContent = `Downloading "${VOICE_ID}" model... This may take a moment.`;
+                    // Download the model, showing progress to the user
+                    await tts.download(VOICE_ID, (progress) => {
+                        const percent = Math.round(progress.loaded * 100 / progress.total);
+                        statusDiv.textContent = `Downloading "${VOICE_ID}" model: ${percent}%...`;
+                    });
+                }
+
+                statusDiv.textContent = 'Synthesizing speech...';
+                // Perform the text-to-speech prediction
+                const wav = await tts.predict({ text: text, voiceId: VOICE_ID });
+                
+                // Create a Blob from the WAV data and a URL for the audio player
+                const audioBlob = new Blob([wav], { type: 'audio/wav' });
+                audioPlayer.src = URL.createObjectURL(audioBlob);
+                audioPlayer.play(); // Play the synthesized audio
+
+                statusDiv.textContent = 'Speech synthesized successfully! Playing audio.';
+
+            } catch (error) {
+                console.error('TTS error:', error);
+                statusDiv.textContent = `Error: ${error.message}. Please try again. Ensure you are using an online code editor or a web server.`;
+            } finally {
+                speakButton.disabled = false; // Re-enable the button
+            }
+        }
+
+        // Add event listener to the speak button
+        speakButton.addEventListener('click', speakText);
+
+        /**
+         * Initializes the TTS status on page load.
+         * Checks if the model is already downloaded and updates the status message.
+         */
+        async function initializeTTSStatus() {
+            try {
+                const storedVoices = await tts.stored();
+                if (storedVoices.includes(VOICE_ID)) {
+                    statusDiv.textContent = `Model "${VOICE_ID}" is already downloaded.`;
+                } else {
+                    statusDiv.textContent = `Model "${VOICE_ID}" will be downloaded on first use.`;
+                }
+            } catch (error) {
+                console.error("Failed to check stored voices:", error);
+                statusDiv.textContent = "Could not check model status. Please ensure your browser supports Web Workers and Origin Private File System.";
+            }
+        }
+
+        // Call the initialization function when the script loads
+        initializeTTSStatus();
+    </script>
+</body>
+</html>
+
