@@ -117,7 +117,7 @@
         statusDiv.textContent = 'Attempting to load TTS library...';
         try {
             // Using app.unpkg.com and specifying version 1.0.3 as requested
-            tts = await import('https://app.unpkg.com/@diffusionstudio/vits-web@1.0.3');
+            tts = await import('https://unpkg.com/@diffusionstudio/vits-web@1.0.3');
             if (tts) {
                 statusDiv.textContent = 'TTS library loaded successfully.';
                 console.log('vits-web library loaded successfully from app.unpkg.com@1.0.3.');
