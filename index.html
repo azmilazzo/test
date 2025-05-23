@@ -110,88 +110,114 @@
     </div>
 
     <script type="module">
-        // Import the vits-web library from unpkg CDN
-        import * as tts from 'https://unpkg.com/@diffusionstudio/vits-web@latest';
+        let tts; // Declare tts variable globally or in a scope accessible by initializeTTSStatus
 
-        // Get references to the HTML elements
-        const speakButton = document.getElementById('speakButton');
-        const ttsInput = document.getElementById('ttsInput');
-        const statusDiv = document.getElementById('status');
-        const audioPlayer = document.getElementById('audioPlayer');
-
-        // Define the specific voice model ID for Amy Low
-        const VOICE_ID = 'en_US-amy-low';
-
-        /**
-         * Handles the text-to-speech synthesis process.
-         * Downloads the model if not already present and then synthesizes speech.
-         */
-        async function speakText() {
-            const text = ttsInput.value.trim();
-            if (!text) {
-                statusDiv.textContent = 'Please enter some text to speak.';
-                return;
-            }
-
-            speakButton.disabled = true; // Disable button during processing
-            statusDiv.textContent = 'Preparing...';
-            audioPlayer.src = ''; // Clear any previously loaded audio
-
-            try {
-                // Check if the model is already stored. If not, initiate download.
-                const storedVoices = await tts.stored();
-                if (!storedVoices.includes(VOICE_ID)) {
-                    // Display initial download message
-                    statusDiv.textContent = `Downloading "${VOICE_ID}" model... This may take a moment.`;
-                    // Download the model, showing progress to the user
-                    await tts.download(VOICE_ID, (progress) => {
-                        const percent = Math.round(progress.loaded * 100 / progress.total);
-                        statusDiv.textContent = `Downloading "${VOICE_ID}" model: ${percent}%...`;
-                    });
-                }
-
-                statusDiv.textContent = 'Synthesizing speech...';
-                // Perform the text-to-speech prediction
-                const wav = await tts.predict({ text: text, voiceId: VOICE_ID });
-                
-                // Create a Blob from the WAV data and a URL for the audio player
-                const audioBlob = new Blob([wav], { type: 'audio/wav' });
-                audioPlayer.src = URL.createObjectURL(audioBlob);
-                audioPlayer.play(); // Play the synthesized audio
-
-                statusDiv.textContent = 'Speech synthesized successfully! Playing audio.';
-
-            } catch (error) {
-                console.error('TTS error:', error);
-                statusDiv.textContent = `Error: ${error.message}. Please try again. Ensure you are using an online code editor or a web server.`;
-            } finally {
-                speakButton.disabled = false; // Re-enable the button
-            }
+        // Dynamically import the vits-web library to catch potential load errors
+        try {
+            tts = await import('https://unpkg.com/@diffusionstudio/vits-web@latest');
+            console.log('vits-web library loaded successfully.');
+        } catch (error) {
+            console.error('Failed to load vits-web library:', error);
+            document.getElementById('status').textContent = 'Error: Could not load TTS library. Your browser might not support it, or there\'s a network issue.';
+            document.getElementById('speakButton').disabled = true;
         }
 
-        // Add event listener to the speak button
-        speakButton.addEventListener('click', speakText);
+        // Only proceed if tts is successfully loaded
+        if (tts) {
+            // Get references to the HTML elements
+            const speakButton = document.getElementById('speakButton');
+            const ttsInput = document.getElementById('ttsInput');
+            const statusDiv = document.getElementById('status');
+            const audioPlayer = document.getElementById('audioPlayer');
 
-        /**
-         * Initializes the TTS status on page load.
-         * Checks if the model is already downloaded and updates the status message.
-         */
-        async function initializeTTSStatus() {
-            try {
-                const storedVoices = await tts.stored();
-                if (storedVoices.includes(VOICE_ID)) {
-                    statusDiv.textContent = `Model "${VOICE_ID}" is already downloaded.`;
-                } else {
-                    statusDiv.textContent = `Model "${VOICE_ID}" will be downloaded on first use.`;
+            // Define the specific voice model ID for Amy Low
+            const VOICE_ID = 'en_US-amy-low';
+
+            /**
+             * Handles the text-to-speech synthesis process.
+             * Downloads the model if not already present and then synthesizes speech.
+             */
+            async function speakText() {
+                const text = ttsInput.value.trim();
+                if (!text) {
+                    statusDiv.textContent = 'Please enter some text to speak.';
+                    return;
                 }
-            } catch (error) {
-                console.error("Failed to check stored voices:", error);
-                statusDiv.textContent = "Could not check model status. Please ensure your browser supports Web Workers and Origin Private File System.";
-            }
-        }
 
-        // Call the initialization function when the script loads
-        initializeTTSStatus();
+                speakButton.disabled = true; // Disable button during processing
+                statusDiv.textContent = 'Starting TTS process...';
+                audioPlayer.src = ''; // Clear any previously loaded audio
+
+                try {
+                    // Check if the model is already stored. If not, initiate download.
+                    statusDiv.textContent = `Checking for "${VOICE_ID}" model...`;
+                    const storedVoices = await tts.stored();
+                    
+                    if (!storedVoices.includes(VOICE_ID)) {
+                        // Display initial download message
+                        statusDiv.textContent = `Downloading "${VOICE_ID}" model... This may take a moment.`;
+                        // Download the model, showing progress to the user
+                        await tts.download(VOICE_ID, (progress) => {
+                            const percent = Math.round(progress.loaded * 100 / progress.total);
+                            statusDiv.textContent = `Downloading "${VOICE_ID}" model: ${percent}%...`;
+                        });
+                        statusDiv.textContent = `Download of "${VOICE_ID}" model complete.`;
+                    } else {
+                        statusDiv.textContent = `Model "${VOICE_ID}" is already downloaded.`;
+                    }
+
+                    statusDiv.textContent = 'Synthesizing speech...';
+                    // Perform the text-to-speech prediction
+                    const wav = await tts.predict({ text: text, voiceId: VOICE_ID });
+                    
+                    // Create a Blob from the WAV data and a URL for the audio player
+                    const audioBlob = new Blob([wav], { type: 'audio/wav' });
+                    audioPlayer.src = URL.createObjectURL(audioBlob);
+                    audioPlayer.play(); // Play the synthesized audio
+
+                    statusDiv.textContent = 'Speech synthesized successfully! Playing audio.';
+
+                } catch (error) {
+                    console.error('TTS execution error:', error);
+                    let errorMessage = `An error occurred: ${error.message || error}.`;
+                    if (error.name === 'NetworkError' || (error.message && error.message.includes('fetch'))) {
+                        errorMessage += ' Please check your internet connection.';
+                    } else if (error.message && error.message.includes('WebAssembly')) {
+                        errorMessage += ' Your browser might not fully support WebAssembly or Web Workers, which are required.';
+                    } else if (error.message && error.message.includes('Origin Private File System')) {
+                        errorMessage += ' Your browser might be blocking access to local storage for models.';
+                    }
+                    statusDiv.textContent = `Error: ${errorMessage} Please try again.`;
+                } finally {
+                    speakButton.disabled = false; // Re-enable the button
+                }
+            }
+
+            // Add event listener to the speak button
+            speakButton.addEventListener('click', speakText);
+
+            /**
+             * Initializes the TTS status on page load.
+             * Checks if the model is already downloaded and updates the status message.
+             */
+            async function initializeTTSStatus() {
+                statusDiv.textContent = 'Initializing TTS...';
+                try {
+                    const storedVoices = await tts.stored();
+                    if (storedVoices.includes(VOICE_ID)) {
+                        statusDiv.textContent = `Ready. Model "${VOICE_ID}" is already downloaded.`;
+                    } else {
+                        statusDiv.textContent = `Ready. Model "${VOICE_ID}" will be downloaded on first use.`;
+                    }
+                } catch (error) {
+                    console.error("Failed to check stored voices on init:", error);
+                    statusDiv.textContent = "Initialization error: Could not check model status. Try speaking or refresh the page.";
+                }
+            }
+
+            // Call the initialization function when the script loads
+            initializeTTSStatus();
+        }
     </script>
 </body>
 </html>
