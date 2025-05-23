@@ -20,7 +20,7 @@
             --text-color-tertiary: #4a5568;
             --text-color-inverted: white;
             --text-color-system-message: #856404;
-            --header-text: white; /* Added for header elements */
+            --header-text: white; 
 
 
             --header-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -48,7 +48,7 @@
             --message-input-border: #e2e8f0;
             --message-input-focus-border: #667eea;
             --message-input-focus-shadow: rgba(102, 126, 234, 0.1);
-            --message-input-text: #333; /* Same as primary text for now */
+            --message-input-text: #333; 
             --message-input-bg: white;
 
             --send-btn-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -71,7 +71,7 @@
             --typing-indicator-border: #e2e8f0;
             --typing-dot-bg: #a0aec0;
             
-            --link-color: #667eea; /* Default link color if needed */
+            --link-color: #667eea; 
 
             /* Placeholder colors */
             --input-message-placeholder-color: #a0aec0;
@@ -81,19 +81,19 @@
         body.dark-mode {
             /* Dark Theme Variable Overrides */
             --body-bg: linear-gradient(135deg, #232743 0%, #301a3a 100%);
-            --app-container-bg: rgba(28, 28, 46, 0.9); /* Darker, slightly transparent */
+            --app-container-bg: rgba(28, 28, 46, 0.9); 
             --text-color-primary: #e0e0e0;
             --text-color-secondary: #c0c0c0; 
             --text-color-tertiary: #9090a0; 
-            --text-color-inverted: #1e1e1e; /* This is for text on light backgrounds in dark mode, if any */
-            --header-text: #e0e0e0; /* Header text in dark mode */
-            --text-color-system-message: #f0e68c; /* Light Khaki for system messages */
+            --text-color-inverted: #1e1e1e; 
+            --header-text: #e0e0e0; 
+            --text-color-system-message: #f0e68c; 
 
             --header-bg: linear-gradient(135deg, #3c4082 0%, #4f306b 100%);
             --header-shadow: rgba(0, 0, 0, 0.3);
 
             --toggle-switch-bg: rgba(255, 255, 255, 0.1);
-            --toggle-switch-active-bg: rgba(128, 134, 236, 0.7); /* Brighter when active */
+            --toggle-switch-active-bg: rgba(128, 134, 236, 0.7); 
             --toggle-slider-bg: #d0d0d0;
             --toggle-slider-shadow: rgba(0, 0, 0, 0.4);
 
@@ -104,7 +104,7 @@
             --user-message-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
             --assistant-message-bg: #2c2c44;
             --assistant-message-border: #40405c;
-            --system-message-bg: rgba(80, 70, 30, 0.5); /* Darker yellow tone */
+            --system-message-bg: rgba(80, 70, 30, 0.5); 
             --system-message-border: rgba(100, 90, 50, 0.7);
             
             --control-btn-hover-bg: rgba(255, 255, 255, 0.15);
@@ -112,7 +112,7 @@
             --input-container-bg: #1e1e2f;
             --input-container-border-top: #30304a;
             --message-input-border: #40405c;
-            --message-input-focus-border: #8086ec; /* Lighter purple for focus */
+            --message-input-focus-border: #8086ec; 
             --message-input-focus-shadow: rgba(128, 134, 236, 0.2);
             --message-input-text: #e0e0e0;
             --message-input-bg: #2c2c44;
@@ -122,7 +122,7 @@
             --send-btn-bg: linear-gradient(135deg, #4a55c7 0%, #5b3a82 100%);
             --send-btn-hover-shadow: rgba(74, 85, 199, 0.4);
 
-            --modal-overlay-bg: rgba(0, 0, 0, 0.7); /* Darker overlay */
+            --modal-overlay-bg: rgba(0, 0, 0, 0.7); 
             --modal-content-bg: #2c2c44;
             --modal-input-border: #40405c;
             --modal-input-focus-border: #8086ec;
@@ -169,7 +169,7 @@
         /* Header */
         .header {
             background: var(--header-bg);
-            color: var(--header-text); /* Uses specific header text color */
+            color: var(--header-text); 
             padding: 15px 20px;
             display: flex;
             align-items: center;
@@ -179,21 +179,26 @@
             flex-shrink: 0;
             position: relative;
             z-index: 100;
+            flex-wrap: nowrap; /* Default to no-wrap */
         }
 
         .header h1 {
             font-size: 1.5em;
             font-weight: 600;
             margin: 0;
-            flex: 1;
-            min-width: 0;
+            flex: 1 1 auto; 
+            min-width: 0; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px; 
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex-shrink: 0;
+            flex-shrink: 0; 
         }
 
         .tts-toggle {
@@ -236,7 +241,7 @@
         .settings-btn {
             background: var(--settings-btn-bg);
             border: 1px solid var(--settings-btn-border);
-            color: var(--header-text); /* Uses specific header text color */
+            color: var(--header-text); 
             padding: 10px 12px;
             border-radius: 8px;
             cursor: pointer;
@@ -296,10 +301,10 @@
         .message.user {
             align-self: flex-end;
             background: var(--user-message-bg);
-            color: var(--text-color-inverted); /* This should be light text on dark bg */
+            color: var(--text-color-inverted); 
         }
         body.dark-mode .message.user {
-             color: var(--text-color-primary); /* Ensure user message text is light in dark mode */
+             color: var(--text-color-primary); 
         }
 
 
@@ -389,13 +394,13 @@
             border: none;
             border-radius: 50%;
             background: var(--send-btn-bg);
-            color: var(--text-color-inverted); /* This should be light text on dark bg */
+            color: var(--text-color-inverted); 
         }
         body.dark-mode .send-btn {
-            color: var(--text-color-primary); /* Ensure send button icon is light in dark mode */
+            color: var(--text-color-primary); 
         }
 
-        .send-btn { /* Duplicated rules, keeping the one above */
+        .send-btn { 
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -498,10 +503,10 @@
 
         .btn-primary {
             background: var(--btn-primary-bg);
-            color: var(--text-color-inverted); /* This should be light text on dark bg */
+            color: var(--text-color-inverted); 
         }
         body.dark-mode .btn-primary {
-            color: var(--text-color-primary); /* Ensure primary button text is light in dark mode */
+            color: var(--text-color-primary); 
         }
 
 
@@ -572,6 +577,7 @@
             transition: all 0.3s ease;
             white-space: nowrap;
             min-width: 44px;
+            height: 44px; 
             display: flex;
             align-items: center;
             justify-content: center;
@@ -596,44 +602,37 @@
             .header {
                 padding: 15px 15px;
                 min-height: 65px;
-                flex-wrap: nowrap;
             }
 
             .header h1 {
-                font-size: 1.2em; /* Slightly reduced */
-                margin-right: 10px;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis; /* Prevent title from breaking layout */
+                font-size: 1.2em; 
             }
 
             .header-controls {
-                gap: 10px; /* Reduced gap slightly */
-                flex-shrink: 0;
+                gap: 10px; 
             }
 
             .tts-toggle {
-                font-size: 0.8em; /* Maintained */
-                white-space: nowrap;
+                font-size: 0.8em; 
             }
-            .tts-toggle span { /* Ensure emoji is visible and has space */
+            .tts-toggle span { 
                 margin-right: 5px;
             }
 
-            .toggle-switch { /* Slightly larger for easier tap */
+            .toggle-switch { 
                 width: 50px;
                 height: 26px;
             }
 
-            .toggle-slider { /* Slightly larger for easier tap */
+            .toggle-slider { 
                 width: 22px;
                 height: 22px;
             }
 
             .toggle-switch.active .toggle-slider {
-                transform: translateX(24px); /* Adjusted for new slider size */
+                transform: translateX(24px); 
             }
-            body.dark-mode .toggle-switch.active { /* Ensure active toggle is distinct in dark mode */
+            body.dark-mode .toggle-switch.active { 
                 background: var(--toggle-switch-active-bg);
             }
             body.dark-mode .toggle-slider {
@@ -649,7 +648,7 @@
             .theme-toggle-btn {
                 padding: 8px 10px;
                 font-size: 1.1em;
-                min-width: 40px;
+                min-width: 40px; 
                 height: 42px; 
                 width: 42px; 
             }
@@ -665,145 +664,194 @@
 
 
             .chat-messages {
-                padding: 15px 10px; /* Adjusted horizontal padding */
+                padding: 15px 10px; 
             }
 
             .message {
-                max-width: 90%; /* Allow messages to be a bit wider */
-                font-size: 0.95em; /* Maintained */
-                padding: 10px 14px; /* Adjusted padding */
+                max-width: 90%; 
+                font-size: 0.95em; 
+                padding: 10px 14px; 
             }
-             .message.user, .message.assistant { /* ensure enough space from edge */
+             .message.user, .message.assistant { 
                 margin-left: 5px;
                 margin-right: 5px;
             }
 
 
             .input-container {
-                padding: 10px; /* Reduced padding to give more space to input */
+                padding: 10px; 
             }
             .input-wrapper {
-                gap: 8px; /* Reduced gap */
+                gap: 8px; 
             }
             .message-input {
-                padding: 10px 14px; /* Adjusted padding */
-                font-size: 15px; /* Slightly smaller font for mobile */
+                padding: 10px 14px; 
+                font-size: 15px; 
             }
-            .send-btn { /* Ensure send button is adequately sized */
+            .send-btn { 
                 width: 42px;
                 height: 42px;
                 font-size: 1.1em;
             }
 
             .modal-content {
-                margin: 20px; /* Ensure some margin from screen edges */
-                padding: 25px; /* Slightly more padding */
-                max-height: 90vh; /* Ensure modal doesn't take full screen height */
+                margin: 20px; 
+                padding: 25px; 
+                max-height: 90vh; 
             }
-            .modal-buttons { /* Stack buttons for easier tapping */
+            .modal-buttons { 
                 flex-direction: column;
             }
             .modal-buttons .btn {
                 width: 100%;
             }
             body.dark-mode .modal-content {
-                box-shadow: 0 5px 20px rgba(0,0,0,0.3); /* Enhance modal visibility in dark mode */
+                box-shadow: 0 5px 20px rgba(0,0,0,0.3); 
             }
         }
 
-        @media (max-width: 480px) {
+        /* Targeting very small screens like 393px width */
+        @media (max-width: 400px) {
             .header {
-                padding: 12px 10px; /* Adjusted padding */
-                min-height: 60px;
+                padding: 8px 10px; 
+                min-height: 48px; 
+                flex-wrap: wrap; 
+                justify-content: space-between; 
+                gap: 5px; 
             }
 
             .header h1 {
-                font-size: 1.0em; /* Further reduce for very small screens */
-                margin-right: 8px;
+                font-size: 0.95em; /* Drastically reduced font size */
+                margin-right: 0; 
+                margin-bottom: 5px; 
+                flex-basis: 100%; 
+                text-align: center; 
+                order: 1; 
             }
 
             .header-controls {
-                gap: 8px; /* Further reduce gap */
+                gap: 5px; 
+                flex-basis: 100%; 
+                justify-content: center; 
+                order: 2; 
             }
 
-            .tts-toggle span { /* Keep emoji, it's usually small enough */
-                display: inline; 
-                font-size: 1.2em; /* Make emoji slightly larger if text is hidden */
+            .tts-toggle span { 
+                font-size: 0.9em; 
             }
-            .tts-toggle .toggle-switch { /* Ensure toggle is tappable */
-                width: 42px;
-                height: 22px;
-            }
-            .tts-toggle .toggle-slider {
-                width: 18px;
+            .tts-toggle .toggle-switch { 
+                width: 36px; 
                 height: 18px;
             }
-            .tts-toggle.active .toggle-slider {
-                transform: translateX(20px);
+            .tts-toggle .toggle-slider {
+                width: 14px;
+                height: 14px;
             }
-
+            .tts-toggle.active .toggle-slider {
+                transform: translateX(18px); 
+            }
 
             .settings-btn, .theme-toggle-btn {
-                font-size: 0.8em; 
-                padding: 8px 8px; 
-                min-width: auto; 
+                font-size: 0.7em; /* Smaller font for buttons */
+                padding: 4px 6px; 
             }
              .theme-toggle-btn {
-                padding: 6px 8px;
-                font-size: 1em;
-                min-width: 36px;
-                height: 40px;
-                width: 40px;
+                font-size: 0.8em; /* Slightly larger icon */
+                height: 32px;
+                width: 32px;
             }
-            .settings-btn span { /* If settings text is too long, hide it and show only icon */
-                 /* This assumes an icon is used. If not, this rule won't apply or needs adjustment */
-            }
-
-
-            .chat-messages {
-                padding: 10px 8px;
-            }
-
-            .message {
-                max-width: 92%; /* Slightly more width for very small screens */
-                font-size: 0.9em; /* Ensure readability */
-                padding: 8px 12px;
-            }
-            
-            .input-container {
-                padding: 8px;
-            }
-            .message-input {
-                font-size: 14px; /* Further adjust input font size */
-                padding: 8px 12px;
-                min-height: 40px;
-            }
-            .send-btn {
-                width: 40px;
-                height: 40px;
-                font-size: 1em;
-            }
-
-            .modal-content {
-                margin: 10px; /* More margin for very small screens */
-                padding: 20px;
-                font-size: 0.9em; /* Adjust modal font size */
-            }
-            .modal h2 {
-                font-size: 1.3em;
-            }
-            .form-group label {
-                font-size: 0.95em;
-            }
-            .form-group input {
-                padding: 10px;
-                font-size: 0.95em;
-            }
-            .btn { /* Ensure modal buttons are still easy to tap */
-                padding: 10px 15px;
-                font-size: 0.95em;
+            .settings-btn {
+                 min-width: 45px; 
+                 height: 32px;
             }
         }
+
+
+        @media (max-width: 480px) { /* Existing 480px query, ensure it doesn't conflict heavily with 400px */
+            /* Check if any rules here need to be adjusted if they were too general */
+            /* For instance, header h1 font-size was 1.0em, now 0.95em at 400px */
+             .header h1 { /* Ensure it's not larger than the 400px setting */
+                font-size: clamp(0.95em, 2.5vw, 1.0em); /* Use clamp for responsive font */
+            }
+            .header-controls { /* Ensure gap is not larger than 400px setting */
+                gap: clamp(5px, 2vw, 8px);
+            }
+             .settings-btn, .theme-toggle-btn { /* Ensure font-size is not larger than 400px setting */
+                font-size: clamp(0.7em, 2vw, 0.8em);
+            }
+        }
+        
+        /* Landscape on small devices - more aggressive */
+        @media (max-height: 450px) and (orientation: landscape) and (max-width: 900px) {
+            .header {
+                padding: 5px 8px; 
+                min-height: 40px; 
+                flex-wrap: nowrap; 
+                gap: 8px; 
+            }
+            .header h1 {
+                font-size: 0.9em; 
+                margin-bottom: 0; 
+                flex-basis: auto; 
+                text-align: left; 
+                margin-right: 8px; 
+            }
+            .header-controls {
+                gap: 5px; 
+                flex-basis: auto; 
+                justify-content: flex-end; 
+            }
+            .settings-btn, .theme-toggle-btn, .tts-toggle {
+                font-size: 0.65em; 
+                padding: 4px 5px;
+            }
+            .theme-toggle-btn {
+                 height: 30px;
+                 width: 30px;
+                 font-size: 0.75em;
+            }
+             .settings-btn {
+                min-width: 40px; 
+            }
+            .tts-toggle span {
+                font-size: 0.9em;
+            }
+            .tts-toggle .toggle-switch {
+                width: 30px; 
+                height: 16px;
+            }
+            .tts-toggle .toggle-slider {
+                width: 12px;
+                height: 12px;
+                top: 2px;
+                left: 2px;
+            }
+            .tts-toggle.active .toggle-slider {
+                transform: translateX(14px); 
+            }
+
+            .chat-messages {
+                padding: 5px;
+            }
+            .input-container {
+                padding: 5px;
+                 gap: 5px;
+            }
+             .input-wrapper {
+                gap: 5px;
+            }
+            .message-input {
+                min-height: 36px;
+                max-height: 60px; 
+                padding: 6px 8px;
+                font-size: 13px;
+            }
+            .send-btn {
+                width: 36px;
+                height: 36px;
+            }
+        }
+
 
         .hidden {
             display: none;
@@ -811,22 +859,12 @@
 
         /* Specific dark mode adjustments for elements that might need it */
         body.dark-mode .message.assistant .control-btn {
-            color: var(--text-color-tertiary); /* Make control buttons visible on dark assistant messages */
+            color: var(--text-color-tertiary); 
         }
         body.dark-mode .message.assistant .control-btn:hover {
             background: rgba(255, 255, 255, 0.1);
             color: var(--text-color-primary);
         }
-
-        /* Placeholder color is now handled by variables, these specific rules are no longer needed */
-        /*
-        body.dark-mode .message-input::placeholder {
-            color: var(--text-color-tertiary);
-        }
-        body.dark-mode .form-group input::placeholder {
-            color: var(--text-color-tertiary);
-        }
-        */
 
     </style>
 </head>
@@ -985,7 +1023,7 @@
             systemPrompt: 'You are Amy, a helpful and friendly AI assistant. Respond naturally and conversationally.',
             ttsEnabled: true,
             messages: [],
-            theme: 'light' // ADDED THIS LINE
+            theme: 'light' // Default to light, will be updated by system preference
         };
 
         // Initialize components
@@ -1000,7 +1038,8 @@
         const systemPromptInput = document.getElementById('systemPromptInput');
         const saveBtn = document.getElementById('saveBtn');
         const cancelBtn = document.getElementById('cancelBtn');
-        const themeToggleBtn = document.getElementById('themeToggleBtn'); // ADDED THIS LINE
+        const themeToggleBtn = document.getElementById('themeToggleBtn'); 
+
 
         // Theme Management
         function updateTheme(mode) {
@@ -1268,7 +1307,7 @@
         settingsBtn.addEventListener('click', showSettings);
         saveBtn.addEventListener('click', saveSettings);
         cancelBtn.addEventListener('click', hideSettings);
-        themeToggleBtn.addEventListener('click', toggleTheme); // ADDED THIS LINE
+        themeToggleBtn.addEventListener('click', toggleTheme); 
 
 
         // Modal click outside to close
@@ -1300,7 +1339,7 @@
                 }
             }, 1000);
 
-            initializeTheme(); // ADDED THIS LINE
+            initializeTheme(); 
         }
 
         init();
