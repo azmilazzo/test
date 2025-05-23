@@ -17,6 +17,10 @@
             height: 100vh;
             color: #333;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -webkit-font-smoothing: antialiased;
         }
 
         .app-container {
@@ -27,6 +31,8 @@
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
         }
 
         /* Header */
@@ -38,17 +44,25 @@
             align-items: center;
             justify-content: space-between;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            min-height: 60px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 100;
         }
 
         .header h1 {
             font-size: 1.5em;
             font-weight: 600;
+            margin: 0;
+            flex: 1;
+            min-width: 0;
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-shrink: 0;
         }
 
         .tts-toggle {
@@ -90,17 +104,26 @@
 
         .settings-btn {
             background: rgba(255, 255, 255, 0.2);
-            border: none;
+            border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            padding: 8px 12px;
+            padding: 10px 12px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.9em;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .settings-btn:hover {
             background: rgba(255, 255, 255, 0.3);
+        }
+
+        .settings-btn:active {
+            transform: scale(0.95);
         }
 
         /* Chat Area */
@@ -391,19 +414,44 @@
             }
 
             .header {
-                padding: 12px 15px;
+                padding: 15px 15px;
+                min-height: 65px;
+                flex-wrap: nowrap;
             }
 
             .header h1 {
-                font-size: 1.3em;
+                font-size: 1.2em;
+                margin-right: 10px;
             }
 
             .header-controls {
-                gap: 10px;
+                gap: 12px;
+                flex-shrink: 0;
             }
 
             .tts-toggle {
                 font-size: 0.8em;
+                white-space: nowrap;
+            }
+
+            .toggle-switch {
+                width: 45px;
+                height: 22px;
+            }
+
+            .toggle-slider {
+                width: 18px;
+                height: 18px;
+            }
+
+            .toggle-switch.active .toggle-slider {
+                transform: translateX(23px);
+            }
+
+            .settings-btn {
+                font-size: 0.8em;
+                padding: 8px 10px;
+                min-width: 50px;
             }
 
             .chat-messages {
@@ -412,6 +460,7 @@
 
             .message {
                 max-width: 85%;
+                font-size: 0.95em;
             }
 
             .input-container {
@@ -421,6 +470,46 @@
             .modal-content {
                 margin: 10px;
                 padding: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 12px 12px;
+                min-height: 60px;
+            }
+
+            .header h1 {
+                font-size: 1.1em;
+                margin-right: 8px;
+            }
+
+            .header-controls {
+                gap: 10px;
+            }
+
+            .tts-toggle span {
+                display: none; /* Hide emoji on very small screens */
+            }
+
+            .settings-btn {
+                font-size: 0.75em;
+                padding: 6px 8px;
+                min-width: 45px;
+            }
+
+            .toggle-switch {
+                width: 40px;
+                height: 20px;
+            }
+
+            .toggle-slider {
+                width: 16px;
+                height: 16px;
+            }
+
+            .toggle-switch.active .toggle-slider {
+                transform: translateX(20px);
             }
         }
 
