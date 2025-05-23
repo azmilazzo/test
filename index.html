@@ -141,6 +141,7 @@
                 // Check if the model is already stored. If not, initiate download.
                 const storedVoices = await tts.stored();
                 if (!storedVoices.includes(VOICE_ID)) {
+                    // Display initial download message
                     statusDiv.textContent = `Downloading "${VOICE_ID}" model... This may take a moment.`;
                     // Download the model, showing progress to the user
                     await tts.download(VOICE_ID, (progress) => {
