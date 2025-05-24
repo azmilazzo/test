@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Face Analysis System</title>
     <style>
-        /* Combined and optimized CSS */
         body, html {
             margin: 0;
             padding: 0;
@@ -125,6 +124,16 @@
             padding: 10px;
             border: 1px solid #eee;
             border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .face-group img {
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -175,7 +184,6 @@
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
     <script>
-        // Unified System Controller
         class FaceSystem {
             constructor() {
                 this.video = document.getElementById('mainVideo');
@@ -197,6 +205,8 @@
                     await this.startCamera();
                     this.setupEventListeners();
                     this.startProcessing();
+                    await this.loadSavedFaces();
+                    this.updateRegistrationUI();
                 } catch (error) {
                     this.showError(error);
                 }
@@ -232,6 +242,10 @@
                         audio: false
                     });
                     this.video.srcObject = this.stream;
+                    this.video.width = 1280;
+                    this.video.height = 720;
+                    this.canvas.width = 1280;
+                    this.canvas.height = 720;
                     document.getElementById('cameraStatus').textContent = 'Camera ready 🎥';
                 } catch (error) {
                     throw new Error(`Camera error: ${error.message}`);
@@ -247,10 +261,8 @@
                 if (!this.isProcessing) return;
 
                 try {
-                    // Process face mesh
                     await this.faceMesh.send({ image: this.video });
                     
-                    // Process face recognition
                     const detections = await faceapi.detectAllFaces(this.video, 
                         new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
                         .withFaceLandmarks()
@@ -281,23 +293,122 @@
             }
 
             detectExpression(landmarks) {
-                // Implement your expression detection logic here
                 const expression = this.calculateExpression(landmarks);
                 document.getElementById('expressionText').textContent = expression;
                 document.getElementById('statusText').textContent = 'Face detected';
             }
 
             calculateExpression(landmarks) {
-                // Add your expression calculation logic
-                return 'Neutral';
+                const mouthLeft = landmarks[61];
+                const mouthRight = landmarks[291];
+                const upperLip = landmarks[13];
+                const lowerLip = landmarks[14];
+                
+                const mouthWidth = Math.abs(mouthRight.x - mouthLeft.x);
+                const mouthHeight = Math.abs(lowerLip.y - upperLip.y);
+                
+                if (mouthWidth > 0.2 && mouthHeight > 0.05) return '😃 Smile';
+                if (mouthHeight < 0.03) return '😐 Neutral';
+                if (mouthWidth < 0.15 && mouthHeight > 0.06) return '😞 Frown';
+                return '😐 Neutral';
             }
 
-            updateRecognitionDisplay(detections) {
-                // Add face recognition display logic
+            async loadSavedFaces() {
+                const saved = localStorage.getItem('knownFaces');
+                if (saved) {
+                    this.knownFaces = JSON.parse(saved);
+                    this.updateFaceMatcher();
+                }
+            }
+
+            updateFaceMatcher() {
+                const labeledDescriptors = this.knownFaces.map(face => 
+                    new faceapi.LabeledFaceDescriptors(face.name, [new Float32Array(face.descriptor)])
+                this.faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
             }
 
             setupEventListeners() {
-                // Add event listeners for UI controls
+                document.getElementById('registerBtn').addEventListener('click', () => this.handleFileUpload());
+                document.getElementById('snapBtn').addEventListener('click', () => this.snapAndRegister());
+                document.getElementById('imageUpload').addEventListener('change', () => this.toggleRegisterButton());
+            }
+
+            toggleRegisterButton() {
+                const registerBtn = document.getElementById('registerBtn');
+                registerBtn.disabled = !(document.getElementById('imageUpload').files[0] && 
+                    document.getElementById('personName').value.trim());
+            }
+
+            async handleFileUpload() {
+                const file = document.getElementById('imageUpload').files[0];
+                const name = document.getElementById('personName').value.trim();
+                if (!file || !name) return;
+
+                const image = await faceapi.bufferToImage(file);
+                await this.registerFace(image, name);
+            }
+
+            async snapAndRegister() {
+                const name = document.getElementById('personName').value.trim();
+                if (!name) return;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = this.video.videoWidth;
+                canvas.height = this.video.videoHeight;
+                canvas.getContext('2d').drawImage(this.video, 0, 0);
+                const image = await faceapi.bufferToImage(canvas.toDataURL());
+                await this.registerFace(image, name);
+            }
+
+            async registerFace(image, name) {
+                try {
+                    const detection = await faceapi
+                        .detectSingleFace(image)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if (!detection) {
+                        alert('No face detected in image');
+                        return;
+                    }
+
+                    this.knownFaces.push({
+                        name,
+                        descriptor: Array.from(detection.descriptor),
+                        image: image.src || image.toDataURL()
+                    });
+
+                    localStorage.setItem('knownFaces', JSON.stringify(this.knownFaces));
+                    this.updateFaceMatcher();
+                    this.updateRegistrationUI();
+                    alert(`${name} registered successfully!`);
+                } catch (error) {
+                    console.error('Registration failed:', error);
+                    alert('Registration failed: ' + error.message);
+                }
+            }
+
+            updateRegistrationUI() {
+                const container = document.getElementById('registeredFaces');
+                container.innerHTML = this.knownFaces.map(face => `
+                    <div class="face-group">
+                        <img src="${face.image}" alt="${face.name}">
+                        <div>${face.name}</div>
+                    </div>
+                `).join('');
+            }
+
+            updateRecognitionDisplay(detections) {
+                const recognitionElement = document.getElementById('recognitionText');
+                if (!detections.length) {
+                    recognitionElement.textContent = 'No faces detected';
+                    return;
+                }
+
+                const bestMatch = this.faceMatcher?.findBestMatch(detections[0].descriptor);
+                recognitionElement.textContent = bestMatch 
+                    ? `👤 ${bestMatch.label} (${(1 - bestMatch.distance).toFixed(2)} confidence)` 
+                    : 'Unknown person';
             }
 
             showError(error) {
@@ -306,9 +417,14 @@
             }
         }
 
-        // Initialize the system when ready
+        // Initialize the system
         window.addEventListener('DOMContentLoaded', () => {
-            new FaceSystem();
+            const system = new FaceSystem();
+            
+            faceapi.tf.ready().then(() => {
+                document.getElementById('registerBtn').disabled = false;
+                document.getElementById('snapBtn').disabled = false;
+            });
         });
     </script>
 </body>
