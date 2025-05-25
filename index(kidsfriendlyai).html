@@ -15,7 +15,11 @@
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
             background: #87CEEB; /* Sky Blue */
-            height: 100vh;
+            /* Use svh or dvh for robust mobile height calculation */
+            height: 100svh; /* Preferred for chat apps, accounts for browser UI */
+            height: 100dvh; /* Fallback for browsers that support dvh */
+            height: 100vh; /* Original fallback for older browsers */
+
             color: #333333; /* Dark Gray for text */
             overflow: hidden; /* Prevent body scroll, app-container handles it */
             margin: 0;
@@ -28,7 +32,11 @@
         }
 
         .app-container {
-            height: 95vh; /* Adjusted for a bit of margin on larger screens */
+            /* Adjusted for a bit of margin on larger screens, relative to 100svh */
+            height: calc(100svh - 4vh); /* Small margin on top/bottom for larger screens */
+            height: calc(100dvh - 4vh); /* Fallback for dvh */
+            height: calc(100vh - 4vh); /* Fallback for vh */
+            
             width: 100%;
             max-width: 600px; /* Kid-friendly width */
             margin: 0 auto;
@@ -516,9 +524,14 @@
         @media (max-width: 768px) {
             body {
                 padding: 0; /* Remove body padding on smaller screens */
+                height: 100svh; /* Ensure full viewport height */
+                height: 100dvh; /* Fallback for dvh */
+                height: 100vh; /* Original fallback */
             }
             .app-container {
-                height: 100vh; /* Full viewport height */
+                height: 100svh; /* Full viewport height */
+                height: 100dvh; /* Fallback for dvh */
+                height: 100vh; /* Original fallback */
                 border-radius: 0; /* No rounded corners */
                 box-shadow: none; /* No shadow */
                 max-width: 100%; /* Take full width */
@@ -1310,7 +1323,7 @@
             // Initial messages are now handled by renderChatHistory based on loaded state.
             // This timeout message only if there's no API key and no history is loaded.
             if (!appState.apiKey && appState.messages.length === 0) {
-                 addMessage('💡 Welcome! Ask a grown-up to click the "Setup" button to enter an OpenRouter API key so we can chat for real! Otherwise, I can only give demo responses.\n\n⚠️ **For Grown-Ups**: If you are running this from a `file:///` URL, API calls might be blocked by browser security (CORS). Running it from a local web server (e.g., `http://localhost/...`) is recommended for full functionality.', 'system', false, false);
+                 addMessage('💡 Welcome! Ask a grown-up to click the "Setup" button to enter an OpenRouter API key so we can chat for real! Otherwise, I can only give demo responses.\\n\\n⚠️ **For Grown-Ups**: If you are running this from a `file:///` URL, API calls might be blocked by browser security (CORS). Running it from a local web server (e.g., `http://localhost/...`) is recommended for full functionality.', 'system', false, false);
             }
             console.log("App initialized.");
         }
