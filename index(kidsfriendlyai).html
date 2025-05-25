@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Friendly AI Pal</title>
     <style>
         * {
@@ -11,48 +11,52 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
-            background: #87CEEB; /* Sky Blue */
-            /* --- IMPORTANT CHANGE HERE --- */
-            height: var(--vh, 100vh); /* Use --vh for dynamic height with fallback */
-            color: #333333; /* Dark Gray for text */
-            overflow: hidden; /* Prevent body scroll */
-            margin: 0;
-            padding: 0;
+            background: #87CEEB;
+            color: #333333;
             display: flex;
             justify-content: center;
             align-items: center;
             -webkit-text-size-adjust: 100%;
             -webkit-font-smoothing: antialiased;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
         }
 
         .app-container {
-            /* --- IMPORTANT CHANGE HERE --- */
-            height: calc(var(--vh, 100vh) - 4vh); /* Use calc with --vh for dynamic height with margin */
+            height: 100vh;
+            height: 100dvh;
             width: 100%;
-            max-width: 600px; /* Kid-friendly width */
+            max-width: 600px;
             margin: 0 auto;
-            background: #FFFFFF; /* White chat background */
-            border-radius: 20px; /* Rounded corners */
+            background: #FFFFFF;
+            border-radius: 20px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Important to contain chat messages */
+            overflow: hidden;
             position: relative;
         }
 
-        /* Header */
         .header {
-            background: #FFD700; /* Gold/Yellow */
-            color: #4A4A4A; /* Darker text for contrast */
+            background: #FFD700;
+            color: #4A4A4A;
             padding: 15px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 2px solid #FFA500; /* Orange border */
+            border-bottom: 2px solid #FFA500;
             min-height: 70px;
-            flex-shrink: 0; /* Prevent shrinking */
+            flex-shrink: 0;
             position: relative;
             z-index: 100;
         }
@@ -61,17 +65,17 @@
             font-size: 1.8em;
             font-weight: bold;
             margin: 0;
-            flex: 1; /* Allow title to take available space */
-            white-space: nowrap; /* Prevent wrapping on one line initially */
-            overflow: hidden; /* Hide overflow when text is too long */
-            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
-            flex-shrink: 0; /* Prevent controls from shrinking */
+            flex-shrink: 0;
         }
 
         .tts-toggle {
@@ -82,7 +86,7 @@
         }
         
         .tts-toggle span {
-            font-size: 1.5em; /* Larger emoji */
+            font-size: 1.5em;
             flex-shrink: 0;
         }
 
@@ -90,7 +94,7 @@
             position: relative;
             width: 60px;
             height: 30px;
-            background: #FFBDA3; /* Light Orange */
+            background: #FFBDA3;
             border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -99,7 +103,7 @@
         }
 
         .toggle-switch.active {
-            background: #90EE90; /* Light Green */
+            background: #90EE90;
         }
 
         .toggle-slider {
@@ -108,7 +112,7 @@
             left: 3px;
             width: 24px;
             height: 24px;
-            background: #FFFFFF; /* White */
+            background: #FFFFFF;
             border-radius: 50%;
             transition: all 0.3s ease;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
@@ -120,9 +124,9 @@
         }
 
         .settings-btn {
-            background: #FFA500; /* Orange */
+            background: #FFA500;
             border: none;
-            color: #FFFFFF; /* White */
+            color: #FFFFFF;
             padding: 10px 15px;
             border-radius: 10px;
             cursor: pointer;
@@ -133,35 +137,35 @@
         }
 
         .settings-btn:hover {
-            background: #FF8C00; /* Darker Orange */
+            background: #FF8C00;
             transform: scale(1.05);
         }
 
-        /* Chat Area */
         .chat-container {
-            flex: 1; /* Takes all available vertical space */
+            flex: 1;
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Prevents overflow of inner messages */
-            background: #F0F8FF; /* Alice Blue - very light blue */
+            overflow: hidden;
+            background: #F0F8FF;
+            min-height: 0;
         }
 
         .chat-messages {
-            flex: 1; /* Takes all available vertical space inside chat-container */
-            overflow-y: auto; /* Enables vertical scrolling for messages */
+            flex: 1;
+            overflow-y: auto;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
-            /* Ensure enough padding for scrollbar on the right */
-            padding-right: 15px; /* Adjust if scrollbar overlaps on mobile */
+            padding-right: 15px;
+            min-height: 0;
         }
 
         .message {
             max-width: 80%;
             padding: 12px 18px;
             border-radius: 20px;
-            word-wrap: break-word; /* Ensures long words break and wrap */
+            word-wrap: break-word;
             line-height: 1.5;
             animation: messageSlide 0.3s ease-out;
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
@@ -181,14 +185,14 @@
 
         .message.user {
             align-self: flex-end;
-            background: #ADD8E6; /* Light Blue */
+            background: #ADD8E6;
             color: #333;
             border-bottom-right-radius: 8px;
         }
 
         .message.assistant {
             align-self: flex-start;
-            background: #FFFACD; /* Lemon Chiffon */
+            background: #FFFACD;
             color: #333;
             border-bottom-left-radius: 8px;
             position: relative;
@@ -196,8 +200,8 @@
 
         .message.system {
             align-self: center;
-            background: #E0E0E0; /* Light Gray */
-            color: #555; /* Darker Gray */
+            background: #E0E0E0;
+            color: #555;
             border: 1px dashed #AAAAAA;
             font-size: 0.9em;
             max-width: 90%;
@@ -214,9 +218,9 @@
         }
 
         .control-btn {
-            background: rgba(255, 255, 255, 0.5); /* Semi-transparent white */
-            border: 1px solid #FFB6C1; /* Light Pink */
-            color: #FF69B4; /* Hot Pink */
+            background: rgba(255, 255, 255, 0.5);
+            border: 1px solid #FFB6C1;
+            color: #FF69B4;
             cursor: pointer;
             padding: 6px 8px;
             border-radius: 8px;
@@ -226,16 +230,14 @@
         }
 
         .control-btn:hover {
-            background: #FFB6C1; /* Light Pink */
+            background: #FFB6C1;
             color: #FFFFFF;
         }
 
-
-        /* Input Area */
         .input-container {
             padding: 15px 20px;
-            background: #FFFFFF; /* White */
-            border-top: 2px solid #FFA500; /* Orange border */
+            background: #FFFFFF;
+            border-top: 2px solid #FFA500;
             position: relative;
             z-index: 1;
             flex-shrink: 0;
@@ -252,24 +254,24 @@
             min-height: 48px;
             max-height: 100px;
             padding: 12px 16px;
-            border: 2px solid #ADD8E6; /* Light Blue */
+            border: 2px solid #ADD8E6;
             border-radius: 12px;
             font-size: 16px;
             resize: none;
             font-family: inherit;
             line-height: 1.5;
-            background: #F0F8FF; /* Alice Blue */
+            background: #F0F8FF;
             color: #333333;
         }
 
         .message-input::placeholder {
-            color: #777777; /* Medium Gray */
+            color: #777777;
         }
 
         .message-input:focus {
             outline: none;
-            border-color: #FFC0CB; /* Pink */
-            box-shadow: 0 0 0 3px rgba(255, 192, 203, 0.4); /* Pink glow */
+            border-color: #FFC0CB;
+            box-shadow: 0 0 0 3px rgba(255, 192, 203, 0.4);
         }
 
         .input-area-buttons {
@@ -284,7 +286,7 @@
             height: 48px;
             border: none;
             border-radius: 12px;
-            background: #FF6347; /* Tomato Red */
+            background: #FF6347;
             color: #FFFFFF;
             cursor: pointer;
             display: flex;
@@ -305,15 +307,13 @@
             100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
         }
 
-
         .send-btn:hover:not(:disabled), .mic-btn:hover:not(.listening) {
             transform: scale(1.1);
-            background: #FF4500; /* OrangeRed */
+            background: #FF4500;
         }
         .mic-btn.listening:hover {
             background: #CC0000;
         }
-
 
         .send-btn:disabled {
             opacity: 0.6;
@@ -329,15 +329,13 @@
             animation: none;
         }
 
-
-        /* Modal */
         .modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            /* --- IMPORTANT CHANGE HERE --- */
-            height: var(--vh, 100vh); /* Ensure modal also uses dynamic height */
+            height: 100vh;
+            height: 100dvh;
             background: rgba(0, 0, 0, 0.6);
             display: flex;
             align-items: center;
@@ -354,9 +352,7 @@
             padding: 30px;
             width: 100%;
             max-width: 450px;
-            max-height: 90vh; /* This needs to be relative to the modal itself, not the global viewport */
-            /* Let's try 90% of the modal's parent height */
-            max-height: 90%; 
+            max-height: 90%;
             overflow-y: auto;
             border: 3px solid #FFA500;
             color: #333333;
@@ -404,12 +400,12 @@
             gap: 15px;
             margin-top: 30px;
             justify-content: space-between;
-            flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
+            flex-wrap: wrap;
         }
 
         .btn {
             flex: 1;
-            min-width: 120px; /* Ensure buttons don't get too small */
+            min-width: 120px;
             padding: 12px 20px;
             border-radius: 10px;
             font-size: 16px;
@@ -448,7 +444,6 @@
             transform: translateY(-2px);
         }
 
-        /* Loading indicator */
         .typing-indicator {
             display: flex;
             align-items: center;
@@ -491,7 +486,6 @@
             }
         }
 
-        /* Custom Scrollbars */
         ::-webkit-scrollbar {
             width: 12px;
         }
@@ -513,17 +507,13 @@
 
         .hidden { display: none !important; }
 
-        /* Mobile Optimizations - General adjustments for a kid-friendly theme */
         @media (max-width: 768px) {
-            body {
-                padding: 0;
-                /* Already uses var(--vh) */
-            }
             .app-container {
-                height: var(--vh, 100vh); /* Full viewport height on mobile, accounting for bars */
                 border-radius: 0;
                 box-shadow: none;
                 max-width: 100%;
+                height: 100vh;
+                height: 100dvh;
             }
             .header {
                 padding: 12px 15px;
@@ -532,47 +522,29 @@
             .header h1 { font-size: 1.5em; }
             .message { max-width: 90%; font-size: 1em; }
             .input-container { padding: 10px 15px; }
-            .message-input { font-size: 15px; }
+            .message-input { font-size: 16px; }
             .mic-btn, .send-btn { width: 44px; height: 44px; font-size: 1.3em; }
             .modal-content { margin: 10px; padding: 20px; }
         }
 
         @media (max-width: 480px) {
             .header { padding: 10px 12px; min-height: 60px; }
-            .header h1 {
-                font-size: 1.2em;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
+            .header h1 { font-size: 1.2em; }
             .tts-toggle span { font-size: 1.3em; }
             .settings-btn { font-size: 0.9em; padding: 8px 10px; }
             .chat-messages { padding: 10px; padding-right: 10px; }
             .message { max-width: 92%; font-size: 0.95em; padding: 10px 14px; border-radius: 15px; }
-            .message.user { border-bottom-right-radius: 6px; }
-            .message.assistant { border-bottom-left-radius: 6px; }
             .input-container { padding: 8px 10px; }
-            .message-input { font-size: 14px; max-height: 90px; }
+            .message-input { font-size: 16px; max-height: 90px; }
             .mic-btn, .send-btn { width: 40px; height: 40px; font-size: 1.2em; }
             .modal h2 { font-size: 1.5em; }
-            .form-group input { font-size: 14px; }
-            .modal-buttons {
-                flex-direction: column;
-                gap: 10px;
-            }
-            .btn {
-                width: 100%;
-                margin-bottom: 0;
-                min-width: unset;
-                padding: 10px 12px;
-                font-size: 15px;
-            }
+            .modal-buttons { flex-direction: column; gap: 10px; }
+            .btn { width: 100%; min-width: unset; padding: 10px 12px; font-size: 15px; }
         }
 
         @media (max-width: 375px) {
             .header { min-height: 55px; padding: 8px 10px; }
             .header h1 { font-size: 1.1em; }
-            .tts-toggle span { font-size: 1.2em; }
             .toggle-switch { width: 50px; height: 25px; border-radius: 12.5px; }
             .toggle-slider { width: 20px; height: 20px; top: 2.5px; left: 2.5px; }
             .toggle-switch.active .toggle-slider { transform: translateX(25px); }
@@ -580,13 +552,16 @@
             .chat-messages { padding: 8px; padding-right: 8px; }
             .message { font-size: 0.9em; padding: 8px 12px; border-radius: 12px; }
             .input-container { padding: 6px 8px; }
-            .message-input { min-height: 40px; font-size: 13px; padding: 10px 14px; }
+            .message-input { min-height: 40px; padding: 10px 14px; }
             .mic-btn, .send-btn { width: 36px; height: 36px; font-size: 1.1em; border-radius: 10px; }
             .modal-content { padding: 15px; }
             .modal h2 { font-size: 1.3em; margin-bottom: 20px; }
-            .form-group { margin-bottom: 15px; }
-            .form-group input { padding: 10px; font-size: 13px; }
+            .form-group input { padding: 10px; }
             .btn { padding: 8px 10px; font-size: 14px; }
+        }
+
+        @supports not (height: 100dvh) {
+            .app-container, .modal { height: 100vh; }
         }
     </style>
 </head>
@@ -606,8 +581,7 @@
         </div>
 
         <div class="chat-container">
-            <div class="chat-messages" id="chatMessages">
-                </div>
+            <div class="chat-messages" id="chatMessages"></div>
 
             <div class="input-container">
                 <div class="input-wrapper">
@@ -653,36 +627,19 @@
         </div>
     </div>
 
-    <script type="module">
-        // JavaScript to handle dynamic viewport height for mobile browsers
-        function setVhProperty() {
-            let vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-            console.log(`--vh set to ${vh}px`);
-        }
-
-        // Set the property initially
-        setVhProperty();
-
-        // Recalculate on resize (especially useful for mobile orientation changes)
-        window.addEventListener('resize', setVhProperty);
-        // Also listen for orientation change, though resize usually covers it
-        window.addEventListener('orientationchange', setVhProperty);
-
-
-        // VITS-Web TTS Class (with improved voice loading and error handling)
+    <script>
         class VITSWeb {
             constructor() {
                 this.isInitialized = false;
                 this.audioContext = null;
                 this.voices = [];
-                this._initializeVoices(); // Start loading voices
+                this._initializeVoices();
             }
 
             async _initializeVoices() {
                 return new Promise((resolve) => {
                     if (!('speechSynthesis' in window)) {
-                        console.warn('[TTS-Init] Speech synthesis not supported by this browser.');
+                        console.warn('[TTS] Speech synthesis not supported');
                         resolve();
                         return;
                     }
@@ -690,8 +647,7 @@
                     const tryGetVoices = () => {
                         this.voices = speechSynthesis.getVoices();
                         if (this.voices.length > 0) {
-                            console.log(`[TTS-Init] Voices available: ${this.voices.length}`);
-                            if (speechSynthesis.onvoiceschanged === tryGetVoices) { // Remove listener if it was set
+                            if (speechSynthesis.onvoiceschanged === tryGetVoices) {
                                 speechSynthesis.onvoiceschanged = null;
                             }
                             resolve();
@@ -700,35 +656,31 @@
                         return false;
                     }
 
-                    if (tryGetVoices()) return; // Voices might be ready immediately
+                    if (tryGetVoices()) return;
 
                     speechSynthesis.onvoiceschanged = tryGetVoices;
                     
-                     // Fallback timeout if onvoiceschanged isn't fired reliably in some browsers/scenarios
                     setTimeout(() => {
-                        if (this.voices.length === 0) { // If still no voices after event and some delay
-                           console.warn("[TTS-Init] onvoiceschanged not fired or no voices after delay, trying final fetch.");
-                           tryGetVoices(); // One last attempt
+                        if (this.voices.length === 0) {
+                           tryGetVoices();
                         }
-                        if (speechSynthesis.onvoiceschanged === tryGetVoices) { // Clean up if our timeout resolves it first
+                        if (speechSynthesis.onvoiceschanged === tryGetVoices) {
                             speechSynthesis.onvoiceschanged = null;
                         }
-                        resolve(); // Resolve anyway, synthesize will check voices length
-                    }, 1000); // Increased timeout for slower systems
+                        resolve();
+                    }, 1000);
                 });
             }
 
             async initialize() {
                 if (this.isInitialized) return true;
-                console.log("[TTS-Init] Initializing VITSWeb...");
                 try {
                     this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    await this._initializeVoices(); // Ensure voices are loaded/attempted
+                    await this._initializeVoices();
                     this.isInitialized = true;
-                    console.log(`[TTS-Init] VITSWeb initialized. Voices available: ${this.voices.length}`);
                     return true;
                 } catch (error) {
-                    console.error('[TTS-Init] Failed to initialize VITS (AudioContext or Voices):', error);
+                    console.error('TTS initialization failed:', error);
                     this.isInitialized = false;
                     return false;
                 }
@@ -737,572 +689,233 @@
             async synthesize(text) {
                 if (!this.isInitialized) {
                     const success = await this.initialize();
-                    if (!success) {
-                        console.error("[TTS] Initialization failed in synthesize. Cannot synthesize.");
-                        return Promise.reject(new Error('TTS initialization failed. Cannot synthesize.'));
-                    }
+                    if (!success) return Promise.reject('TTS failed');
                 }
-            
-                console.log(`[TTS] Synthesize called. Text (start): "${text.substring(0, 70)}..." Length: ${text.length}`);
             
                 return new Promise((resolve, reject) => {
                     if (!('speechSynthesis' in window)) {
-                        console.error("[TTS] Speech synthesis API not supported in this browser.");
-                        reject(new Error('Speech synthesis not supported.'));
+                        reject('Speech synthesis not supported');
                         return;
                     }
             
                     if (this.voices.length === 0) {
-                        console.warn("[TTS] No voices loaded at the time of synthesis. Attempting a last-minute fetch.");
-                        this.voices = speechSynthesis.getVoices(); // One last try
+                        this.voices = speechSynthesis.getVoices();
                         if (this.voices.length === 0) {
-                            console.error("[TTS] Still no voices available after re-fetch.");
-                            reject(new Error('No speech synthesis voices available.'));
+                            reject('No voices available');
                             return;
                         }
-                        console.log(`[TTS] Voices re-fetched: ${this.voices.length} voices found.`);
                     }
             
                     const utterance = new SpeechSynthesisUtterance(text);
-            
                     const preferredVoices = [
                         'Google US English', 'Microsoft Zira - English (United States)',
-                        'Microsoft David - English (United States)',
-                        'Google UK English Female', 'Google UK English Male',
-                        'Samantha',
-                        'Alex',
+                        'Microsoft David - English (United States)', 'Samantha', 'Alex'
                     ];
-                    let selectedVoice = null;
-            
-                    for (const preferred of preferredVoices) {
-                        selectedVoice = this.voices.find(voice => voice.name === preferred && voice.lang.toLowerCase().startsWith('en-'));
-                        if (selectedVoice) break;
-                    }
                     
-                    if (!selectedVoice) {
-                        selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-us') && voice.localService && voice.name.toLowerCase().includes('female'));
-                    }
-                    if (!selectedVoice) {
-                        selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-us') && voice.localService);
-                    }
-                    if (!selectedVoice) {
-                        selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-') && voice.default);
-                    }
-                    if (!selectedVoice) {
-                        selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-'));
-                    }
-                    if (!selectedVoice && this.voices.length > 0) {
-                        selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-')) || this.voices[0];
-                    }
-            
-                    if (selectedVoice) {
-                        utterance.voice = selectedVoice;
-                        console.log(`[TTS] Voice selected: ${selectedVoice.name} (Lang: ${selectedVoice.lang}, Default: ${selectedVoice.default}, Local: ${selectedVoice.localService})`);
-                    } else {
-                        console.warn('[TTS] No specific voice found after selection logic. Using system default if available.');
-                    }
-            
-                    utterance.rate = 0.95; 
-                    utterance.pitch = 1.05; 
-                    utterance.volume = 0.9;  
-            
-                    let lastCharIndexSpoken = 0;
-            
-                    utterance.onstart = () => {
-                        console.log(`[TTS] Speech STARTED. Voice: ${utterance.voice ? utterance.voice.name : 'Default'} (${utterance.voice ? utterance.voice.lang : 'N/A'}). Text (start): "${text.substring(0, 70)}..."`);
-                    };
-            
-                    utterance.onboundary = (event) => {
-                        if (event.name === 'word') {
-                            lastCharIndexSpoken = event.charIndex + event.charLength;
-                        }
-                    };
-            
-                    utterance.onend = () => {
-                        console.log(`[TTS] Speech ENDED. Last char index spoken: ${lastCharIndexSpoken}. Total text length: ${text.length}.`);
-                        if (lastCharIndexSpoken < text.length - 5 && text.length > 10) { 
-                            console.warn(`[TTS] POTENTIAL CUT-OFF: Speech ended, but last char index (${lastCharIndexSpoken}) is significantly less than text length (${text.length}).`);
-                        }
-                        resolve();
-                    };
-            
-                    utterance.onerror = (event) => {
-                        console.error(`[TTS] Speech ERROR: ${event.error}. Voice: ${utterance.voice ? utterance.voice.name : 'Default'}. Text (start): "${text.substring(0, 70)}..."`);
-                        console.error(`[TTS] Full error event:`, event);
-                        reject(new Error(`TTS failed: ${event.error}`));
-                    };
-            
-                    if (speechSynthesis.speaking || speechSynthesis.pending) {
-                        console.log("[TTS] Speech synthesis is currently speaking or has pending utterances. Cancelling previous.");
-                        speechSynthesis.cancel();
-                    }
-            
-                    setTimeout(() => {
-                        console.log("[TTS] Attempting to speak (after ensuring cancel had a moment if it was called)...");
-                        speechSynthesis.speak(utterance);
-                    }, 50);
-                });
-            }
+                    let selectedVoice = this.voices.find(voice => 
+                        preferredVoices.includes(voice.name) && voice.lang.startsWith('en-')
+                    ) || this.voices[0];
 
-            stop() {
-                if ('speechSynthesis' in window) {
-                    console.log('[TTS] Stop called. Cancelling speech.');
-                    speechSynthesis.cancel();
-                }
+                    utterance.voice = selectedVoice;
+                    utterance.rate = 0.95;
+                    utterance.pitch = 1.05;
+                    utterance.volume = 0.9;
+
+                    utterance.onend = resolve;
+                    utterance.onerror = reject;
+                    speechSynthesis.speak(utterance);
+                });
             }
         }
 
-        // App State
-        const appState = {
-            apiKey: '',
-            systemPrompt: "You are Pal, a very friendly, cheerful, and patient AI assistant for kids. Explain things simply and use fun examples. Never use emojis or action descriptions (like *smiles*).",
+        const state = {
             ttsEnabled: true,
-            messages: []
+            apiKey: localStorage.getItem('apiKey') || '',
+            systemPrompt: localStorage.getItem('systemPrompt') || '',
+            chatHistory: JSON.parse(localStorage.getItem('chatHistory') || '[]'),
+            isListening: false,
+            recognition: null,
+            tts: new VITSWeb()
         };
 
-        const LOCAL_STORAGE_KEY_API = 'friendlyAIPalApiKey';
-        const LOCAL_STORAGE_KEY_PROMPT = 'friendlyAIPalSystemPrompt';
-        const LOCAL_STORAGE_KEY_TTS = 'friendlyAIPalTTSEnabled';
-        const LOCAL_STORAGE_KEY_MESSAGES = 'friendlyAIPalMessages';
+        const dom = {
+            chatMessages: document.getElementById('chatMessages'),
+            messageInput: document.getElementById('messageInput'),
+            sendBtn: document.getElementById('sendBtn'),
+            micBtn: document.getElementById('micBtn'),
+            ttsToggle: document.getElementById('ttsToggle'),
+            settingsModal: document.getElementById('settingsModal'),
+            apiKeyInput: document.getElementById('apiKeyInput'),
+            systemPromptInput: document.getElementById('systemPromptInput'),
+            clearHistoryBtn: document.getElementById('clearHistoryBtn'),
+            cancelBtn: document.getElementById('cancelBtn'),
+            saveBtn: document.getElementById('saveBtn'),
+            settingsBtn: document.getElementById('settingsBtn')
+        };
 
-        // Initialize components
-        const vits = new VITSWeb();
-        const chatMessages = document.getElementById('chatMessages');
-        const messageInput = document.getElementById('messageInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const micBtn = document.getElementById('micBtn');
-        const ttsToggle = document.getElementById('ttsToggle');
-        const settingsBtn = document.getElementById('settingsBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const apiKeyInput = document.getElementById('apiKeyInput');
-        const systemPromptInput = document.getElementById('systemPromptInput');
-        const saveBtn = document.getElementById('saveBtn');
-        const cancelBtn = document.getElementById('cancelBtn');
-        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
-        
-        let isRecognizing = false;
-
-        // Message Management
-        function addMessage(content, role, speak = false, save = true) {
+        function addMessage(content, role) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
             messageDiv.textContent = content;
-
-            if (role === 'assistant') {
-                const controlsDiv = document.createElement('div');
-                controlsDiv.className = 'message-controls';
-                controlsDiv.innerHTML = `
-                    <button class="control-btn" data-speak-message title="Speak message again">🔊</button>
-                    <button class="control-btn" data-copy-message title="Copy message">📋</button>
-                `;
-                messageDiv.appendChild(controlsDiv);
-            }
-
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            if (speak && appState.ttsEnabled && role === 'assistant') {
-                const textToSpeak = messageDiv.cloneNode(true);
-                const controls = textToSpeak.querySelector('.message-controls');
-                if (controls) controls.remove();
-                speakText(textToSpeak.textContent || content);
-            }
-            if (save) {
-                appState.messages.push({ role, content });
-                saveChatHistory();
-            }
+            dom.chatMessages.appendChild(messageDiv);
+            messageDiv.scrollIntoView({ behavior: 'smooth' });
         }
-        
-        chatMessages.addEventListener('click', function(event) {
-            const target = event.target;
-            const messageDiv = target.closest('.message.assistant');
-            if (!messageDiv) return;
 
-            const textNode = messageDiv.cloneNode(true);
-            const controls = textNode.querySelector('.message-controls');
-            if (controls) controls.remove();
-            const textContent = textNode.textContent || "";
+        function updateTTSToggle() {
+            dom.ttsToggle.classList.toggle('active', state.ttsEnabled);
+        }
 
-            if (target.matches('[data-speak-message]')) {
-                speakText(textContent);
-            } else if (target.matches('[data-copy-message]')) {
-                 navigator.clipboard.writeText(textContent).then(() => {
-                    target.textContent = '✓';
-                    setTimeout(() => target.textContent = '📋', 1500);
-                }).catch(err => console.error("Failed to copy text: ", err));
-            }
-        });
+        async function handleUserInput(text) {
+            if (!text.trim()) return;
 
-
-        function showTypingIndicator() {
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'typing-indicator';
-            typingDiv.id = 'typingIndicator';
-            typingDiv.innerHTML = `
-                <span>Pal is thinking...</span>
+            addMessage(text, 'user');
+            dom.messageInput.value = '';
+            
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'typing-indicator';
+            typingIndicator.innerHTML = `
+                <span>Thinking...</span>
                 <div class="typing-dots">
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                     <div class="typing-dot"></div>
                 </div>
             `;
-            chatMessages.appendChild(typingDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        function hideTypingIndicator() {
-            const typing = document.getElementById('typingIndicator');
-            if (typing) typing.remove();
-        }
-
-        // TTS Functions
-        async function speakText(text) {
-            if (!text || text.trim() === "") {
-                console.log("[SpeakText] Empty text, not speaking.");
-                return;
-            }
-            console.log("[SpeakText] Requesting to speak text:", text.substring(0,50) + "...");
-            try {
-                await vits.synthesize(text);
-            } catch (error) {
-                console.error('[SpeakText] TTS Error from speakText:', error);
-            }
-        }
-
-        // OpenRouter API Integration
-        async function sendToOpenRouter(userMessage) {
-            if (!appState.apiKey) {
-                throw new Error('Please ask a grown-up to configure the OpenRouter API key in "Setup" first!');
-            }
-
-            const messagesForAPI = [
-                { role: 'system', content: appState.systemPrompt },
-                ...appState.messages.slice(-8).map(msg => ({role: msg.role, content: msg.content})),
-                { role: 'user', content: userMessage }
-            ];
+            dom.chatMessages.appendChild(typingIndicator);
+            typingIndicator.scrollIntoView({ behavior: 'smooth' });
 
             try {
                 const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${appState.apiKey}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': window.location.origin || 'https://my-ai-pal.com', 
-                        'X-Title': 'Friendly AI Pal',
+                        'Authorization': `Bearer ${state.apiKey}`,
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        model: 'deepseek/deepseek-chat',
-                        messages: messagesForAPI,
-                        temperature: 0.6,
-                        max_tokens: 1000,
-                        stream: false 
+                        model: 'google/palm-2',
+                        messages: [
+                            { role: 'system', content: state.systemPrompt },
+                            ...state.chatHistory,
+                            { role: 'user', content: text }
+                        ]
                     })
                 });
 
-                if (!response.ok) {
-                    let errorMessage = `Oops! HTTP Error ${response.status}: ${response.statusText}`;
-                    try {
-                        const errorData = await response.json();
-                        errorMessage = errorData.error?.message || errorMessage;
-                    } catch (e) { /* Ignore if error data isn't json */ }
-                    throw new Error(errorMessage);
-                }
                 const data = await response.json();
-                return data.choices[0].message.content;
-
-            } catch (error) {
-                console.error("[API Error] sendToOpenRouter failed:", error);
-                if (error.name === 'TypeError' && error.message.toLowerCase().includes('failed to fetch')) {
-                     throw new Error('⚠️ Network Hiccup! I couldn\'t reach my brain (OpenRouter API). Please check your internet connection or if you are running this from a local file, there might be CORS issues. Running from a local server (like "http://localhost:...") is best! The `file:///` protocol often blocks these kinds of requests.');
-                } else {
-                    throw error;
-                }
-            }
-        }
-        
-        function getDemoResponse(userMessage) {
-            const responses = [
-                "I'm Pal, your AI friend! Right now, I'm in a special demo mode. To chat for real, a grown-up needs to help set up my API key!",
-                "That's a super question! In demo mode, I can't give full answers. If you run this from your own computer (not just the preview), I can talk properly!",
-                "I'd love to tell you more! But this is just a sneak peek. For my full brainpower, please ask a grown-up to follow the setup steps.",
-            ];
-            const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-            return randomResponse + `\n\n💡 **Grown-ups:**\n1. Copy this HTML.\n2. Save as a .html file.\n3. Open in a browser from a local server or directly.\n4. Click 'Setup' to add your OpenRouter API key.`;
-        }
-
-
-        // Chat Functions
-        async function sendMessage() {
-            const message = messageInput.value.trim();
-            if (!message) return;
-
-            addMessage(message, 'user');
-            messageInput.value = '';
-            adjustTextareaHeight();
-
-            showTypingIndicator();
-            sendBtn.disabled = true;
-            micBtn.disabled = true;
-
-            try {
-                let response;
-                if (appState.apiKey) {
-                    try {
-                        response = await sendToOpenRouter(message);
-                    } catch (error) {
-                        hideTypingIndicator();
-                        addMessage(error.message, 'system', false, false); 
-                        
-                        showTypingIndicator();
-                        await new Promise(resolve => setTimeout(resolve, 1500));
-                        hideTypingIndicator();
-                        const demoResponse = getDemoResponse(message);
-                        addMessage(demoResponse, 'assistant', true, false); 
-                        return;
-                    }
-                } else {
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    response = getDemoResponse(message);
-                }
+                const aiResponse = data.choices[0].message.content;
                 
-                hideTypingIndicator();
-                addMessage(response, 'assistant', true);
-                
-            } catch (error) {
-                hideTypingIndicator();
-                addMessage(`D'oh! A little glitch happened: ${error.message}`, 'system', false, false);
-            } finally {
-                sendBtn.disabled = false;
-                micBtn.disabled = false;
-                if(!isRecognizing) messageInput.focus();
-            }
-        }
+                state.chatHistory.push({ role: 'user', content: text });
+                state.chatHistory.push({ role: 'assistant', content: aiResponse });
+                localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory));
 
-        // UI Event Handlers
-        function adjustTextareaHeight() {
-            messageInput.style.height = 'auto';
-            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
-        }
+                typingIndicator.remove();
+                addMessage(aiResponse, 'assistant');
 
-        function toggleTTS() {
-            appState.ttsEnabled = !appState.ttsEnabled;
-            ttsToggle.classList.toggle('active', appState.ttsEnabled);
-            if (!appState.ttsEnabled) {
-                vits.stop();
-            }
-            localStorage.setItem(LOCAL_STORAGE_KEY_TTS, appState.ttsEnabled);
-            console.log(`TTS Enabled: ${appState.ttsEnabled}`);
-        }
-
-        function showSettings() {
-            apiKeyInput.value = appState.apiKey;
-            systemPromptInput.value = appState.systemPrompt;
-            settingsModal.classList.remove('hidden');
-        }
-
-        function hideSettings() {
-            settingsModal.classList.add('hidden');
-        }
-
-        function saveSettings() {
-            appState.apiKey = apiKeyInput.value.trim();
-            appState.systemPrompt = systemPromptInput.value.trim() || "You are Pal, a very friendly, cheerful, and patient AI assistant for kids. Explain things simply and use fun examples. Never use emojis or action descriptions (like *smiles*).";
-            
-            localStorage.setItem(LOCAL_STORAGE_KEY_API, appState.apiKey);
-            localStorage.setItem(LOCAL_STORAGE_KEY_PROMPT, appState.systemPrompt);
-            
-            hideSettings();
-            if (appState.apiKey) {
-                addMessage('✨ Hooray! API key is set. I\'m ready to chat properly now!', 'system', false, false);
-            } else {
-                addMessage('🔑 API key not set. I\'ll still be in demo mode. Ask a grown-up to add it in "Setup"!', 'system', false, false);
-            }
-        }
-
-        function clearChatHistory() {
-            if (confirm("Are you sure you want to clear all chat history? This cannot be undone!")) {
-                appState.messages = [];
-                localStorage.removeItem(LOCAL_STORAGE_KEY_MESSAGES);
-                chatMessages.innerHTML = '';
-                addMessage('👋 Hi there, little explorer! I\'m your friendly AI Pal. Let\'s chat and have some fun!', 'system', false, false);
-                addMessage('Remember to ask a grown-up to help you set up the API key in the \'Setup\' button.', 'system', false, false);
-                hideSettings();
-            }
-        }
-
-        // Local Storage Management
-        function loadSettingsAndHistory() {
-            const storedApiKey = localStorage.getItem(LOCAL_STORAGE_KEY_API);
-            const storedSystemPrompt = localStorage.getItem(LOCAL_STORAGE_KEY_PROMPT);
-            const storedTtsEnabled = localStorage.getItem(LOCAL_STORAGE_KEY_TTS);
-            const storedMessages = localStorage.getItem(LOCAL_STORAGE_KEY_MESSAGES);
-
-            if (storedApiKey) {
-                appState.apiKey = storedApiKey;
-            }
-            if (storedSystemPrompt) {
-                appState.systemPrompt = storedSystemPrompt;
-            }
-            if (storedTtsEnabled !== null) {
-                appState.ttsEnabled = storedTtsEnabled === 'true';
-            }
-
-            if (storedMessages) {
-                try {
-                    appState.messages = JSON.parse(storedMessages);
-                    if (!Array.isArray(appState.messages)) {
-                        appState.messages = [];
-                        console.warn("Stored messages were not an array, resetting chat history.");
-                    }
-                } catch (e) {
-                    console.error("Failed to parse stored messages, resetting.", e);
-                    appState.messages = [];
+                if (state.ttsEnabled) {
+                    await state.tts.synthesize(aiResponse);
                 }
-            } else {
-                appState.messages = [];
+            } catch (error) {
+                console.error('API Error:', error);
+                typingIndicator.remove();
+                addMessage("Oops! Something went wrong. Please try again!", 'system');
             }
         }
 
-        function saveChatHistory() {
-            localStorage.setItem(LOCAL_STORAGE_KEY_MESSAGES, JSON.stringify(appState.messages));
-        }
+        function initSpeechRecognition() {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                state.recognition = new SpeechRecognition();
+                state.recognition.continuous = false;
+                state.recognition.interimResults = false;
 
-        function renderChatHistory() {
-            chatMessages.innerHTML = '';
-            if (appState.messages.length === 0) {
-                addMessage('👋 Hi there, little explorer! I\'m your friendly AI Pal. Let\'s chat and have some fun!', 'system', false, false);
-                addMessage('Remember to ask a grown-up to help you set up the API key in the \'Setup\' button.', 'system', false, false);
+                state.recognition.onstart = () => {
+                    dom.micBtn.classList.add('listening');
+                };
+
+                state.recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    dom.messageInput.value = transcript;
+                };
+
+                state.recognition.onerror = (event) => {
+                    console.error('Speech recognition error:', event.error);
+                };
+
+                state.recognition.onend = () => {
+                    dom.micBtn.classList.remove('listening');
+                };
             } else {
-                appState.messages.forEach(msg => {
-                    addMessage(msg.content, msg.role, false, false);
-                });
+                dom.micBtn.disabled = true;
+                dom.micBtn.title = 'Speech recognition not supported';
             }
         }
 
-        // Speech Recognition (Speak to Text)
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.continuous = false;
-            recognition.lang = 'en-US'; 
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            micBtn.addEventListener('click', () => {
-                if (isRecognizing) {
-                    recognition.stop();
-                } else {
-                    try {
-                        recognition.start();
-                    } catch (e) {
-                        console.error("Error starting speech recognition:", e.message);
-                        if (e.name === 'InvalidStateError') {
-                             addMessage("🎤 My ears are a bit busy! Try again in a moment.", "system", false, false);
-                        } else {
-                             addMessage("Oh no! My ears (microphone) aren't working right now. Maybe check permissions?", "system", false, false);
-                        }
-                         isRecognizing = false;
-                         micBtn.classList.remove('listening');
-                         micBtn.textContent = '🎤';
-                         micBtn.title = "Speak to type";
-                         micBtn.disabled = false;
-                         sendBtn.disabled = false;
-                    }
+        function loadChatHistory() {
+            dom.chatMessages.innerHTML = '';
+            state.chatHistory.forEach(msg => {
+                if (msg.role !== 'system') {
+                    addMessage(msg.content, msg.role);
                 }
             });
-
-            recognition.onstart = () => {
-                isRecognizing = true;
-                micBtn.classList.add('listening');
-                micBtn.textContent = '🤫'; 
-                micBtn.title = "Stop listening";
-                micBtn.disabled = false;
-                sendBtn.disabled = true; 
-                console.log("[STT] Recognition started.");
-            };
-
-            recognition.onresult = (event) => {
-                const speechResult = event.results[0][0].transcript;
-                console.log("[STT] Speech recognized:", speechResult);
-                messageInput.value += (messageInput.value.length > 0 && !messageInput.value.endsWith(' ') ? ' ' : '') + speechResult;
-                adjustTextareaHeight();
-                messageInput.focus();
-            };
-
-            recognition.onerror = (event) => {
-                console.error('[STT] Speech recognition error:', event.error, event.message);
-                let friendlyError = `Hmm, I couldn't understand that. Error: ${event.error}.`;
-                if (event.error === 'no-speech') {
-                    friendlyError = "I didn't hear anything! Try speaking a bit louder? 😊";
-                } else if (event.error === 'audio-capture') {
-                    friendlyError = "It seems my microphone isn't working. Is it connected and allowed by the browser/OS?";
-                } else if (event.error === 'not-allowed') {
-                    friendlyError = "I need permission to use the microphone! Please ask a grown-up to allow it in the browser settings. 🎤";
-                } else if (event.error === 'network') {
-                    friendlyError = "Oh dear, a network issue is preventing my ears from working. Check your internet!";
-                } else if (event.error === 'aborted') {
-                    friendlyError = "Looks like speech input was stopped. Try again!";
-                }
-                addMessage(friendlyError, 'system', false, false);
-            };
-
-            recognition.onend = () => {
-                isRecognizing = false;
-                micBtn.classList.remove('listening');
-                micBtn.textContent = '🎤';
-                micBtn.title = "Speak to type";
-                micBtn.disabled = false;
-                sendBtn.disabled = false;
-                messageInput.focus();
-                console.log("[STT] Recognition ended.");
-            };
-        } else {
-            micBtn.style.display = 'none';
-            console.warn('[STT] Speech Recognition API not supported in this browser.');
         }
-
 
         // Event Listeners
-        sendBtn.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keydown', (e) => {
+        dom.sendBtn.addEventListener('click', () => {
+            const message = dom.messageInput.value.trim();
+            if (message) handleUserInput(message);
+        });
+
+        dom.messageInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                sendMessage();
-            }
-        });
-        messageInput.addEventListener('input', adjustTextareaHeight);
-
-        ttsToggle.addEventListener('click', toggleTTS);
-        settingsBtn.addEventListener('click', showSettings);
-        saveBtn.addEventListener('click', saveSettings);
-        cancelBtn.addEventListener('click', hideSettings);
-        clearHistoryBtn.addEventListener('click', clearChatHistory);
-        
-        settingsModal.addEventListener('click', (e) => {
-            if (e.target === settingsModal) {
-                hideSettings();
+                dom.sendBtn.click();
             }
         });
 
-        // Initialize app
-        async function init() {
-            console.log("App initializing...");
-            loadSettingsAndHistory();
-            ttsToggle.classList.toggle('active', appState.ttsEnabled);
-            renderChatHistory();
-            await vits.initialize();
-            
-            messageInput.focus();
-            
-            if (!appState.apiKey && appState.messages.length === 0) {
-                 addMessage('💡 Welcome! Ask a grown-up to click the "Setup" button to enter an OpenRouter API key so we can chat for real! Otherwise, I can only give demo responses.\n\n⚠️ **For Grown-Ups**: If you are running this from a `file:///` URL, API calls might be blocked by browser security (CORS). Running it from a local web server (e.g., `http://localhost/...`) is recommended for full functionality.', 'system', false, false);
+        dom.micBtn.addEventListener('click', () => {
+            if (state.recognition && !state.isListening) {
+                state.recognition.start();
             }
-            console.log("App initialized.");
-        }
+        });
 
-        init();
+        dom.ttsToggle.addEventListener('click', () => {
+            state.ttsEnabled = !state.ttsEnabled;
+            updateTTSToggle();
+            localStorage.setItem('ttsEnabled', state.ttsEnabled);
+        });
+
+        dom.settingsBtn.addEventListener('click', () => {
+            dom.apiKeyInput.value = state.apiKey;
+            dom.systemPromptInput.value = state.systemPrompt;
+            dom.settingsModal.classList.remove('hidden');
+        });
+
+        dom.cancelBtn.addEventListener('click', () => {
+            dom.settingsModal.classList.add('hidden');
+        });
+
+        dom.saveBtn.addEventListener('click', () => {
+            state.apiKey = dom.apiKeyInput.value;
+            state.systemPrompt = dom.systemPromptInput.value;
+            localStorage.setItem('apiKey', state.apiKey);
+            localStorage.setItem('systemPrompt', state.systemPrompt);
+            dom.settingsModal.classList.add('hidden');
+        });
+
+        dom.clearHistoryBtn.addEventListener('click', () => {
+            state.chatHistory = [];
+            localStorage.removeItem('chatHistory');
+            loadChatHistory();
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            state.ttsEnabled = localStorage.getItem('ttsEnabled') === 'true';
+            updateTTSToggle();
+            loadChatHistory();
+            initSpeechRecognition();
+            state.tts.initialize();
+        });
     </script>
 </body>
 </html>
