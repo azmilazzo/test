@@ -14,9 +14,10 @@
         body {
             font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', sans-serif;
             background: #87CEEB; /* Sky Blue */
-            height: var(--vh, 100vh); /* Modified: Use --vh for dynamic height */
+            /* --- IMPORTANT CHANGE HERE --- */
+            height: var(--vh, 100vh); /* Use --vh for dynamic height with fallback */
             color: #333333; /* Dark Gray for text */
-            overflow: hidden;
+            overflow: hidden; /* Prevent body scroll */
             margin: 0;
             padding: 0;
             display: flex;
@@ -27,7 +28,8 @@
         }
 
         .app-container {
-            height: calc(var(--vh, 100vh) - 4vh); /* Modified: Use calc with --vh for dynamic height with margin */
+            /* --- IMPORTANT CHANGE HERE --- */
+            height: calc(var(--vh, 100vh) - 4vh); /* Use calc with --vh for dynamic height with margin */
             width: 100%;
             max-width: 600px; /* Kid-friendly width */
             margin: 0 auto;
@@ -36,7 +38,7 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* Important to contain chat messages */
             position: relative;
         }
 
@@ -50,7 +52,7 @@
             justify-content: space-between;
             border-bottom: 2px solid #FFA500; /* Orange border */
             min-height: 70px;
-            flex-shrink: 0;
+            flex-shrink: 0; /* Prevent shrinking */
             position: relative;
             z-index: 100;
         }
@@ -59,13 +61,17 @@
             font-size: 1.8em;
             font-weight: bold;
             margin: 0;
-            flex: 1;
+            flex: 1; /* Allow title to take available space */
+            white-space: nowrap; /* Prevent wrapping on one line initially */
+            overflow: hidden; /* Hide overflow when text is too long */
+            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-shrink: 0; /* Prevent controls from shrinking */
         }
 
         .tts-toggle {
@@ -77,6 +83,7 @@
         
         .tts-toggle span {
             font-size: 1.5em; /* Larger emoji */
+            flex-shrink: 0;
         }
 
         .toggle-switch {
@@ -88,6 +95,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid #FFA500;
+            flex-shrink: 0;
         }
 
         .toggle-switch.active {
@@ -121,6 +129,7 @@
             font-size: 1em;
             font-weight: bold;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .settings-btn:hover {
@@ -130,30 +139,33 @@
 
         /* Chat Area */
         .chat-container {
-            flex: 1;
+            flex: 1; /* Takes all available vertical space */
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* Prevents overflow of inner messages */
             background: #F0F8FF; /* Alice Blue - very light blue */
         }
 
         .chat-messages {
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; /* Takes all available vertical space inside chat-container */
+            overflow-y: auto; /* Enables vertical scrolling for messages */
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            /* Ensure enough padding for scrollbar on the right */
+            padding-right: 15px; /* Adjust if scrollbar overlaps on mobile */
         }
 
         .message {
             max-width: 80%;
             padding: 12px 18px;
             border-radius: 20px;
-            word-wrap: break-word;
+            word-wrap: break-word; /* Ensures long words break and wrap */
             line-height: 1.5;
             animation: messageSlide 0.3s ease-out;
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            min-width: 50px;
         }
 
         @keyframes messageSlide {
@@ -210,6 +222,7 @@
             border-radius: 8px;
             font-size: 0.9em;
             transition: all 0.2s ease;
+            white-space: nowrap;
         }
 
         .control-btn:hover {
@@ -225,6 +238,7 @@
             border-top: 2px solid #FFA500; /* Orange border */
             position: relative;
             z-index: 1;
+            flex-shrink: 0;
         }
 
         .input-wrapper {
@@ -261,6 +275,7 @@
         .input-area-buttons {
             display: flex;
             gap: 8px;
+            flex-shrink: 0;
         }
         
         .mic-btn,
@@ -268,19 +283,19 @@
             width: 48px;
             height: 48px;
             border: none;
-            border-radius: 12px; /* Rounded */
+            border-radius: 12px;
             background: #FF6347; /* Tomato Red */
-            color: #FFFFFF; /* White icon/text */
+            color: #FFFFFF;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5em; /* Larger emoji */
+            font-size: 1.5em;
             transition: all 0.3s ease;
             flex-shrink: 0;
         }
-        .mic-btn.listening { /* Style for when mic is active */
-            background: #FF0000; /* Red when listening */
+        .mic-btn.listening {
+            background: #FF0000;
             animation: pulse 1.5s infinite;
         }
 
@@ -296,17 +311,17 @@
             background: #FF4500; /* OrangeRed */
         }
         .mic-btn.listening:hover {
-            background: #CC0000; /* Darker red when listening and hovered */
+            background: #CC0000;
         }
 
 
         .send-btn:disabled {
             opacity: 0.6;
-            background: #D3D3D3; /* Light Gray */
+            background: #D3D3D3;
             cursor: not-allowed;
             transform: none;
         }
-        .mic-btn:disabled { /* Separate disabled style for mic if needed */
+        .mic-btn:disabled {
             opacity: 0.6;
             background: #D3D3D3;
             cursor: not-allowed;
@@ -321,24 +336,29 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
+            /* --- IMPORTANT CHANGE HERE --- */
+            height: var(--vh, 100vh); /* Ensure modal also uses dynamic height */
             background: rgba(0, 0, 0, 0.6);
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 1000;
             padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .modal-content {
-            background: #FFFFFF; /* White */
+            background: #FFFFFF;
             border-radius: 15px;
             padding: 30px;
             width: 100%;
             max-width: 450px;
-            max-height: 90vh;
+            max-height: 90vh; /* This needs to be relative to the modal itself, not the global viewport */
+            /* Let's try 90% of the modal's parent height */
+            max-height: 90%; 
             overflow-y: auto;
-            border: 3px solid #FFA500; /* Orange */
+            border: 3px solid #FFA500;
             color: #333333;
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
             position: relative;
@@ -347,7 +367,7 @@
 
         .modal h2 {
             margin-bottom: 25px;
-            color: #FF6347; /* Tomato Red */
+            color: #FF6347;
             text-align: center;
             font-size: 1.8em;
         }
@@ -360,34 +380,36 @@
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
-            color: #555555; /* Dark Gray */
+            color: #555555;
         }
 
         .form-group input {
             width: 100%;
             padding: 12px;
-            border: 2px solid #ADD8E6; /* Light Blue */
+            border: 2px solid #ADD8E6;
             border-radius: 10px;
             font-size: 16px;
-            background: #F0F8FF; /* Alice Blue */
+            background: #F0F8FF;
             color: #333333;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #FFC0CB; /* Pink */
-            box-shadow: 0 0 0 3px rgba(255, 192, 203, 0.4); /* Pink glow */
+            border-color: #FFC0CB;
+            box-shadow: 0 0 0 3px rgba(255, 192, 203, 0.4);
         }
 
         .modal-buttons {
             display: flex;
             gap: 15px;
             margin-top: 30px;
-            justify-content: space-between; /* Added for spacing buttons */
+            justify-content: space-between;
+            flex-wrap: wrap; /* Allows buttons to wrap on smaller screens */
         }
 
         .btn {
             flex: 1;
+            min-width: 120px; /* Ensure buttons don't get too small */
             padding: 12px 20px;
             border-radius: 10px;
             font-size: 16px;
@@ -395,33 +417,34 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
+            text-align: center;
         }
 
         .btn-primary {
-            background: #32CD32; /* Lime Green */
+            background: #32CD32;
             color: #FFFFFF;
         }
         .btn-primary:hover {
-            background: #228B22; /* Forest Green */
+            background: #228B22;
             transform: translateY(-2px);
         }
 
         .btn-secondary {
-            background: #FF6347; /* Tomato Red */
+            background: #FF6347;
             color: #FFFFFF;
         }
         .btn-secondary:hover {
-            background: #CD5C5C; /* Indian Red */
+            background: #CD5C5C;
             transform: translateY(-2px);
         }
         
-        .btn-tertiary { /* New style for clear history button */
-            background: #ADD8E6; /* Light Blue */
+        .btn-tertiary {
+            background: #ADD8E6;
             color: #333;
-            border: 1px solid #6495ED; /* Cornflower Blue */
+            border: 1px solid #6495ED;
         }
         .btn-tertiary:hover {
-            background: #87CEEB; /* Sky Blue */
+            background: #87CEEB;
             transform: translateY(-2px);
         }
 
@@ -431,14 +454,15 @@
             align-items: center;
             gap: 10px;
             padding: 12px 18px;
-            background: #FFFACD; /* Lemon Chiffon, similar to assistant */
-            border: 1px dashed #F0E68C; /* Khaki */
+            background: #FFFACD;
+            border: 1px dashed #F0E68C;
             border-radius: 20px;
             border-bottom-left-radius: 8px;
             align-self: flex-start;
             max-width: fit-content;
             font-style: italic;
             color: #555;
+            flex-shrink: 0;
         }
 
         .typing-dots {
@@ -449,7 +473,7 @@
         .typing-dot {
             width: 10px;
             height: 10px;
-            background: #FFC0CB; /* Pink */
+            background: #FFC0CB;
             border-radius: 50%;
             animation: typing 1.4s infinite ease-in-out;
         }
@@ -472,29 +496,34 @@
             width: 12px;
         }
         ::-webkit-scrollbar-track {
-            background: #E0F7FA; /* Very light cyan */
+            background: #E0F7FA;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #FFB6C1; /* Light Pink */
+            background: #FFB6C1;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #FF69B4; /* Hot Pink */
+            background: #FF69B4;
         }
-        * { /* For Firefox */
-            scrollbar-width: auto; /* Or 'thin' */
-            scrollbar-color: #FFB6C1 #E0F7FA; /* thumb track */
+        * {
+            scrollbar-width: auto;
+            scrollbar-color: #FFB6C1 #E0F7FA;
         }
 
         .hidden { display: none !important; }
 
         /* Mobile Optimizations - General adjustments for a kid-friendly theme */
         @media (max-width: 768px) {
+            body {
+                padding: 0;
+                /* Already uses var(--vh) */
+            }
             .app-container {
-                height: calc(var(--vh, 100vh) - 0vh); /* Modified for full height on mobile */
+                height: var(--vh, 100vh); /* Full viewport height on mobile, accounting for bars */
                 border-radius: 0;
                 box-shadow: none;
+                max-width: 100%;
             }
             .header {
                 padding: 12px 15px;
@@ -510,10 +539,15 @@
 
         @media (max-width: 480px) {
             .header { padding: 10px 12px; min-height: 60px; }
-            .header h1 { font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-            .tts-toggle span { font-size: 1.3em; } /* Keep emoji visible */
+            .header h1 {
+                font-size: 1.2em;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .tts-toggle span { font-size: 1.3em; }
             .settings-btn { font-size: 0.9em; padding: 8px 10px; }
-            .chat-messages { padding: 10px; }
+            .chat-messages { padding: 10px; padding-right: 10px; }
             .message { max-width: 92%; font-size: 0.95em; padding: 10px 14px; border-radius: 15px; }
             .message.user { border-bottom-right-radius: 6px; }
             .message.assistant { border-bottom-left-radius: 6px; }
@@ -522,10 +556,37 @@
             .mic-btn, .send-btn { width: 40px; height: 40px; font-size: 1.2em; }
             .modal h2 { font-size: 1.5em; }
             .form-group input { font-size: 14px; }
-            .btn { font-size: 15px; padding: 10px 12px; }
-            .modal-buttons { flex-direction: column; } /* Stack buttons on small screens */
-            .btn { width: 100%; margin-bottom: 10px; }
-            .btn:last-child { margin-bottom: 0; }
+            .modal-buttons {
+                flex-direction: column;
+                gap: 10px;
+            }
+            .btn {
+                width: 100%;
+                margin-bottom: 0;
+                min-width: unset;
+                padding: 10px 12px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 375px) {
+            .header { min-height: 55px; padding: 8px 10px; }
+            .header h1 { font-size: 1.1em; }
+            .tts-toggle span { font-size: 1.2em; }
+            .toggle-switch { width: 50px; height: 25px; border-radius: 12.5px; }
+            .toggle-slider { width: 20px; height: 20px; top: 2.5px; left: 2.5px; }
+            .toggle-switch.active .toggle-slider { transform: translateX(25px); }
+            .settings-btn { font-size: 0.85em; padding: 6px 8px; }
+            .chat-messages { padding: 8px; padding-right: 8px; }
+            .message { font-size: 0.9em; padding: 8px 12px; border-radius: 12px; }
+            .input-container { padding: 6px 8px; }
+            .message-input { min-height: 40px; font-size: 13px; padding: 10px 14px; }
+            .mic-btn, .send-btn { width: 36px; height: 36px; font-size: 1.1em; border-radius: 10px; }
+            .modal-content { padding: 15px; }
+            .modal h2 { font-size: 1.3em; margin-bottom: 20px; }
+            .form-group { margin-bottom: 15px; }
+            .form-group input { padding: 10px; font-size: 13px; }
+            .btn { padding: 8px 10px; font-size: 14px; }
         }
     </style>
 </head>
@@ -705,35 +766,32 @@
                     const utterance = new SpeechSynthesisUtterance(text);
             
                     const preferredVoices = [
-                        'Google US English', 'Microsoft Zira - English (United States)', // Common good quality
-                        'Microsoft David - English (United States)', // Male alternative
+                        'Google US English', 'Microsoft Zira - English (United States)',
+                        'Microsoft David - English (United States)',
                         'Google UK English Female', 'Google UK English Male',
-                        'Samantha', // Often on Apple devices
-                        'Alex', // Often on Apple devices
-                         // Add any other known good voices
+                        'Samantha',
+                        'Alex',
                     ];
                     let selectedVoice = null;
             
-                    // Try to find a preferred, high-quality voice
                     for (const preferred of preferredVoices) {
                         selectedVoice = this.voices.find(voice => voice.name === preferred && voice.lang.toLowerCase().startsWith('en-'));
                         if (selectedVoice) break;
                     }
                     
-                    // Broader search if specific preferred not found
                     if (!selectedVoice) {
                         selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-us') && voice.localService && voice.name.toLowerCase().includes('female'));
                     }
                     if (!selectedVoice) {
                         selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-us') && voice.localService);
                     }
-                    if (!selectedVoice) { // Fallback to any default English voice
+                    if (!selectedVoice) {
                         selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-') && voice.default);
                     }
-                    if (!selectedVoice) { // Any English voice
+                    if (!selectedVoice) {
                         selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-'));
                     }
-                    if (!selectedVoice && this.voices.length > 0) { // Absolute fallback
+                    if (!selectedVoice && this.voices.length > 0) {
                         selectedVoice = this.voices.find(voice => voice.lang.toLowerCase().startsWith('en-')) || this.voices[0];
                     }
             
@@ -757,7 +815,6 @@
                     utterance.onboundary = (event) => {
                         if (event.name === 'word') {
                             lastCharIndexSpoken = event.charIndex + event.charLength;
-                            // console.log(`[TTS] Boundary: Word "${text.substring(event.charIndex, lastCharIndexSpoken)}" at char ${event.charIndex}`);
                         }
                     };
             
@@ -777,20 +834,13 @@
             
                     if (speechSynthesis.speaking || speechSynthesis.pending) {
                         console.log("[TTS] Speech synthesis is currently speaking or has pending utterances. Cancelling previous.");
-                        speechSynthesis.cancel(); // This should clear the queue and stop current speech.
+                        speechSynthesis.cancel();
                     }
             
-                    // A brief timeout *can* sometimes help if cancel() itself is buggy or takes a moment to process in the browser.
-                    // This is usually a sign of a browser quirk. Test without it first.
                     setTimeout(() => {
                         console.log("[TTS] Attempting to speak (after ensuring cancel had a moment if it was called)...");
                         speechSynthesis.speak(utterance);
-                    }, 50); // 50ms delay; adjust or remove if not needed. If speech gets cut *more*, this might be too aggressive with some engines.
-                           // Or, if it helps, it points to a timing issue with cancel/speak.
-
-                    // Alternatively, if the timeout causes issues:
-                    // console.log("[TTS] Attempting to speak directly after cancel check...");
-                    // speechSynthesis.speak(utterance);
+                    }, 50);
                 });
             }
 
@@ -805,7 +855,7 @@
         // App State
         const appState = {
             apiKey: '',
-            systemPrompt: "You are Pal, a very friendly, cheerful, and patient AI assistant for kids. Explain things simply and use fun examples. Never use emojis or action descriptions (like *smiles*).", // Modified prompt
+            systemPrompt: "You are Pal, a very friendly, cheerful, and patient AI assistant for kids. Explain things simply and use fun examples. Never use emojis or action descriptions (like *smiles*).",
             ttsEnabled: true,
             messages: []
         };
@@ -828,15 +878,15 @@
         const systemPromptInput = document.getElementById('systemPromptInput');
         const saveBtn = document.getElementById('saveBtn');
         const cancelBtn = document.getElementById('cancelBtn');
-        const clearHistoryBtn = document.getElementById('clearHistoryBtn'); // New button
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
         
-        let isRecognizing = false; // For speech recognition state
+        let isRecognizing = false;
 
         // Message Management
-        function addMessage(content, role, speak = false, save = true) { // Added save parameter
+        function addMessage(content, role, speak = false, save = true) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
-            messageDiv.textContent = content; // Use textContent for safety against XSS with plain text
+            messageDiv.textContent = content;
 
             if (role === 'assistant') {
                 const controlsDiv = document.createElement('div');
@@ -854,16 +904,15 @@
             if (speak && appState.ttsEnabled && role === 'assistant') {
                 const textToSpeak = messageDiv.cloneNode(true);
                 const controls = textToSpeak.querySelector('.message-controls');
-                if (controls) controls.remove(); // Remove controls before getting text content for speech
+                if (controls) controls.remove();
                 speakText(textToSpeak.textContent || content);
             }
-            if (save) { // Only save if not a temporary system message
+            if (save) {
                 appState.messages.push({ role, content });
-                saveChatHistory(); // Save after each message
+                saveChatHistory();
             }
         }
         
-        // Event delegation for message controls
         chatMessages.addEventListener('click', function(event) {
             const target = event.target;
             const messageDiv = target.closest('.message.assistant');
@@ -917,7 +966,6 @@
                 await vits.synthesize(text);
             } catch (error) {
                 console.error('[SpeakText] TTS Error from speakText:', error);
-                // addMessage(`Oh dear! My voice box had a little hiccup trying to speak. Error: ${error.message}`, 'system');
             }
         }
 
@@ -929,7 +977,7 @@
 
             const messagesForAPI = [
                 { role: 'system', content: appState.systemPrompt },
-                ...appState.messages.slice(-8).map(msg => ({role: msg.role, content: msg.content})), // Keep last 8 messages
+                ...appState.messages.slice(-8).map(msg => ({role: msg.role, content: msg.content})),
                 { role: 'user', content: userMessage }
             ];
 
@@ -943,7 +991,7 @@
                         'X-Title': 'Friendly AI Pal',
                     },
                     body: JSON.stringify({
-                        model: 'deepseek/deepseek-chat', // Or use a different model available on OpenRouter
+                        model: 'deepseek/deepseek-chat',
                         messages: messagesForAPI,
                         temperature: 0.6,
                         max_tokens: 1000,
@@ -1003,21 +1051,17 @@
                         response = await sendToOpenRouter(message);
                     } catch (error) {
                         hideTypingIndicator();
-                        // This message should not be saved to history as it's an error feedback
                         addMessage(error.message, 'system', false, false); 
                         
-                        // Offer demo response after API failure
                         showTypingIndicator();
-                        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait a bit
+                        await new Promise(resolve => setTimeout(resolve, 1500));
                         hideTypingIndicator();
-                        // This demo response should also not be saved to history
                         const demoResponse = getDemoResponse(message);
                         addMessage(demoResponse, 'assistant', true, false); 
                         return;
                     }
                 } else {
-                    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate thinking for demo
-                    // This demo response should not be saved to history
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     response = getDemoResponse(message);
                 }
                 
@@ -1026,7 +1070,6 @@
                 
             } catch (error) {
                 hideTypingIndicator();
-                // This message should not be saved to history
                 addMessage(`D'oh! A little glitch happened: ${error.message}`, 'system', false, false);
             } finally {
                 sendBtn.disabled = false;
@@ -1038,16 +1081,16 @@
         // UI Event Handlers
         function adjustTextareaHeight() {
             messageInput.style.height = 'auto';
-            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px'; // Max height 100px
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
         }
 
         function toggleTTS() {
             appState.ttsEnabled = !appState.ttsEnabled;
             ttsToggle.classList.toggle('active', appState.ttsEnabled);
             if (!appState.ttsEnabled) {
-                vits.stop(); // Stop any current speech if TTS is turned off
+                vits.stop();
             }
-            localStorage.setItem(LOCAL_STORAGE_KEY_TTS, appState.ttsEnabled); // Save TTS preference
+            localStorage.setItem(LOCAL_STORAGE_KEY_TTS, appState.ttsEnabled);
             console.log(`TTS Enabled: ${appState.ttsEnabled}`);
         }
 
@@ -1063,8 +1106,6 @@
 
         function saveSettings() {
             appState.apiKey = apiKeyInput.value.trim();
-            // Ensure the hardcoded prompt override behavior is removed here, it should only be set initially.
-            // When saving, we use the value from the input directly.
             appState.systemPrompt = systemPromptInput.value.trim() || "You are Pal, a very friendly, cheerful, and patient AI assistant for kids. Explain things simply and use fun examples. Never use emojis or action descriptions (like *smiles*).";
             
             localStorage.setItem(LOCAL_STORAGE_KEY_API, appState.apiKey);
@@ -1072,9 +1113,9 @@
             
             hideSettings();
             if (appState.apiKey) {
-                addMessage('✨ Hooray! API key is set. I\'m ready to chat properly now!', 'system', false, false); // Don't save this system message
+                addMessage('✨ Hooray! API key is set. I\'m ready to chat properly now!', 'system', false, false);
             } else {
-                addMessage('🔑 API key not set. I\'ll still be in demo mode. Ask a grown-up to add it in "Setup"!', 'system', false, false); // Don't save this system message
+                addMessage('🔑 API key not set. I\'ll still be in demo mode. Ask a grown-up to add it in "Setup"!', 'system', false, false);
             }
         }
 
@@ -1082,7 +1123,7 @@
             if (confirm("Are you sure you want to clear all chat history? This cannot be undone!")) {
                 appState.messages = [];
                 localStorage.removeItem(LOCAL_STORAGE_KEY_MESSAGES);
-                chatMessages.innerHTML = ''; // Clear display
+                chatMessages.innerHTML = '';
                 addMessage('👋 Hi there, little explorer! I\'m your friendly AI Pal. Let\'s chat and have some fun!', 'system', false, false);
                 addMessage('Remember to ask a grown-up to help you set up the API key in the \'Setup\' button.', 'system', false, false);
                 hideSettings();
@@ -1109,7 +1150,7 @@
             if (storedMessages) {
                 try {
                     appState.messages = JSON.parse(storedMessages);
-                    if (!Array.isArray(appState.messages)) { // Validate parsed data
+                    if (!Array.isArray(appState.messages)) {
                         appState.messages = [];
                         console.warn("Stored messages were not an array, resetting chat history.");
                     }
@@ -1118,7 +1159,7 @@
                     appState.messages = [];
                 }
             } else {
-                appState.messages = []; // Initialize as empty array if nothing stored
+                appState.messages = [];
             }
         }
 
@@ -1127,15 +1168,13 @@
         }
 
         function renderChatHistory() {
-            chatMessages.innerHTML = ''; // Clear existing messages
+            chatMessages.innerHTML = '';
             if (appState.messages.length === 0) {
-                // Display initial system messages if no history
                 addMessage('👋 Hi there, little explorer! I\'m your friendly AI Pal. Let\'s chat and have some fun!', 'system', false, false);
                 addMessage('Remember to ask a grown-up to help you set up the API key in the \'Setup\' button.', 'system', false, false);
             } else {
                 appState.messages.forEach(msg => {
-                    // Re-render messages, but don't speak them on load
-                    addMessage(msg.content, msg.role, false, false); // Don't save again, don't speak
+                    addMessage(msg.content, msg.role, false, false);
                 });
             }
         }
@@ -1154,20 +1193,15 @@
             micBtn.addEventListener('click', () => {
                 if (isRecognizing) {
                     recognition.stop();
-                     // isRecognizing will be set to false in recognition.onend
                 } else {
-                    if (!appState.apiKey && appState.messages.length > 3) { // Simple rate limit for demo STT
-                        // addMessage("🎤 Please set up the API key to use the microphone more!", "system");
-                        // return;
-                    }
                     try {
                         recognition.start();
                     } catch (e) {
                         console.error("Error starting speech recognition:", e.message);
                         if (e.name === 'InvalidStateError') {
-                             addMessage("🎤 My ears are a bit busy! Try again in a moment.", "system", false, false); // Don't save this message
+                             addMessage("🎤 My ears are a bit busy! Try again in a moment.", "system", false, false);
                         } else {
-                             addMessage("Oh no! My ears (microphone) aren't working right now. Maybe check permissions?", "system", false, false); // Don't save this message
+                             addMessage("Oh no! My ears (microphone) aren't working right now. Maybe check permissions?", "system", false, false);
                         }
                          isRecognizing = false;
                          micBtn.classList.remove('listening');
@@ -1184,7 +1218,7 @@
                 micBtn.classList.add('listening');
                 micBtn.textContent = '🤫'; 
                 micBtn.title = "Stop listening";
-                micBtn.disabled = false; // Keep mic button enabled to allow stopping
+                micBtn.disabled = false;
                 sendBtn.disabled = true; 
                 console.log("[STT] Recognition started.");
             };
@@ -1195,8 +1229,6 @@
                 messageInput.value += (messageInput.value.length > 0 && !messageInput.value.endsWith(' ') ? ' ' : '') + speechResult;
                 adjustTextareaHeight();
                 messageInput.focus();
-                // Consider auto-sending:
-                // sendMessage(); 
             };
 
             recognition.onerror = (event) => {
@@ -1213,7 +1245,7 @@
                 } else if (event.error === 'aborted') {
                     friendlyError = "Looks like speech input was stopped. Try again!";
                 }
-                addMessage(friendlyError, 'system', false, false); // Don't save this message
+                addMessage(friendlyError, 'system', false, false);
             };
 
             recognition.onend = () => {
@@ -1221,13 +1253,13 @@
                 micBtn.classList.remove('listening');
                 micBtn.textContent = '🎤';
                 micBtn.title = "Speak to type";
-                micBtn.disabled = false; 
-                sendBtn.disabled = false; 
+                micBtn.disabled = false;
+                sendBtn.disabled = false;
                 messageInput.focus();
                 console.log("[STT] Recognition ended.");
             };
         } else {
-            micBtn.style.display = 'none'; 
+            micBtn.style.display = 'none';
             console.warn('[STT] Speech Recognition API not supported in this browser.');
         }
 
@@ -1246,10 +1278,10 @@
         settingsBtn.addEventListener('click', showSettings);
         saveBtn.addEventListener('click', saveSettings);
         cancelBtn.addEventListener('click', hideSettings);
-        clearHistoryBtn.addEventListener('click', clearChatHistory); // New event listener
+        clearHistoryBtn.addEventListener('click', clearChatHistory);
         
         settingsModal.addEventListener('click', (e) => {
-            if (e.target === settingsModal) { // Click outside modal content
+            if (e.target === settingsModal) {
                 hideSettings();
             }
         });
@@ -1257,15 +1289,13 @@
         // Initialize app
         async function init() {
             console.log("App initializing...");
-            loadSettingsAndHistory(); // Load settings and history first
+            loadSettingsAndHistory();
             ttsToggle.classList.toggle('active', appState.ttsEnabled);
-            renderChatHistory(); // Render loaded history or initial messages
-            await vits.initialize(); // Ensure VITS/voices are ready (modified initialize)
+            renderChatHistory();
+            await vits.initialize();
             
             messageInput.focus();
             
-            // Initial messages are now handled by renderChatHistory based on loaded state.
-            // This timeout message only if there's no API key and no history is loaded.
             if (!appState.apiKey && appState.messages.length === 0) {
                  addMessage('💡 Welcome! Ask a grown-up to click the "Setup" button to enter an OpenRouter API key so we can chat for real! Otherwise, I can only give demo responses.\n\n⚠️ **For Grown-Ups**: If you are running this from a `file:///` URL, API calls might be blocked by browser security (CORS). Running it from a local web server (e.g., `http://localhost/...`) is recommended for full functionality.', 'system', false, false);
             }
