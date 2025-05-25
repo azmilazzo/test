@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Friendly AI Pal</title>
     <style>
+        /* Base styles already well-suited for a clean start */
         * {
             margin: 0;
             padding: 0;
@@ -16,18 +17,18 @@
             background: #87CEEB; /* Sky Blue */
             height: 100vh;
             color: #333333; /* Dark Gray for text */
-            overflow: hidden;
+            overflow: hidden; /* Prevent body scroll, app-container handles it */
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
             align-items: center;
-            -webkit-text-size-adjust: 100%;
-            -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: 100%; /* Ensure text doesn't resize oddly */
+            -webkit-font-smoothing: antialiased; /* Smoother fonts */
         }
 
         .app-container {
-            height: 95vh; /* Adjusted for a bit of margin */
+            height: 95vh; /* Adjusted for a bit of margin on larger screens */
             width: 100%;
             max-width: 600px; /* Kid-friendly width */
             margin: 0 auto;
@@ -36,7 +37,7 @@
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* Important to contain chat messages */
             position: relative;
         }
 
@@ -50,7 +51,7 @@
             justify-content: space-between;
             border-bottom: 2px solid #FFA500; /* Orange border */
             min-height: 70px;
-            flex-shrink: 0;
+            flex-shrink: 0; /* Prevent shrinking */
             position: relative;
             z-index: 100;
         }
@@ -59,13 +60,17 @@
             font-size: 1.8em;
             font-weight: bold;
             margin: 0;
-            flex: 1;
+            flex: 1; /* Allow title to take available space */
+            white-space: nowrap; /* Prevent wrapping on one line initially */
+            overflow: hidden; /* Hide overflow when text is too long */
+            text-overflow: ellipsis; /* Add ellipsis for overflowed text */
         }
 
         .header-controls {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex-shrink: 0; /* Prevent controls from shrinking */
         }
 
         .tts-toggle {
@@ -73,10 +78,12 @@
             align-items: center;
             gap: 8px;
             font-size: 1em;
+            /* No text, just emoji and toggle, so less concern for wrapping */
         }
         
         .tts-toggle span {
             font-size: 1.5em; /* Larger emoji */
+            flex-shrink: 0;
         }
 
         .toggle-switch {
@@ -88,6 +95,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 2px solid #FFA500;
+            flex-shrink: 0;
         }
 
         .toggle-switch.active {
@@ -121,6 +129,7 @@
             font-size: 1em;
             font-weight: bold;
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .settings-btn:hover {
@@ -130,30 +139,34 @@
 
         /* Chat Area */
         .chat-container {
-            flex: 1;
+            flex: 1; /* Takes all available vertical space */
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* Prevents overflow of inner messages */
             background: #F0F8FF; /* Alice Blue - very light blue */
         }
 
         .chat-messages {
-            flex: 1;
-            overflow-y: auto;
+            flex: 1; /* Takes all available vertical space inside chat-container */
+            overflow-y: auto; /* Enables vertical scrolling for messages */
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
+            /* Ensure enough padding for scrollbar on the right */
+            padding-right: 15px; /* Adjust if scrollbar overlaps on mobile */
         }
 
         .message {
             max-width: 80%;
             padding: 12px 18px;
             border-radius: 20px;
-            word-wrap: break-word;
+            word-wrap: break-word; /* Ensures long words break and wrap */
             line-height: 1.5;
             animation: messageSlide 0.3s ease-out;
             box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+            /* Min-width can prevent super thin messages on tiny screens */
+            min-width: 50px; /* Example, adjust as needed */
         }
 
         @keyframes messageSlide {
@@ -210,6 +223,7 @@
             border-radius: 8px;
             font-size: 0.9em;
             transition: all 0.2s ease;
+            white-space: nowrap; /* Prevent button text/emoji from wrapping */
         }
 
         .control-btn:hover {
@@ -225,23 +239,24 @@
             border-top: 2px solid #FFA500; /* Orange border */
             position: relative;
             z-index: 1;
+            flex-shrink: 0; /* Prevent input area from shrinking */
         }
 
         .input-wrapper {
             display: flex;
-            align-items: flex-end;
+            align-items: flex-end; /* Align input and buttons at the bottom */
             gap: 10px;
         }
 
         .message-input {
             flex: 1;
-            min-height: 48px;
+            min-height: 48px; /* Standard touch target size */
             max-height: 100px;
             padding: 12px 16px;
             border: 2px solid #ADD8E6; /* Light Blue */
             border-radius: 12px;
             font-size: 16px;
-            resize: none;
+            resize: none; /* Disable manual resize, use JS for auto-height */
             font-family: inherit;
             line-height: 1.5;
             background: #F0F8FF; /* Alice Blue */
@@ -261,12 +276,13 @@
         .input-area-buttons {
             display: flex;
             gap: 8px;
+            flex-shrink: 0; /* Prevent buttons from shrinking */
         }
         
         .mic-btn,
         .send-btn {
-            width: 48px;
-            height: 48px;
+            width: 48px; /* Fixed width for consistent touch target */
+            height: 48px; /* Fixed height for consistent touch target */
             border: none;
             border-radius: 12px; /* Rounded */
             background: #FF6347; /* Tomato Red */
@@ -277,7 +293,7 @@
             justify-content: center;
             font-size: 1.5em; /* Larger emoji */
             transition: all 0.3s ease;
-            flex-shrink: 0;
+            flex-shrink: 0; /* Important: prevent these from shrinking */
         }
         .mic-btn.listening { /* Style for when mic is active */
             background: #FF0000; /* Red when listening */
@@ -327,7 +343,9 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
-            padding: 20px;
+            padding: 20px; /* Add padding to prevent content touching edges on very small screens */
+            overflow-y: auto; /* Allow scrolling for modal content if it gets too tall */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         }
 
         .modal-content {
@@ -336,8 +354,8 @@
             padding: 30px;
             width: 100%;
             max-width: 450px;
-            max-height: 90vh;
-            overflow-y: auto;
+            max-height: 90vh; /* Limit height to 90% of viewport height */
+            overflow-y: auto; /* Scroll content if it exceeds max-height */
             border: 3px solid #FFA500; /* Orange */
             color: #333333;
             box-shadow: 0 5px 20px rgba(0,0,0,0.2);
@@ -384,10 +402,12 @@
             gap: 15px;
             margin-top: 30px;
             justify-content: space-between; /* Added for spacing buttons */
+            flex-wrap: wrap; /* Allow buttons to wrap to next line on small screens */
         }
 
         .btn {
-            flex: 1;
+            flex: 1; /* Allow buttons to grow and shrink */
+            min-width: 120px; /* Ensure buttons don't get too small */
             padding: 12px 20px;
             border-radius: 10px;
             font-size: 16px;
@@ -395,6 +415,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: none;
+            text-align: center; /* Center text if button shrinks */
         }
 
         .btn-primary {
@@ -439,6 +460,7 @@
             max-width: fit-content;
             font-style: italic;
             color: #555;
+            flex-shrink: 0; /* Prevent from shrinking */
         }
 
         .typing-dots {
@@ -490,11 +512,16 @@
         .hidden { display: none !important; }
 
         /* Mobile Optimizations - General adjustments for a kid-friendly theme */
+        /* Targets tablets and larger phones in landscape */
         @media (max-width: 768px) {
+            body {
+                padding: 0; /* Remove body padding on smaller screens */
+            }
             .app-container {
-                height: 100vh;
-                border-radius: 0;
-                box-shadow: none;
+                height: 100vh; /* Full viewport height */
+                border-radius: 0; /* No rounded corners */
+                box-shadow: none; /* No shadow */
+                max-width: 100%; /* Take full width */
             }
             .header {
                 padding: 12px 15px;
@@ -508,12 +535,16 @@
             .modal-content { margin: 10px; padding: 20px; }
         }
 
+        /* Targets smaller phones */
         @media (max-width: 480px) {
             .header { padding: 10px 12px; min-height: 60px; }
-            .header h1 { font-size: 1.2em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .header h1 {
+                font-size: 1.2em;
+                /* Already has: overflow: hidden; text-overflow: ellipsis; white-space: nowrap; */
+            }
             .tts-toggle span { font-size: 1.3em; } /* Keep emoji visible */
             .settings-btn { font-size: 0.9em; padding: 8px 10px; }
-            .chat-messages { padding: 10px; }
+            .chat-messages { padding: 10px; padding-right: 10px; /* Adjust scrollbar padding */ }
             .message { max-width: 92%; font-size: 0.95em; padding: 10px 14px; border-radius: 15px; }
             .message.user { border-bottom-right-radius: 6px; }
             .message.assistant { border-bottom-left-radius: 6px; }
@@ -522,10 +553,38 @@
             .mic-btn, .send-btn { width: 40px; height: 40px; font-size: 1.2em; }
             .modal h2 { font-size: 1.5em; }
             .form-group input { font-size: 14px; }
-            .btn { font-size: 15px; padding: 10px 12px; }
-            .modal-buttons { flex-direction: column; } /* Stack buttons on small screens */
-            .btn { width: 100%; margin-bottom: 10px; }
-            .btn:last-child { margin-bottom: 0; }
+            .modal-buttons {
+                flex-direction: column; /* Stack buttons vertically */
+                gap: 10px; /* Reduce gap when stacked */
+            }
+            .btn {
+                width: 100%; /* Take full width when stacked */
+                margin-bottom: 0; /* Remove bottom margin if stacking handles spacing */
+                min-width: unset; /* Allow to fill width */
+                padding: 10px 12px; /* Slightly smaller padding */
+                font-size: 15px;
+            }
+        }
+
+        /* Specific adjustments for very small screens (e.g., iPhone SE 1st gen, older Androids) */
+        @media (max-width: 375px) {
+            .header { min-height: 55px; padding: 8px 10px; }
+            .header h1 { font-size: 1.1em; }
+            .tts-toggle span { font-size: 1.2em; }
+            .toggle-switch { width: 50px; height: 25px; border-radius: 12.5px; }
+            .toggle-slider { width: 20px; height: 20px; top: 2.5px; left: 2.5px; }
+            .toggle-switch.active .toggle-slider { transform: translateX(25px); }
+            .settings-btn { font-size: 0.85em; padding: 6px 8px; }
+            .chat-messages { padding: 8px; padding-right: 8px; }
+            .message { font-size: 0.9em; padding: 8px 12px; border-radius: 12px; }
+            .input-container { padding: 6px 8px; }
+            .message-input { min-height: 40px; font-size: 13px; padding: 10px 14px; }
+            .mic-btn, .send-btn { width: 36px; height: 36px; font-size: 1.1em; border-radius: 10px; }
+            .modal-content { padding: 15px; }
+            .modal h2 { font-size: 1.3em; margin-bottom: 20px; }
+            .form-group { margin-bottom: 15px; }
+            .form-group input { padding: 10px; font-size: 13px; }
+            .btn { padding: 8px 10px; font-size: 14px; }
         }
     </style>
 </head>
