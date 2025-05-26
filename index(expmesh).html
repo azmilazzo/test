@@ -82,19 +82,6 @@
             transform: scaleX(-1);
         }
         
-        .overlay {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 1000;
-            max-width: 250px;
-        }
-        
         .status-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -217,6 +204,23 @@
     <div class="container">
         <h1>Combined Face Expression & Recognition System 📸</h1>
         
+        <div class="status-panel">
+            <div class="status-grid">
+                <div class="status-item" id="modelStatus">
+                    <strong>Models:</strong> Loading...
+                </div>
+                <div class="status-item" id="cameraStatus">
+                    <strong>Camera:</strong> Initializing...
+                </div>
+                <div class="status-item" id="expressionStatus">
+                    <strong>Expression:</strong> --
+                </div>
+                <div class="status-item" id="recognitionStatus">
+                    <strong>Recognition:</strong> --
+                </div>
+            </div>
+        </div>
+        
         <div class="main-content">
             <div class="video-section">
                 <div class="video-container">
@@ -254,6 +258,10 @@
         // DOM elements
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
+        const modelStatusEl = document.getElementById('modelStatus');
+        const cameraStatusEl = document.getElementById('cameraStatus');
+        const expressionStatusEl = document.getElementById('expressionStatus');
+        const recognitionStatusEl = document.getElementById('recognitionStatus');
         const registerBtn = document.getElementById('registerBtn');
         const snapBtn = document.getElementById('snapBtn');
         const personNameInput = document.getElementById('personName');
@@ -264,11 +272,13 @@
         async function initializeSystem() {
             try {
                 // Load face-api.js models
+                modelStatusEl.innerHTML = '<strong>Models:</strong> Loading face-api.js...';
                 await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 
                 // Initialize MediaPipe FaceMesh
+                modelStatusEl.innerHTML = '<strong>Models:</strong> Loading MediaPipe...';
                 faceMesh = new FaceMesh({
                     locateFile: (file) => {
                         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -283,6 +293,8 @@
                 
                 faceMesh.onResults(onFaceMeshResults);
                 
+                modelStatusEl.innerHTML = '<strong>Models:</strong> ✅ Loaded';
+                modelStatusEl.className = 'status-item success';
                 modelsLoaded = true;
                 
                 await loadSavedFaces();
@@ -291,12 +303,16 @@
                 
             } catch (error) {
                 console.error('Error initializing system:', error);
+                modelStatusEl.innerHTML = '<strong>Models:</strong> ❌ Error loading';
+                modelStatusEl.className = 'status-item error';
             }
         }
         
         // Initialize camera
         async function initializeCamera() {
             try {
+                cameraStatusEl.innerHTML = '<strong>Camera:</strong> Requesting access...';
+                
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: { facingMode: 'user' },
                     audio: false
@@ -307,6 +323,8 @@
                 video.onloadedmetadata = () => {
                     video.play();
                     videoStreamActive = true;
+                    cameraStatusEl.innerHTML = '<strong>Camera:</strong> ✅ Active';
+                    cameraStatusEl.className = 'status-item success';
                     
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
@@ -317,6 +335,8 @@
                 
             } catch (error) {
                 console.error('Camera error:', error);
+                cameraStatusEl.innerHTML = '<strong>Camera:</strong> ❌ Access denied';
+                cameraStatusEl.className = 'status-item error';
                 videoStreamActive = false;
             }
         }
@@ -336,8 +356,13 @@
                 
                 // Landmarks drawing removed - no longer drawing face mesh
                 
-                // Detect expression (but don't display status)
+                // Detect expression and update status panel
                 const expression = detectExpression(landmarks);
+                expressionStatusEl.innerHTML = `<strong>Expression:</strong> ${expression}`;
+                expressionStatusEl.className = 'status-item success';
+            } else {
+                expressionStatusEl.innerHTML = '<strong>Expression:</strong> No face';
+                expressionStatusEl.className = 'status-item warning';
             }
             
             canvasCtx.restore();
@@ -393,7 +418,17 @@
                     if (detections && detections.length > 0 && faceMatcher) {
                         const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
                         
-                        // Recognition logic continues but status display removed
+                        if (bestMatch.label !== 'unknown') {
+                            const name = `${bestMatch.label} (${bestMatch.distance.toFixed(2)})`;
+                            recognitionStatusEl.innerHTML = `<strong>Recognition:</strong> ${name}`;
+                            recognitionStatusEl.className = 'status-item success';
+                        } else {
+                            recognitionStatusEl.innerHTML = '<strong>Recognition:</strong> Unknown person';
+                            recognitionStatusEl.className = 'status-item warning';
+                        }
+                    } else if (detections && detections.length === 0) {
+                        recognitionStatusEl.innerHTML = '<strong>Recognition:</strong> No face';
+                        recognitionStatusEl.className = 'status-item warning';
                     }
                 } catch (error) {
                     console.error('Recognition error:', error);
