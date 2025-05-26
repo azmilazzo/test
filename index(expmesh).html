@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Expression & Recognition System</title>
+    <title>Combined Face Expression & Recognition</title>
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
@@ -272,8 +272,7 @@
         let faceMesh = null;
         let faceMatcher = null;
         let detectionInterval = null;
-        let currentRecognitionResult = 'Initializing...';
-
+        
         // DOM elements
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
@@ -291,14 +290,18 @@
         // Initialize system
         async function initializeSystem() {
             try {
+                // Load face-api.js models
                 modelStatusEl.innerHTML = '<strong>Models:</strong> Loading face-api.js...';
                 await faceapi.nets.ssdMobilenetv1.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 await faceapi.nets.faceLandmark68Net.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 await faceapi.nets.faceRecognitionNet.loadFromUri('https://justadudewhohacks.github.io/face-api.js/models');
                 
+                // Initialize MediaPipe FaceMesh
                 modelStatusEl.innerHTML = '<strong>Models:</strong> Loading MediaPipe...';
                 faceMesh = new FaceMesh({
-                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
                 });
                 
                 faceMesh.setOptions({
@@ -318,32 +321,37 @@
                 updateButtonStates();
                 
             } catch (error) {
-                console.error('Initialization error:', error);
+                console.error('Error initializing system:', error);
                 modelStatusEl.innerHTML = '<strong>Models:</strong> ❌ Error loading';
                 modelStatusEl.className = 'status-item error';
             }
         }
-
+        
+        // Initialize camera
         async function initializeCamera() {
             try {
                 cameraStatusEl.innerHTML = '<strong>Camera:</strong> Requesting access...';
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'user' }, 
-                    audio: false 
+                
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'user' },
+                    audio: false
                 });
+                
                 video.srcObject = stream;
-
+                
                 video.onloadedmetadata = () => {
                     video.play();
                     videoStreamActive = true;
                     cameraStatusEl.innerHTML = '<strong>Camera:</strong> ✅ Active';
                     cameraStatusEl.className = 'status-item success';
+                    
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
+                    
                     updateButtonStates();
                     startDetection();
                 };
-
+                
             } catch (error) {
                 console.error('Camera error:', error);
                 cameraStatusEl.innerHTML = '<strong>Camera:</strong> ❌ Access denied';
@@ -351,126 +359,220 @@
                 videoStreamActive = false;
             }
         }
-
+        
+        // MediaPipe FaceMesh results handler
         function onFaceMeshResults(results) {
             const canvasCtx = canvas.getContext('2d');
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Mirror the canvas
             canvasCtx.save();
             canvasCtx.translate(canvas.width, 0);
             canvasCtx.scale(-1, 1);
-
-            if (results.multiFaceLandmarks?.length) {
+            
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
+                
+                // Draw face mesh
                 drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, 
-                             {color: '#00FF0030', lineWidth: 1});
+                    {color: '#00FF0030', lineWidth: 1});
+                
+                // Detect expression
                 const expression = detectExpression(landmarks);
                 expressionStatusEl.innerHTML = `<strong>Expression:</strong> ${expression}`;
                 expressionStatusEl.className = 'status-item success';
-                updateOverlay('Face detected', expression, currentRecognitionResult);
+                
+                updateOverlay('Face detected', expression, 'Processing...');
             } else {
                 expressionStatusEl.innerHTML = '<strong>Expression:</strong> No face';
                 expressionStatusEl.className = 'status-item warning';
-                currentRecognitionResult = 'No face detected';
-                updateOverlay('No face detected', '--', currentRecognitionResult);
+                updateOverlay('No face detected', '--', '--');
             }
+            
             canvasCtx.restore();
         }
-
+        
+        // Expression detection logic
         function detectExpression(landmarks) {
-            const mouthWidth = Math.abs(landmarks[291].x - landmarks[61].x);
-            const mouthHeight = Math.abs(landmarks[14].y - landmarks[13].y);
-            if (mouthWidth > 0.05 && mouthHeight > 0.02) return "😊 Smile";
-            if (mouthHeight < 0.01) return "😐 Neutral";
-            return "☹️ Frown";
+            const leftMouthCorner = landmarks[61];
+            const rightMouthCorner = landmarks[291];
+            const upperLip = landmarks[13];
+            const lowerLip = landmarks[14];
+            
+            const mouthWidth = Math.abs(rightMouthCorner.x - leftMouthCorner.x);
+            const mouthHeight = Math.abs(lowerLip.y - upperLip.y);
+            
+            if (mouthWidth > 0.05 && mouthHeight > 0.02) {
+                return "😊 Smile";
+            } else if (mouthHeight < 0.01) {
+                return "😐 Neutral";
+            } else {
+                return "☹️ Frown";
+            }
         }
-
+        
+        // Start detection loop
         function startDetection() {
             if (!modelsLoaded || !videoStreamActive) return;
-
+            
+            // MediaPipe detection
             const camera = new Camera(video, {
-                onFrame: async () => faceMesh && await faceMesh.send({image: video}),
+                onFrame: async () => {
+                    if (faceMesh) {
+                        await faceMesh.send({image: video});
+                    }
+                },
                 width: video.videoWidth,
                 height: video.videoHeight
             });
             camera.start();
-
+            
+            // Face recognition detection
             if (detectionInterval) clearInterval(detectionInterval);
+            
             detectionInterval = setInterval(async () => {
+                if (!videoStreamActive || video.paused) return;
+                
                 try {
                     const detections = await faceapi.detectAllFaces(video, 
                         new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 }))
                         .withFaceLandmarks()
                         .withFaceDescriptors();
-
-                    if (!detections?.length) {
-                        currentRecognitionResult = 'No face detected';
+                    
+                    if (detections && detections.length > 0 && faceMatcher) {
+                        const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
+                        
+                        if (bestMatch.label !== 'unknown') {
+                            const name = `${bestMatch.label} (${bestMatch.distance.toFixed(2)})`;
+                            recognitionStatusEl.innerHTML = `<strong>Recognition:</strong> ${name}`;
+                            recognitionStatusEl.className = 'status-item success';
+                        } else {
+                            recognitionStatusEl.innerHTML = '<strong>Recognition:</strong> Unknown person';
+                            recognitionStatusEl.className = 'status-item warning';
+                        }
+                    } else if (detections && detections.length === 0) {
                         recognitionStatusEl.innerHTML = '<strong>Recognition:</strong> No face';
                         recognitionStatusEl.className = 'status-item warning';
-                        return;
-                    }
-
-                    if (!faceMatcher) {
-                        currentRecognitionResult = 'No registered faces';
-                        recognitionStatusEl.innerHTML = '<strong>Recognition:</strong> No registered faces';
-                        recognitionStatusEl.className = 'status-item warning';
-                        return;
-                    }
-
-                    const bestMatch = faceMatcher.findBestMatch(detections[0].descriptor);
-                    if (bestMatch.label === 'unknown') {
-                        currentRecognitionResult = 'Unknown person';
-                        recognitionStatusEl.innerHTML = '<strong>Recognition:</strong> Unknown person';
-                        recognitionStatusEl.className = 'status-item warning';
-                    } else {
-                        currentRecognitionResult = `${bestMatch.label} (${bestMatch.distance.toFixed(2)})`;
-                        recognitionStatusEl.innerHTML = `<strong>Recognition:</strong> ${currentRecognitionResult}`;
-                        recognitionStatusEl.className = 'status-item success';
                     }
                 } catch (error) {
                     console.error('Recognition error:', error);
-                    currentRecognitionResult = 'Recognition error';
-                    recognitionStatusEl.className = 'status-item error';
                 }
             }, 500);
         }
-
+        
+        // Update overlay
+        function updateOverlay(status, expression, recognition) {
+            overlay.innerHTML = `
+                <div>Status: ${status}</div>
+                <div>Expression: ${expression}</div>
+                <div>Recognition: ${recognition}</div>
+            `;
+        }
+        
+        // Load saved faces
+        async function loadSavedFaces() {
+            const saved = localStorage.getItem('knownFaces');
+            if (saved) {
+                knownFaces = JSON.parse(saved).map(face => {
+                    face.descriptor = new Float32Array(Object.values(face.descriptor));
+                    return face;
+                });
+                
+                if (knownFaces.length > 0) {
+                    const labeledDescriptors = knownFaces.map(face => 
+                        new faceapi.LabeledFaceDescriptors(face.name, [face.descriptor])
+                    );
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+                }
+                
+                displayRegisteredFaces();
+            }
+        }
+        
+        // Register face from file
+        async function registerFromFile() {
+            const file = imageUploadInput.files[0];
+            const name = personNameInput.value.trim();
+            
+            if (!file || !name) {
+                alert('Please select an image and enter a name.');
+                return;
+            }
+            
+            try {
+                const base64 = await convertFileToBase64(file);
+                await processAndRegisterFace(base64, name);
+                imageUploadInput.value = '';
+                personNameInput.value = '';
+            } catch (error) {
+                alert('Error processing image: ' + error.message);
+            }
+        }
+        
+        // Snap photo and register
+        async function snapAndRegister() {
+            const name = personNameInput.value.trim();
+            if (!name) {
+                alert('Please enter a name.');
+                return;
+            }
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            const base64 = tempCanvas.toDataURL('image/jpeg');
+            await processAndRegisterFace(base64, name);
+            personNameInput.value = '';
+        }
+        
+        // Process and register face
         async function processAndRegisterFace(base64Image, name) {
             try {
                 const img = await createImageFromBase64(base64Image);
                 const detection = await faceapi.detectSingleFace(img)
                     .withFaceLandmarks()
                     .withFaceDescriptor();
-
-                if (!detection) {
-                    alert('No face detected in image');
-                    return;
+                
+                if (detection) {
+                    const face = {
+                        id: `${name}_${Date.now()}`,
+                        name: name,
+                        descriptor: Array.from(detection.descriptor),
+                        image: base64Image
+                    };
+                    
+                    knownFaces.push(face);
+                    localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
+                    
+                    // Update face matcher
+                    const labeledDescriptors = knownFaces.map(face => 
+                        new faceapi.LabeledFaceDescriptors(face.name, [new Float32Array(face.descriptor)])
+                    );
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+                    
+                    displayRegisteredFaces();
+                    alert(`${name} registered successfully!`);
+                } else {
+                    alert('No face detected in the image.');
                 }
-
-                const newFace = {
-                    id: `${name}_${Date.now()}`,
-                    name: name,
-                    descriptor: Array.from(detection.descriptor),
-                    image: base64Image
-                };
-
-                knownFaces.push(newFace);
-                localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
-
-                const labeledDescriptors = knownFaces.map(face => 
-                    new faceapi.LabeledFaceDescriptors(face.name, [new Float32Array(face.descriptor)])
-                );
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
-                displayRegisteredFaces();
-                alert(`${name} registered successfully!`);
-
             } catch (error) {
                 console.error('Registration error:', error);
-                alert(`Registration failed: ${error.message}`);
+                alert('Error registering face: ' + error.message);
             }
         }
-
+        
+        // Display registered faces
         function displayRegisteredFaces() {
-            facesListEl.innerHTML = knownFaces.length ? '' : '<p>No registered faces</p>';
+            facesListEl.innerHTML = '';
+            
+            if (knownFaces.length === 0) {
+                facesListEl.innerHTML = '<p>No faces registered yet.</p>';
+                return;
+            }
+            
             knownFaces.forEach(face => {
                 const div = document.createElement('div');
                 div.className = 'face-item';
@@ -482,78 +584,65 @@
                 facesListEl.appendChild(div);
             });
         }
-
+        
+        // Delete face
         function deleteFace(id) {
-            if (!confirm('Delete this face?')) return;
-            knownFaces = knownFaces.filter(f => f.id !== id);
-            localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
-            
-            if (knownFaces.length) {
-                const labeledDescriptors = knownFaces.map(face => 
-                    new faceapi.LabeledFaceDescriptors(face.name, [new Float32Array(face.descriptor)])
-                );
-                faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
-            } else {
-                faceMatcher = null;
+            const face = knownFaces.find(f => f.id === id);
+            if (face && confirm(`Delete ${face.name}?`)) {
+                knownFaces = knownFaces.filter(f => f.id !== id);
+                localStorage.setItem('knownFaces', JSON.stringify(knownFaces));
+                
+                // Update face matcher
+                if (knownFaces.length > 0) {
+                    const labeledDescriptors = knownFaces.map(face => 
+                        new faceapi.LabeledFaceDescriptors(face.name, [new Float32Array(face.descriptor)])
+                    );
+                    faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+                } else {
+                    faceMatcher = null;
+                }
+                
+                displayRegisteredFaces();
             }
-            displayRegisteredFaces();
         }
-
-        // Utility functions
-        const convertFileToBase64 = file => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
-
-        const createImageFromBase64 = base64 => new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = base64;
-        });
-
-        const updateOverlay = (status, expression, recognition) => {
-            overlay.innerHTML = `
-                <div>Status: ${status}</div>
-                <div>Expression: ${expression}</div>
-                <div>Recognition: ${recognition}</div>
-            `;
-        };
-
-        const updateButtonStates = () => {
+        
+        // Update button states
+        function updateButtonStates() {
             registerBtn.disabled = !modelsLoaded;
             snapBtn.disabled = !(modelsLoaded && videoStreamActive);
-        };
-
-        // Event listeners
+        }
+        
+        // Utility functions
+        function convertFileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function createImageFromBase64(base64) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = base64;
+            });
+        }
+        
+        // Initialize on page load
         window.addEventListener('DOMContentLoaded', initializeSystem);
+        
+        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
-            video.srcObject?.getTracks().forEach(track => track.stop());
-            clearInterval(detectionInterval);
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+            }
         });
-
-        // Expose functions to HTML buttons
-        window.registerFromFile = async () => {
-            const file = imageUploadInput.files[0];
-            const name = personNameInput.value.trim();
-            if (!file || !name) return alert('Please provide both name and image');
-            await processAndRegisterFace(await convertFileToBase64(file), name);
-            imageUploadInput.value = '';
-            personNameInput.value = '';
-        };
-
-        window.snapAndRegister = async () => {
-            const name = personNameInput.value.trim();
-            if (!name) return alert('Please enter a name');
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            await processAndRegisterFace(canvas.toDataURL('image/jpeg'), name);
-            personNameInput.value = '';
-        };
     </script>
 </body>
 </html>
