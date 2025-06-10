@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VRM Viewer - AI VTuber System</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Prevent body scrollbars */
+        }
+        
+        #viewer {
+            width: 100vw;
+            /* Height is set dynamically by JavaScript */
+            position: relative;
+            display: block;
+        }
+        
+        #togglePanel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1001;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 60px;
+            right: 15px;
+            z-index: 1000;
+            background: rgba(28, 28, 30, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            width: 300px;
+            max-height: calc(100vh - 80px); /* Adjust max-height for mobile */
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: none; /* Initially hidden */
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #f0f0f0;
+        }
+
+        .control-group .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            box-sizing: border-box;
+        }
+        
+        input[type="file"]::file-selector-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background: #5a6fd8;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            margin: 4px 2px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+            flex-grow: 1; /* Allow buttons to grow */
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+        
+        button:disabled {
+            background: #4a5c9f;
+            cursor: not-allowed;
+        }
+
+        .button-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .status, .error {
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+            display: none; /* Hidden by default */
+            text-align: center;
+        }
+
+        .status { background: rgba(0, 100, 0, 0.8); }
+        .error { background: rgba(100, 0, 0, 0.8); }
+        
+    </style>
+    
+    <!-- Import map for Three.js and dependencies -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/",
+            "@pixiv/three-vrm": "https://cdn.jsdelivr.net/npm/@pixiv/three-vrm@3/lib/three-vrm.module.min.js",
+            "easy-three": "https://cdn.jsdelivr.net/gh/masabando/easy-three@1.1.2/dist/easy-three.js"
+        }
+    }
+    </script>
+</head>
+<body>
+    <div id="viewer"></div>
+    
+    <button id="togglePanel" onclick="toggleControlPanel()">☰ Controls</button>
+    
+    <div class="controls" id="controlPanel">
+        <h3>🎭 VRM Viewer Controls</h3>
+        
+        <div class="control-group">
+            <label for="vrmFile">Load VRM Model:</label>
+            <input type="file" id="vrmFile" accept=".vrm" />
+        </div>
+        
+        <div class="control-group">
+            <label>Camera Controls:</label>
+            <div class="button-grid">
+                <button onclick="resetCamera()">Reset Camera</button>
+                <button onclick="toggleControls()">Toggle Mouse</button>
+                <button onclick="startLookingAtMouse()">Start Look</button>
+                <button onclick="stopLookingAtMouse()">Stop Look</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <label>Expressions:</label>
+            <div class="button-grid">
+                <button onclick="setExpression('happy')">😊 Happy</button>
+                <button onclick="setExpression('angry')">😠 Angry</button>
+                <button onclick="setExpression('sad')">😢 Sad</button>
+                <button onclick="setExpression('surprised')">😲 Surprised</button>
+                <button onclick="resetExpressions()">Reset</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div>
+            <input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" />
+        </div>
+        
+        <div class="control-group">
+            <label>Model Orientation:</label>
+            <div class="button-grid">
+                <button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+             <label>Music Listening Animation:</label>
+            <div class="button-grid">
+                <button onclick="startMusicListeningAnimation()">Start Listen</button>
+                <button onclick="stopMusicListeningAnimation()">Stop Listen</button>
+            </div>
+        </div>
+        
+        <div id="status" class="status"></div>
+        <div id="error" class="error"></div>
+    </div>
+    
+    <!-- GSAP CDN for smooth animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    
+    <script type="module">
+        import { init } from "easy-three";
+        import * as THREE from "three"; 
+        import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+        import { VRM, VRMLoaderPlugin } from "@pixiv/three-vrm";
+        
+        // Global variables
+        let scene, camera, renderer, controls, animate, destroy;
+        let currentVRM = null;
+        let isAnimating = true; // Always true: controls perpetual idle animation (breathing + subtle sway)
+        let isMusicListening = false; // Controls the override for music listening animation
+        let isLookingAtMouse = false; // New: Controls mouse look-at animation
+        const clock = new THREE.Clock();
+        
+        let controlsEnabled = false;
+        let isInverted = false; // Global state for inversion
+
+        // Auto-blink specific global variables
+        let autoBlinkTimeoutId = null;
+
+        // Mouse look-at specific variables
+        let mouse = new THREE.Vector2(0, 0); // Stores normalized mouse coordinates (-1 to 1)
+        const mouseLookSensitivity = 0.5; // How much the head moves in response to mouse X
+
+        // Fixed vertical tilt values
+        const defaultBodyPitch = 0.1; // Default vertical body tilt (constant)
+        const defaultHeadPitch = 0;   // Default head pitch (relative to body) (constant)
+
+        // Model vertical offset, now a fixed default
+        const defaultModelVerticalOffset = -0.2; // Original default value
+
+        // Function to capture mouse movement and update normalized coordinates
+        function onMouseMove(event) {
+            // Calculate normalized device coordinates (-1 to +1) based on window size
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1; 
+        }
+
+        // Handle window resizing, especially for mobile viewports
+        function resizeViewer() {
+            const viewerElement = document.getElementById('viewer');
+            const newHeight = window.innerHeight;
+            viewerElement.style.height = `${newHeight}px`;
+
+            if (renderer) {
+                camera.aspect = window.innerWidth / newHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, newHeight);
+            }
+        }
+
+        // Initialize the 3D scene
+        function initScene() {
+            const viewerElement = document.getElementById('viewer');
+            const result = init(viewerElement);
+            
+            ({ scene, camera, renderer, controls, animate, destroy } = result);
+            
+            // Initial camera setup, will be overridden by resetCamera on VRM load
+            camera.position.set(0, 1.0, 1.8);
+            controls.target.set(0, 0.8, 0);
+            camera.lookAt(controls.target);
+            
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
+            directionalLight.position.set(1, 1, 1).normalize();
+            scene.add(directionalLight);
+            
+            const loader = new GLTFLoader();
+            loader.register((parser) => new VRMLoaderPlugin(parser));
+            window.vrmLoader = loader;
+
+            // Add mouse move listener to the window
+            window.addEventListener('mousemove', onMouseMove);
+            
+            animate(() => {
+                const deltaTime = clock.getDelta();
+                if (currentVRM) {
+                    // Update the VRM's animation mixer
+                    if (currentVRM.mixer) {
+                        currentVRM.mixer.update(deltaTime);
+                    }
+                    
+                    const t = clock.getElapsedTime();
+
+                    const spine = currentVRM.humanoid?.getNormalizedBoneNode('spine');
+                    const hips = currentVRM.humanoid?.getNormalizedBoneNode('hips');
+                    const chest = currentVRM.humanoid?.getNormalizedBoneNode('chest');
+                    const head = currentVRM.humanoid?.getNormalizedBoneNode('head');
+                    const neck = currentVRM.humanoid?.getNormalizedBoneNode('neck');
+
+                    // Breathing animation on spine (vertical movement) - always active if model loaded
+                    if (spine) {
+                        // Only apply if GSAP is not currently tweening spine.position
+                        if (!gsap.isTweening(spine.position)) {
+                             spine.position.y = 0.06 + Math.sin(t * 2) * 0.005;
+                        }
+                    }
+
+                    // Determine the effective body pitch based on inversion
+                    const effectiveBodyPitch = isInverted ? -defaultBodyPitch : defaultBodyPitch;
+
+                    if (isMusicListening) {
+                        // Music Listening animation: pronounced head tilt, subtle body sway
+                        const headTiltAmount = 0.15; // Reduced head tilt amount
+                        const headTiltFrequency = 2.5; // Speed of the head tilt
+
+                        // Apply default body pitch, then layer music sway on top
+                        const bodySwayYaw = 0.01; // Very subtle body side-to-side rotation
+                        const bodySwayPitch = 0.005; // Very subtle body forward/backward rotation
+                        const bodyFrequency = 1.5; // Slower rhythmic body movement
+
+
+                        if (hips && !gsap.isTweening(hips.rotation)) {
+                            hips.rotation.y = Math.sin(t * bodyFrequency) * bodySwayYaw;
+                            hips.rotation.x = effectiveBodyPitch + (Math.cos(t * bodyFrequency * 0.9) * bodySwayPitch); // Combine default with music sway pitch
+                        }
+                        if (chest && !gsap.isTweening(chest.rotation)) {
+                            chest.rotation.y = Math.sin(t * bodyFrequency * 1.1 + 0.5) * bodySwayYaw * 0.5;
+                            chest.rotation.x = effectiveBodyPitch * 0.5 + (Math.cos(t * bodyFrequency * 1.0 + 0.1) * bodySwayPitch * 0.5); // Combine default with music sway pitch
+                        }
+
+                        // Head/Neck: If mouse is also looking, combine mouse yaw with music animation's subtle head movements
+                        if (head && !gsap.isTweening(head.rotation)) {
+                            const targetHeadYaw = isLookingAtMouse ? mouse.x * mouseLookSensitivity : 0; // Only apply mouse yaw if isLookingAtMouse
+                            head.rotation.y = targetHeadYaw + (Math.sin(t * headTiltFrequency * 0.7) * headTiltAmount * 0.1); // Combine mouse yaw with music yaw
+                            head.rotation.z = Math.sin(t * headTiltFrequency) * headTiltAmount; // Music head tilt
+                            head.rotation.x = defaultHeadPitch + (Math.cos(t * headTiltFrequency * 0.6) * headTiltAmount * 0.05); // Combine default pitch with music pitch
+                        }
+                        if (neck && !gsap.isTweening(neck.rotation)) {
+                            const targetNeckYaw = isLookingAtMouse ? mouse.x * mouseLookSensitivity * 0.3 : 0; // Less neck movement
+                            neck.rotation.y = targetNeckYaw;
+                            neck.rotation.x = defaultHeadPitch * 0.3; // Scaled default pitch
+                            neck.rotation.z = 0; // No roll
+                        }
+
+                    } else if (isLookingAtMouse) { // Only mouse look active
+                        // Kill any conflicting animations on body parts from other states
+                        gsap.killTweensOf(head.rotation);
+                        if (neck) gsap.killTweensOf(neck.rotation);
+                        gsap.killTweensOf(hips.rotation); 
+                        gsap.killTweensOf(chest.rotation); 
+                        gsap.killTweensOf(spine.rotation); 
+
+                        // Body: Apply fixed body pitch and idle sway
+                        const idleSwayYaw = 0.02; 
+                        const idleSwayPitch = 0.01; 
+                        const idleFrequency = 0.75; 
+
+                        if (hips && !gsap.isTweening(hips.rotation)) {
+                            hips.rotation.y = Math.sin(t * idleFrequency) * idleSwayYaw;
+                            hips.rotation.x = effectiveBodyPitch + (Math.cos(t * idleFrequency * 0.8) * idleSwayPitch); 
+                            hips.rotation.z = 0; 
+                        }
+                        if (chest && !gsap.isTweening(chest.rotation)) {
+                            chest.rotation.y = Math.sin(t * idleFrequency * 1.1 + 0.5) * idleSwayYaw * 0.5;
+                            chest.rotation.x = effectiveBodyPitch * 0.5 + (Math.cos(t * idleFrequency * 0.9 + 0.3) * idleSwayPitch * 0.5); 
+                            chest.rotation.z = 0; 
+                        }
+
+                        // Head/Neck: Apply mouse-controlled yaw, fixed vertical pitch
+                        if (head) {
+                            const targetHeadYaw = mouse.x * mouseLookSensitivity;
+                            gsap.to(head.rotation, {
+                                y: targetHeadYaw,
+                                x: defaultHeadPitch, 
+                                z: 0, 
+                                duration: 0.1, 
+                                ease: "power1.out",
+                                overwrite: true
+                            });
+                        }
+                        if (neck) {
+                             gsap.to(neck.rotation, {
+                                y: mouse.x * mouseLookSensitivity * 0.3, 
+                                x: defaultHeadPitch * 0.3, 
+                                z: 0, 
+                                duration: 0.1,
+                                ease: "power1.out",
+                                overwrite: true
+                            });
+                        }
+
+                    } else { // Idle animation active (breathing + subtle sway) with fixed tilts
+                        const idleSwayYaw = 0.02; // Subtle rotation around Y-axis
+                        const idleSwayPitch = 0.01; // Subtle rotation around X-axis
+                        const idleFrequency = 0.75; // Slower rhythm for idle
+
+                        // Apply fixed body pitch, then layer idle sway on top
+                        if (hips && !gsap.isTweening(hips.rotation)) {
+                            hips.rotation.y = Math.sin(t * idleFrequency) * idleSwayYaw;
+                            hips.rotation.x = effectiveBodyPitch + (Math.cos(t * idleFrequency * 0.8) * idleSwayPitch); // Combine fixed with subtle idle pitch
+                            hips.rotation.z = 0; // No roll
+                        }
+                        if (chest && !gsap.isTweening(chest.rotation)) {
+                            chest.rotation.y = Math.sin(t * idleFrequency * 1.1 + 0.5) * idleSwayYaw * 0.5;
+                            chest.rotation.x = effectiveBodyPitch * 0.5 + (Math.cos(t * idleFrequency * 0.9 + 0.3) * idleSwayPitch * 0.5); // Combine fixed with subtle idle pitch
+                            chest.rotation.z = 0; // No roll
+                        }
+                        if (head && !gsap.isTweening(head.rotation)) {
+                            // Apply defaultHeadPitch directly to head's X-rotation (pitch)
+                            head.rotation.x = defaultHeadPitch; 
+                            head.rotation.y = Math.sin(t * idleFrequency * 0.6) * idleSwayYaw * 0.2; // Subtle idle yaw
+                            head.rotation.z = 0; // Keep roll neutral for idle
+                        }
+                         if (neck && !gsap.isTweening(neck.rotation)) {
+                            // Apply a scaled version of defaultHeadPitch to neck's X-rotation
+                            neck.rotation.x = defaultHeadPitch * 0.3; 
+                            neck.rotation.y = Math.sin(t * idleFrequency * 0.7) * idleSwayYaw * 0.1; // Subtle idle yaw
+                            neck.rotation.z = 0; // Keep roll neutral for idle
+                        }
+                    }
+
+                    currentVRM.update(deltaTime);
+                }
+            });
+            
+            showStatus('VRM Viewer initialized. Load a VRM file to begin.');
+            toggleControlPanel();
+        }
+        
+        // Load VRM file
+        async function loadVRM(file) {
+            try {
+                showStatus('Loading VRM model...');
+                const url = URL.createObjectURL(file);
+                const gltf = await window.vrmLoader.loadAsync(url);
+                const vrm = gltf.userData.vrm;
+                
+                if (!vrm) throw new Error('Invalid VRM file');
+                
+                if (currentVRM) scene.remove(currentVRM.scene);
+                
+                currentVRM = vrm;
+                scene.add(vrm.scene);
+                
+                const box = new THREE.Box3().setFromObject(vrm.scene);
+                const center = box.getCenter(new THREE.Vector3());
+                // Apply defaultModelVerticalOffset to lower the entire model
+                vrm.scene.position.set(-center.x, -box.min.y + defaultModelVerticalOffset, -center.z);
+                
+                // If isInverted is true from a previous state, apply initial 180-degree rotation
+                if (isInverted) {
+                    currentVRM.scene.rotation.y = Math.PI;
+                }
+
+                // Set default pose for the model based on its current global orientation (no animation on load)
+                setDefaultPose(vrm, false); 
+                vrm.springBoneManager?.reset();
+                resetCamera(); // Call resetCamera after model is loaded and posed
+                
+                updateInvertButtonText(); // Ensure button text reflects current isInverted state
+
+                // Start auto-blink and idle animation automatically
+                startAutoBlink();
+
+                URL.revokeObjectURL(url);
+                showStatus(`VRM loaded: ${file.name}`);
+                
+            } catch (error) {
+                console.error('Error loading VRM:', error);
+                showError(`Failed to load VRM: ${error.message}`);
+            }
+        }
+
+        /**
+         * Sets a default relaxed A-pose for the VRM model by directly applying
+         * quaternion rotations to the normalized humanoid bones.
+         * These values are calibrated for a standard, forward-facing model.
+         * When the model's global Y-rotation is inverted, these same local rotations
+         * will result in visually "inverted" arm behavior relative to the user.
+         * @param {VRM} vrm The VRM model to pose.
+         * @param {boolean} animate If true, animates the pose transition.
+         */
+        function setDefaultPose(vrm, animate = false) {
+            if (!vrm.humanoid) return;
+            
+            // Define desired relaxed A-pose rotations in radians for a standard (forward-facing) model.
+            // These are the *base* values for a non-inverted model.
+            const baseUpperArmX = 0.00;   // No forward/backward lean
+            const baseUpperArmY = -0.45;  // Inward for left arm
+            const baseUpperArmZ = -1.30;  // Downward for left arm
+            const baseLowerArmZ = 0.20;   // Natural bend for left elbow
+
+            // Determine actual rotations based on the isInverted state
+            // If inverted, we flip the Y and Z axes for the left arm to achieve
+            // the same visual effect from the user's perspective.
+            const actualUpperArmY_left = isInverted ? -baseUpperArmY : baseUpperArmY;
+            const actualUpperArmZ_left = isInverted ? -baseUpperArmZ : baseUpperArmZ;
+            const actualLowerArmZ_left = isInverted ? -baseLowerArmZ : baseLowerArmZ;
+
+            // For the right arm, these are mirrored from the left arm's *actual* rotations.
+            const actualUpperArmY_right = -actualUpperArmY_left;
+            const actualUpperArmZ_right = -actualUpperArmZ_left;
+            const actualLowerArmZ_right = -actualLowerArmZ_left;
+
+
+            // Get bone nodes using the VRM humanoid API
+            const leftUpperArmBone = vrm.humanoid.getNormalizedBoneNode('leftUpperArm');
+            const rightUpperArmBone = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
+            const leftLowerArmBone = vrm.humanoid.getNormalizedBoneNode('leftLowerArm');
+            const rightLowerArmBone = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
+            
+            // Also reset hips and spine rotations to their default (no sway)
+            const hipsBone = vrm.humanoid.getNormalizedBoneNode('hips');
+            const spineBone = vrm.humanoid.getNormalizedBoneNode('spine');
+            const chestBone = vrm.humanoid.getNormalizedBoneNode('chest');
+            const headBone = vrm.humanoid.getNormalizedBoneNode('head');
+            const neckBone = vrm.humanoid.getNormalizedBoneNode('neck');
+
+
+            const animationDuration = 0.8; // Same duration as global model rotation
+
+            // Helper function to animate or set rotation
+            const setOrAnimateRotation = (bone, targetX, targetY, targetZ, duration) => {
+                if (!bone) return; // Ensure bone exists
+
+                // bone.rotation is a THREE.Euler object
+                const targetEuler = new THREE.Euler(targetX, targetY, targetZ, 'XYZ');
+
+                if (animate) {
+                    gsap.to(bone.rotation, {
+                        x: targetEuler.x,
+                        y: targetEuler.y,
+                        z: targetEuler.z,
+                        duration: duration,
+                        ease: "power2.inOut",
+                        overwrite: true // Important: stop any ongoing idle animations on these bones
+                    });
+                } else {
+                    gsap.killTweensOf(bone.rotation); // Stop any ongoing GSAP animations
+                    bone.rotation.copy(targetEuler); 
+                }
+            };
+
+            // Apply rotations (animated or instant)
+            setOrAnimateRotation(leftUpperArmBone, baseUpperArmX, actualUpperArmY_left, actualUpperArmZ_left, animationDuration);
+            setOrAnimateRotation(rightUpperArmBone, baseUpperArmX, actualUpperArmY_right, actualUpperArmZ_right, animationDuration);
+            setOrAnimateRotation(leftLowerArmBone, 0, 0, actualLowerArmZ_left, animationDuration); // Lower arm only needs Z rotation
+            setOrAnimateRotation(rightLowerArmBone, 0, 0, actualLowerArmZ_right, animationDuration); // Lower arm only needs Z rotation
+
+            // Reset hips, spine, chest, head, and neck rotation to zero when setting default pose
+            if (hipsBone) {
+                setOrAnimateRotation(hipsBone, 0, 0, 0, animate ? animationDuration : 0);
+            }
+            if (spineBone) {
+                setOrAnimateRotation(spineBone, 0, 0, 0, animate ? animationDuration : 0);
+                // Also reset spine position if it's affected by breathing
+                if (animate) {
+                    gsap.to(spineBone.position, { y: 0.06, duration: animationDuration, ease: "power2.inOut", overwrite: true });
+                } else {
+                    spineBone.position.y = 0.06;
+                }
+            }
+            if (chestBone) {
+                setOrAnimateRotation(chestBone, 0, 0, 0, animate ? animationDuration : 0);
+            }
+            if (headBone) {
+                setOrAnimateRotation(headBone, 0, 0, 0, animate ? animationDuration : 0);
+            }
+            if (neckBone) {
+                setOrAnimateRotation(neckBone, 0, 0, 0, animate ? animationDuration : 0);
+            }
+        }
+        
+        window.toggleControlPanel = function() {
+            const panel = document.getElementById('controlPanel');
+            const toggleButton = document.getElementById('togglePanel');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+                toggleButton.innerHTML = '☰ Controls';
+            } else {
+                panel.style.display = 'block';
+                toggleButton.innerHTML = '✕ Close';
+            }
+        };
+
+        function updateInvertButtonText() {
+            const invertButton = document.getElementById('invertModelBtn');
+            if (invertButton) {
+                invertButton.textContent = `Invert Model (${isInverted ? 'ON' : 'OFF'})`;
+            }
+        }
+        
+        window.toggleModelInversion = function() {
+            if (!currentVRM) {
+                showError('Load a VRM model first to invert.');
+                return;
+            }
+
+            const invertButton = document.getElementById('invertModelBtn');
+            invertButton.disabled = true; // Disable button during animation
+            
+            const targetRotationY = currentVRM.scene.rotation.y + Math.PI; // Add 180 degrees
+            
+            // Start model rotation animation
+            gsap.to(currentVRM.scene.rotation, {
+                y: targetRotationY,
+                duration: 0.8, // Animation duration in seconds
+                ease: "power2.inOut", // Smooth easing
+                onComplete: () => {
+                    isInverted = !isInverted; // Toggle the state AFTER animation
+                    // Ensure rotation is clamped to a reasonable range to prevent large values
+                    currentVRM.scene.rotation.y = currentVRM.scene.rotation.y % (2 * Math.PI);
+                    
+                    updateInvertButtonText();
+                    showStatus(`Model Inversion: ${isInverted ? 'ON' : 'OFF'}`);
+                    invertButton.disabled = false; // Re-enable button
+                }
+            });
+
+            // Trigger arm pose animation simultaneously
+            // Temporarily toggle isInverted to get the correct target pose for the animation
+            isInverted = !isInverted; 
+            setDefaultPose(currentVRM, true); // Call with animate = true
+            // Revert isInverted state back to its *actual* post-rotation state for the next click
+            isInverted = !isInverted; 
+        };
+        
+        window.setExpression = function(expressionName) {
+            if (!currentVRM?.expressionManager) {
+                showError('Load a VRM model first');
+                return;
+            }
+            // Stop auto-blink when an expression is set
+            stopAutoBlink();
+
+            window.resetExpressions(false); // Pass false to prevent showing status message
+            const expressionMap = {
+                'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'],
+                'sad': ['sad', 'sorrow'], 'surprised': ['surprised', 'shock']
+            };
+            const possibleNames = expressionMap[expressionName] || [expressionName];
+            for (const name of possibleNames) {
+                if (currentVRM.expressionManager.expressionMap[name]) {
+                    currentVRM.expressionManager.setValue(name, 1.0);
+                    showStatus(`Expression: ${name}`);
+                    return;
+                }
+            }
+            if(possibleNames[0] !== 'reset') showError(`Expression '${expressionName}' not found`);
+        };
+        
+        // This implementation manually iterates through all expressions and sets their value to 0.
+        window.resetExpressions = function(showStatusMsg = true) {
+            if (!currentVRM || !currentVRM.expressionManager) return;
+
+            try {
+                const expressionNames = Object.keys(currentVRM.expressionManager.expressionMap);
+                expressionNames.forEach(name => {
+                    currentVRM.expressionManager.setValue(name, 0);
+                });
+                if (showStatusMsg) {
+                    showStatus('Expressions reset');
+                }
+                // Restart auto-blink after expressions are reset
+                startAutoBlink();
+            }
+             catch (error) {
+                console.error('Error resetting expressions:', error);
+                showError('Could not reset expressions.');
+            }
+        };
+        
+        window.setMouthOpen = function(value) {
+            document.getElementById('mouthValue').textContent = parseFloat(value).toFixed(2);
+            if (!currentVRM?.expressionManager) return;
+            const mouthNames = ['aa', 'a', 'mouthOpen'];
+            for (const name of mouthNames) {
+                if (currentVRM.expressionManager.getExpression(name)) {
+                    currentVRM.expressionManager.setValue(name, parseFloat(value));
+                    return;
+                }
+            }
+        };
+        
+        // Internal function to set eye blink, without triggering auto-blink scheduling
+        function setEyeBlinkInternal(value) {
+            if (!currentVRM?.expressionManager) return;
+            const blinkNames = ['blink', 'eyeBlink', 'close'];
+            for (const name of blinkNames) {
+                if (currentVRM.expressionManager.getExpression(name)) {
+                    currentVRM.expressionManager.setValue(name, parseFloat(value));
+                    return;
+                }
+            }
+        }
+
+        // Function to start the auto-blink animation
+        window.startAutoBlink = function() {
+            if (!currentVRM?.expressionManager) { 
+                return;
+            }
+
+            // Clear any previous auto-blink timeout to prevent multiple scheduled blinks
+            if (autoBlinkTimeoutId) {
+                clearTimeout(autoBlinkTimeoutId);
+                autoBlinkTimeoutId = null;
+            }
+
+            const minDelay = 2000; // Minimum delay between blinks (2 seconds)
+            const maxDelay = 5000; // Maximum delay between blinks (5 seconds)
+            const blinkDuration = 100; // Time to close the eye (100ms)
+            const blinkHoldDuration = 50; // Time to hold the eye closed (50ms)
+
+            const randomDelay = Math.random() * (maxDelay - minDelay) + minDelay;
+
+            autoBlinkTimeoutId = setTimeout(() => {
+                // Close the eyes
+                setEyeBlinkInternal(1.0);
+
+                // Schedule opening the eyes after the blink duration and hold
+                setTimeout(() => {
+                    setEyeBlinkInternal(0.0);
+                    // Schedule the next auto-blink after eyes are fully open
+                    startAutoBlink();
+                }, blinkDuration + blinkHoldDuration); // Total time eyes are mostly closed
+            }, randomDelay);
+        };
+
+        // Function to stop the auto-blink animation
+        window.stopAutoBlink = function() {
+            if (autoBlinkTimeoutId) {
+                clearTimeout(autoBlinkTimeoutId);
+                autoBlinkTimeoutId = null;
+            }
+            // Ensure eyes are open when auto-blink stops
+            if (currentVRM?.expressionManager) { 
+                setEyeBlinkInternal(0.0);
+            }
+        };
+
+        window.resetCamera = function() {
+            if (currentVRM) {
+                const box = new THREE.Box3().setFromObject(currentVRM.scene);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+
+                // Calculate distance needed to fit the full height in view
+                // Assuming camera.fov is 50 degrees (default for THREE.PerspectiveCamera)
+                const fovRad = camera.fov * (Math.PI / 180);
+                let distanceHeight = (size.y / 2) / Math.tan(fovRad / 2);
+
+                // Calculate distance needed to fit the full width based on aspect ratio
+                const aspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
+                let distanceWidth = (size.x / 2) / Math.tan( (2 * Math.atan(Math.tan(fovRad / 2) * aspectRatio)) / 2 );
+
+                // Take the maximum of the two distances to ensure the entire model fits, plus some padding
+                const cameraDistance = Math.max(distanceHeight, distanceWidth) * 1.1; 
+
+                // Set camera position and target. Adjust Y slightly to center vertically on the character.
+                camera.position.set(center.x, center.y + size.y * 0.1, center.z + cameraDistance); 
+                controls.target.set(center.x, center.y, center.z);
+                controls.update();
+                showStatus('Camera reset to fit model.');
+            } else {
+                // Default camera position if no VRM is loaded
+                camera.position.set(0, 1.0, 1.8);
+                controls.target.set(0, 0.8, 0);
+                controls.update();
+                showStatus('Camera reset to default position.');
+            }
+        };
+        
+        window.toggleControls = function() {
+            if (controls) {
+                if (controlsEnabled) {
+                    controls.disconnect();
+                    controlsEnabled = false;
+                    showStatus('Mouse controls disabled');
+                } else {
+                    controls.connect();
+                    controlsEnabled = true;
+                    showStatus('Mouse controls enabled');
+                }
+            }
+        };
+        
+        // Function to start music listening animation
+        window.startMusicListeningAnimation = function() {
+            if (!currentVRM) {
+                showError('Load a VRM model first.');
+                return;
+            }
+            if (isMusicListening) return; // Already listening
+
+            isMusicListening = true;
+            // isLookingAtMouse is NOT set to false here, allowing combined animation
+            showStatus('Music listening animation started.');
+
+            // Set expression to happy
+            setExpression('happy');
+
+            // When starting this animation, immediately kill any ongoing GSAP tweens on body parts
+            const hips = currentVRM.humanoid?.getNormalizedBoneNode('hips');
+            const spine = currentVRM.humanoid?.getNormalizedBoneNode('spine');
+            const chest = currentVRM.humanoid?.getNormalizedBoneNode('chest');
+            const head = currentVRM.humanoid?.getNormalizedBoneNode('head');
+            const neck = currentVRM.humanoid?.getNormalizedBoneNode('neck');
+
+
+            if (hips) gsap.killTweensOf(hips.rotation);
+            if (spine) { gsap.killTweensOf(spine.rotation); gsap.killTweensOf(spine.position); }
+            if (chest) gsap.killTweensOf(chest.rotation);
+            if (head) gsap.killTweensOf(head.rotation);
+            if (neck) gsap.killTweensOf(neck.rotation);
+        };
+
+        // Function to stop music listening animation
+        window.stopMusicListeningAnimation = function() {
+            if (!currentVRM) {
+                showError('Load a VRM model first.');
+                return;
+            }
+            if (!isMusicListening) return; // Not listening
+
+            isMusicListening = false;
+            showStatus('Music listening animation stopped. Returning to idle.');
+
+            // Reset expressions to normal
+            resetExpressions();
+
+            // Smoothly transition bones back to their neutral pose or default values
+            const hipsBone = currentVRM.humanoid?.getNormalizedBoneNode('hips');
+            const spineBone = currentVRM.humanoid?.getNormalizedBoneNode('spine');
+            const chestBone = currentVRM.humanoid?.getNormalizedBoneNode('chest');
+            const headBone = currentVRM.humanoid?.getNormalizedBoneNode('head');
+            const neckBone = currentVRM.humanoid?.getNormalizedBoneNode('neck');
+            const animationDuration = 0.5; // Duration for returning to idle pose
+
+            const effectiveBodyPitch = isInverted ? -defaultBodyPitch : defaultBodyPitch;
+
+            if (hipsBone) {
+                gsap.to(hipsBone.rotation, { x: effectiveBodyPitch, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            if (chestBone) {
+                gsap.to(chestBone.rotation, { x: effectiveBodyPitch * 0.5, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            if (headBone) {
+                gsap.to(headBone.rotation, { x: defaultHeadPitch, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            if (neckBone) {
+                gsap.to(neckBone.rotation, { x: defaultHeadPitch * 0.3, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            if (spineBone) {
+                gsap.to(spineBone.rotation, { x: 0, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+                // Ensure spine position returns to idle height, as breathing will naturally resume
+                gsap.to(spineBone.position, { y: 0.06, duration: animationDuration, ease: "power2.inOut" });
+            }
+        };
+
+        // New function to start looking at mouse
+        window.startLookingAtMouse = function() {
+            if (!currentVRM) {
+                showError('Load a VRM model first.');
+                return;
+            }
+            if (isLookingAtMouse) return; // Already looking at mouse
+
+            isLookingAtMouse = true;
+            // Removed isMusicListening = false; to allow combined animation
+            showStatus('Mouse look-at animation started.');
+
+            // Kill any conflicting animations on head/neck/body from other states
+            const hips = currentVRM.humanoid?.getNormalizedBoneNode('hips');
+            const spine = currentVRM.humanoid?.getNormalizedBoneNode('spine');
+            const chest = currentVRM.humanoid?.getNormalizedBoneNode('chest');
+            const head = currentVRM.humanoid?.getNormalizedBoneNode('head');
+            const neck = currentVRM.humanoid?.getNormalizedBoneNode('neck');
+
+            if (hips) gsap.killTweensOf(hips.rotation);
+            if (spine) { gsap.killTweensOf(spine.rotation); gsap.killTweensOf(spine.position); }
+            if (chest) gsap.killTweensOf(chest.rotation);
+            if (head) gsap.killTweensOf(head.rotation);
+            if (neck) gsap.killTweensOf(neck.rotation);
+        };
+
+        // New function to stop looking at mouse
+        window.stopLookingAtMouse = function() {
+            if (!currentVRM) {
+                showError('Load a VRM model first.');
+                return;
+            }
+            if (!isLookingAtMouse) return; // Not looking at mouse
+
+            isLookingAtMouse = false;
+            showStatus('Mouse look-at animation stopped. Returning to idle.');
+
+            // Smoothly transition hips, head, and neck back to their default pose
+            const hipsBone = currentVRM.humanoid?.getNormalizedBoneNode('hips');
+            const headBone = currentVRM.humanoid?.getNormalizedBoneNode('head');
+            const neckBone = currentVRM.humanoid?.getNormalizedBoneNode('neck');
+            const animationDuration = 0.5; // Duration for returning to idle pose
+
+            const effectiveBodyPitch = isInverted ? -defaultBodyPitch : defaultBodyPitch;
+
+            if (hipsBone) {
+                gsap.to(hipsBone.rotation, { x: effectiveBodyPitch, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            if (headBone) {
+                gsap.to(headBone.rotation, { x: defaultHeadPitch, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            if (neckBone) {
+                gsap.to(neckBone.rotation, { x: defaultHeadPitch * 0.3, y: 0, z: 0, duration: animationDuration, ease: "power2.out" });
+            }
+            // Body sway and breathing will automatically resume due to isAnimating being true
+        };
+        
+        function showStatus(message) {
+            const statusEl = document.getElementById('status');
+            if (statusEl.timeout) clearTimeout(statusEl.timeout);
+            statusEl.textContent = message;
+            statusEl.style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            statusEl.timeout = setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        }
+        
+        function showError(message) {
+            const errorEl = document.getElementById('error');
+            if (errorEl.timeout) clearTimeout(errorEl.timeout);
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
+            document.getElementById('status').style.display = 'none';
+            errorEl.timeout = setTimeout(() => { errorEl.style.display = 'none'; }, 5000);
+        }
+        
+        document.getElementById('vrmFile').addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file?.name.toLowerCase().endsWith('.vrm')) {
+                loadVRM(file);
+            } else if (file) {
+                showError('Please select a valid .vrm file');
+            }
+        });
+        
+        // Event Listeners
+        window.addEventListener('load', () => {
+            initScene();
+            resizeViewer();
+        });
+        window.addEventListener('resize', resizeViewer);
+        window.addEventListener('beforeunload', () => { 
+            if (destroy) destroy(); 
+        });
+    </script>
+</body>
+</html>
