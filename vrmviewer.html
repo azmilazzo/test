@@ -20,35 +20,110 @@
             display: block;
         }
         
-        #togglePanel {
+        #togglePanel, #messageButton, #micToggleButton { /* Apply common styles to all three buttons */
             position: absolute;
-            top: 15px;
             right: 15px;
             z-index: 1001;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.6); /* Slightly transparent background */
             color: white;
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            padding: 8px 12px;
+            border-radius: 50%; /* Make it circular */
+            width: 50px; /* Fixed width */
+            height: 50px; /* Fixed height */
+            display: flex; /* Use flexbox for centering content */
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Center vertically */
             cursor: pointer;
-            font-size: 16px;
+            font-size: 16px; /* Adjust font size if any text fallback */
+            padding: 0; /* Remove default padding for better icon centering */
+            transition: background 0.3s, transform 0.3s, color 0.3s, border-color 0.3s; /* Added color and border-color transition */
+            opacity: 0.85; /* Slightly transparent */
+        }
+
+        #togglePanel {
+            top: 15px;
+        }
+
+        #messageButton {
+            top: 75px; /* Position 10px below the togglePanel (15px + 50px + 10px = 75px) */
+        }
+
+        #micToggleButton {
+            top: 135px; /* Position 10px below the messageButton (75px + 50px + 10px = 135px) */
+            background-color: #4CAF50; /* Initial green for mic ON */
+            border-color: #388E3C;
+        }
+
+        #togglePanel:hover, #messageButton:hover, #micToggleButton:hover {
+            opacity: 1; /* Fully opaque on hover */
+            transform: scale(1.05); /* Slight scale effect on hover */
+        }
+
+        /* Mic button specific colors */
+        #micToggleButton.mic-on {
+            background-color: #4CAF50; /* Green */
+            border-color: #388E3C;
+        }
+
+        #micToggleButton.mic-off {
+            background-color: #F44336; /* Red */
+            border-color: #D32F2F;
+        }
+
+        #togglePanel svg, #messageButton svg, #micToggleButton svg {
+            width: 28px; /* Adjust SVG size as needed */
+            height: 28px; /* Adjust SVG size as needed */
+            fill: currentColor; /* Use button's color for SVG fill */
         }
         
         .controls {
             position: absolute;
-            top: 60px;
             right: 15px;
+            /* top and height are controlled by JavaScript */
             z-index: 1000;
             background: rgba(28, 28, 30, 0.85);
             backdrop-filter: blur(10px);
-            padding: 20px;
+            padding: 20px; /* Increased padding */
             border-radius: 12px;
             color: white;
             width: 300px;
-            max-height: calc(100vh - 80px); /* Adjust max-height for mobile */
-            overflow-y: auto;
+            overflow-y: auto; /* Keep scrolling */
             border: 1px solid rgba(255, 255, 255, 0.1);
-            display: none; /* Initially hidden */
+            
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none; /* Prevent interaction when hidden/fading out */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .controls.show {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto; /* Allow interaction when shown */
+        }
+
+        /* Styles for the AI Input Overlay */
+        #aiInputOverlay {
+            position: absolute;
+            bottom: 150px; /* Fixed vertical position */
+            left: 50%;
+            transform: translateX(-50%); /* Center horizontally */
+            z-index: 999; /* Below control panel, above viewer */
+            width: 90%; /* Responsive width */
+            max-width: 500px; /* Max width for larger screens */
+            background: rgba(255, 255, 255, 0.7); /* Slightly transparent white background, default 0.7 */
+            backdrop-filter: blur(10px);
+            padding: 15px; 
+            height: 250px; /* Fixed height for the box */
+            box-sizing: border-box; /* Include padding in height calculation */
+            border-radius: 12px;
+            color: #333; /* Darker text for readability on white background */
+            display: flex;
+            flex-direction: column;
+            gap: 15px; /* Increased gap for more spacing */
+            border: 3px solid #00FF00; /* Thick green border */
+            opacity: 0.7; /* Initial transparency set to 0.7 */
+            transition: opacity 0.3s ease-in-out; /* Add transition for transparency */
         }
         
         .control-group {
@@ -124,6 +199,46 @@
             width: 100%;
             margin: 5px 0;
         }
+
+        /* Styles specific to labels and ranges within #aiInputOverlay */
+        #aiInputOverlay label {
+            color: #333; /* Make label visible on white background */
+            font-weight: 600; /* Ensure labels are bold */
+            margin-bottom: 0; /* Remove default label margin */
+        }
+
+        #aiInputOverlay .slider-label {
+            margin-bottom: 0; /* Remove extra margin from this div */
+        }
+
+        #aiInputOverlay input[type="range"] {
+            background: rgba(0, 0, 0, 0.1); /* Slightly tinted background for slider track */
+            border-radius: 5px;
+            height: 8px; /* Thicker slider track */
+            -webkit-appearance: none; /* Remove default styling */
+            appearance: none;
+        }
+
+        #aiInputOverlay input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; /* Remove default styling */
+            appearance: none;
+            width: 18px; /* Size of the slider thumb */
+            height: 18px; /* Size of the slider thumb */
+            border-radius: 50%; /* Circular thumb */
+            background: #667eea; /* Thumb color */
+            cursor: grab;
+            margin-top: -5px; /* Adjust vertical position of thumb */
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
+
+        #aiInputOverlay input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: grab;
+            box-shadow: 0 0 5px rgba(0,0,0,0.3);
+        }
         
         .status, .error {
             padding: 10px;
@@ -153,11 +268,39 @@
 <body>
     <div id="viewer"></div>
     
-    <button id="togglePanel" onclick="toggleControlPanel()">☰ Controls</button>
+    <button id="togglePanel" onclick="toggleControlPanel()">
+        <!-- Human silhouette icon (SVG) -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2C9.79 2 8 3.79 8 6s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm0 10c-2.67 0-8 1.34-8 4v2c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+    </button>
+
+    <button id="messageButton" onclick="showMessage()">
+        <!-- Chat bubble icon (SVG) -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+        </svg>
+    </button>
+
+    <button id="micToggleButton" onclick="toggleMic()" class="mic-on">
+        <svg id="micMainIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="width: 28px; height: 28px; fill: white;">
+            <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.2-3c0 3.53-2.93 6.4-6.2 6.4S4.8 14.53 4.8 11H3c0 4.07 3.06 7.44 7 7.93V22h4v-3.07c3.94-.49 7-3.86 7-7.93h-1.8z"/>
+        </svg>
+        <svg id="micSlashIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" style="position: absolute; width: 28px; height: 28px; fill: red; display: none;">
+            <path d="M19.7 4.3c-.39-.39-1.02-.39-1.41 0L4.3 18.29c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0L19.7 5.71c.39-.39.39-1.02 0-1.41z"/>
+        </svg>
+    </button>
     
     <div class="controls" id="controlPanel">
         <h3>🎭 VRM Viewer Controls</h3>
+
+        <div class="control-group">
+            <div class="slider-label"><label for="panelVerticalPosSlider">Panel Vertical Position:</label><span id="panelVerticalPosValue">15px</span></div>
+            <input type="range" id="panelVerticalPosSlider" min="0" max="800" step="1" value="15" oninput="setControlPanelVerticalPosition(this.value)" />
+        </div>
         
+        <!-- Panel Height Slider Removed -->
+
         <div class="control-group">
             <label for="vrmFile">Load VRM Model:</label>
             <input type="file" id="vrmFile" accept=".vrm" />
@@ -166,11 +309,18 @@
         <div class="control-group">
             <label>Camera Controls:</label>
             <div class="button-grid">
-                <button onclick="resetCamera()">Reset Camera</button>
-                <button onclick="toggleControls()">Toggle Mouse</button>
-                <button onclick="startLookingAtMouse()">Start Look</button>
-                <button onclick="stopLookingAtMouse()">Stop Look</button>
+                <!-- Removed Reset Camera and Toggle Mouse buttons -->
             </div>
+        </div>
+        
+        <div class="control-group">
+            <div class="slider-label"><label for="zoomSlider">Zoom:</label><span id="zoomValue">1.50</span></div>
+            <input type="range" id="zoomSlider" min="0.5" max="1.5" step="0.01" value="1.5" oninput="setZoom(this.value)" />
+        </div>
+
+        <div class="control-group">
+            <div class="slider-label"><label for="verticalPosSlider">Vertical Position:</label><span id="verticalPosValue">-0.45</span></div>
+            <input type="range" id="verticalPosSlider" min="-0.5" max="0.5" step="0.01" value="-0.45" oninput="setVerticalPosition(this.value)" />
         </div>
         
         <div class="control-group">
@@ -207,6 +357,11 @@
         <div id="status" class="status"></div>
         <div id="error" class="error"></div>
     </div>
+
+    <!-- AI Input Overlay -->
+    <div id="aiInputOverlay">
+        <!-- Sliders removed as per request -->
+    </div>
     
     <!-- GSAP CDN for smooth animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
@@ -225,8 +380,9 @@
         let isLookingAtMouse = false; // New: Controls mouse look-at animation
         const clock = new THREE.Clock();
         
-        let controlsEnabled = false;
+        let controlsEnabled = false; // Initial state for orbit controls
         let isInverted = false; // Global state for inversion
+        let isMicOn = true; // Initial state for the mic button
 
         // Auto-blink specific global variables
         let autoBlinkTimeoutId = null;
@@ -241,6 +397,13 @@
 
         // Model vertical offset, now a fixed default
         const defaultModelVerticalOffset = -0.2; // Original default value
+
+        // Global variables for camera adjustments
+        let currentZoomFactor = 1.5; // Changed default zoom to 1.5
+        let currentVerticalPositionOffset = -0.45; // Changed default vertical position to -0.45
+
+        let currentPanelTop = 15; // Initial top position for the control panel
+        let currentPanelHeight = 600; // Fixed height for the control panel
 
         // Function to capture mouse movement and update normalized coordinates
         function onMouseMove(event) {
@@ -260,6 +423,7 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(window.innerWidth, newHeight);
             }
+            updatePanelSliderRanges(); // Update slider ranges on resize
         }
 
         // Initialize the 3D scene
@@ -287,6 +451,9 @@
 
             // Add mouse move listener to the window
             window.addEventListener('mousemove', onMouseMove);
+
+            // Lock controls by default
+            controls.enabled = false; 
             
             animate(() => {
                 const deltaTime = clock.getDelta();
@@ -409,7 +576,7 @@
                         }
                         if (chest && !gsap.isTweening(chest.rotation)) {
                             chest.rotation.y = Math.sin(t * idleFrequency * 1.1 + 0.5) * idleSwayYaw * 0.5;
-                            chest.rotation.x = effectiveBodyPitch * 0.5 + (Math.cos(t * idleFrequency * 0.9 + 0.3) * idleSwayPitch * 0.5); // Combine fixed with subtle idle pitch
+                            chest.rotation.x = effectiveBodyPitch * 0.5 + (Math.cos(t * idleFrequency * 1.0 + 0.1) * idleSwayPitch * 0.5); // Combine fixed with subtle idle pitch
                             chest.rotation.z = 0; // No roll
                         }
                         if (head && !gsap.isTweening(head.rotation)) {
@@ -431,7 +598,7 @@
             });
             
             showStatus('VRM Viewer initialized. Load a VRM file to begin.');
-            toggleControlPanel();
+            // Removed initial call to toggleControlPanel() to keep panel closed by default
         }
         
         // Load VRM file
@@ -462,12 +629,23 @@
                 // Set default pose for the model based on its current global orientation (no animation on load)
                 setDefaultPose(vrm, false); 
                 vrm.springBoneManager?.reset();
+                
+                // Reset zoom and vertical position sliders to defaults and apply
+                currentZoomFactor = 1.5; // Set default zoom to 1.5
+                currentVerticalPositionOffset = -0.45; // Set default vertical position to -0.45
+                document.getElementById('zoomSlider').value = currentZoomFactor;
+                document.getElementById('zoomValue').textContent = currentZoomFactor.toFixed(2);
+                document.getElementById('verticalPosSlider').value = currentVerticalPositionOffset;
+                document.getElementById('verticalPosValue').textContent = currentVerticalPositionOffset.toFixed(2);
+                
                 resetCamera(); // Call resetCamera after model is loaded and posed
                 
                 updateInvertButtonText(); // Ensure button text reflects current isInverted state
 
                 // Start auto-blink and idle animation automatically
                 startAutoBlink();
+                // Automatically start mouse look-at animation
+                startLookingAtMouse();
 
                 URL.revokeObjectURL(url);
                 showStatus(`VRM loaded: ${file.name}`);
@@ -580,13 +758,12 @@
         
         window.toggleControlPanel = function() {
             const panel = document.getElementById('controlPanel');
-            const toggleButton = document.getElementById('togglePanel');
-            if (panel.style.display === 'block') {
-                panel.style.display = 'none';
-                toggleButton.innerHTML = '☰ Controls';
+            if (panel.classList.contains('show')) {
+                // Currently shown, fade out and then hide
+                panel.classList.remove('show');
             } else {
-                panel.style.display = 'block';
-                toggleButton.innerHTML = '✕ Close';
+                // Currently hidden, show immediately and then fade in
+                panel.classList.add('show');
             }
         };
 
@@ -748,26 +925,35 @@
         window.resetCamera = function() {
             if (currentVRM) {
                 const box = new THREE.Box3().setFromObject(currentVRM.scene);
-                const size = box.getSize(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3()); // Overall dimensions of the model
                 const center = box.getCenter(new THREE.Vector3());
 
-                // Calculate distance needed to fit the full height in view
-                // Assuming camera.fov is 50 degrees (default for THREE.PerspectiveCamera)
                 const fovRad = camera.fov * (Math.PI / 180);
-                let distanceHeight = (size.y / 2) / Math.tan(fovRad / 2);
+                
+                // Define the proportion of the model's height we want to focus on (e.g., top 70%)
+                const baseViewableHeightProportion = 0.5; // Base for head to waist
+                const targetVisibleHeight = size.y * baseViewableHeightProportion;
 
-                // Calculate distance needed to fit the full width based on aspect ratio
+                // Calculate the required camera distance based on the target visible height
+                // Apply currentZoomFactor to adjust this distance
+                let cameraDistance = (targetVisibleHeight / 2) / Math.tan(fovRad / 2) * 1.05 / currentZoomFactor;
+
+                // Calculate distance needed to fit the full width based on aspect ratio, also with padding
                 const aspectRatio = renderer.domElement.clientWidth / renderer.domElement.clientHeight;
-                let distanceWidth = (size.x / 2) / Math.tan( (2 * Math.atan(Math.tan(fovRad / 2) * aspectRatio)) / 2 );
+                let distanceWidth = (size.x / 2) / Math.tan( (2 * Math.atan(Math.tan(fovRad / 2) * aspectRatio)) / 2 ) * 1.05 / currentZoomFactor;
 
-                // Take the maximum of the two distances to ensure the entire model fits, plus some padding
-                const cameraDistance = Math.max(distanceHeight, distanceWidth) * 1.1; 
+                // Take the maximum of the two distances to ensure the view fits within the aspect ratio
+                cameraDistance = Math.max(cameraDistance, distanceWidth);
 
-                // Set camera position and target. Adjust Y slightly to center vertically on the character.
-                camera.position.set(center.x, center.y + size.y * 0.1, center.z + cameraDistance); 
-                controls.target.set(center.x, center.y, center.z);
+                // Calculate the target Y position: top of the model minus half of the target visible height
+                // Add currentVerticalPositionOffset to adjust vertical position
+                const targetY = box.max.y - (targetVisibleHeight / 2) + currentVerticalPositionOffset;
+
+                // Set camera position and target
+                camera.position.set(center.x, targetY, center.z + cameraDistance); 
+                controls.target.set(center.x, targetY, center.z);
                 controls.update();
-                showStatus('Camera reset to fit model.');
+                showStatus('Camera reset: Head to waist view.');
             } else {
                 // Default camera position if no VRM is loaded
                 camera.position.set(0, 1.0, 1.8);
@@ -777,17 +963,31 @@
             }
         };
         
-        window.toggleControls = function() {
-            if (controls) {
-                if (controlsEnabled) {
-                    controls.disconnect();
-                    controlsEnabled = false;
-                    showStatus('Mouse controls disabled');
-                } else {
-                    controls.connect();
-                    controlsEnabled = true;
-                    showStatus('Mouse controls enabled');
-                }
+        window.setZoom = function(value) {
+            currentZoomFactor = parseFloat(value);
+            document.getElementById('zoomValue').textContent = currentZoomFactor.toFixed(2);
+            if (currentVRM) {
+                resetCamera(); // Recalculate camera position based on new zoom
+                showStatus(`Zoom: ${currentZoomFactor.toFixed(2)}`);
+            }
+        };
+
+        window.setVerticalPosition = function(value) {
+            currentVerticalPositionOffset = parseFloat(value);
+            document.getElementById('verticalPosValue').textContent = currentVerticalPositionOffset.toFixed(2);
+            if (currentVRM) {
+                // Adjust camera position directly by adding the offset to the target Y
+                const box = new THREE.Box3().setFromObject(currentVRM.scene);
+                const size = box.getSize(new THREE.Vector3());
+                const baseViewableHeightProportion = 0.5;
+                const targetVisibleHeight = size.y * baseViewableHeightProportion;
+                const baseTargetY = box.max.y - (targetVisibleHeight / 2);
+
+                const newTargetY = baseTargetY + currentVerticalPositionOffset;
+                camera.position.y = newTargetY + (camera.position.y - controls.target.y); // Maintain relative camera height
+                controls.target.y = newTargetY;
+                controls.update();
+                showStatus(`Vertical Position: ${currentVerticalPositionOffset.toFixed(2)}`);
             }
         };
         
@@ -920,6 +1120,68 @@
             }
             // Body sway and breathing will automatically resume due to isAnimating being true
         };
+
+        // New function to handle the message button click
+        window.showMessage = function() {
+            showStatus('Hello! This is a message from your AI VTuber.');
+        };
+
+        window.setControlPanelVerticalPosition = function(value) {
+            currentPanelTop = parseInt(value);
+            const panel = document.getElementById('controlPanel');
+            const panelVerticalPosValue = document.getElementById('panelVerticalPosValue');
+
+            panel.style.top = `${currentPanelTop}px`;
+            // Panel height is fixed, set it here
+            panel.style.height = `${currentPanelHeight}px`; 
+            panelVerticalPosValue.textContent = `${currentPanelTop}px`;
+            
+            updatePanelSliderRanges(); // Re-adjust slider ranges
+            showStatus(`Panel Top: ${currentPanelTop}px`);
+        };
+
+        function updatePanelSliderRanges() {
+             const panelVerticalPosSlider = document.getElementById('panelVerticalPosSlider');
+             const panel = document.getElementById('controlPanel');
+
+             const bottomMargin = 20; // Margin from the bottom of the viewport
+
+             // Update max for vertical position slider
+             // Max top position ensures there's enough space for the fixed panel height + bottom margin
+             const calculatedMaxTop = window.innerHeight - currentPanelHeight - bottomMargin;
+             panelVerticalPosSlider.max = Math.max(0, calculatedMaxTop); // Min value is 0
+             
+             // Ensure current top value is within new bounds
+             if (currentPanelTop > panelVerticalPosSlider.max) {
+                 currentPanelTop = panelVerticalPosSlider.max;
+                 panel.style.top = `${currentPanelTop}px`;
+                 panelVerticalPosSlider.value = currentPanelTop;
+                 document.getElementById('panelVerticalPosValue').textContent = `${currentPanelTop}px`;
+             }
+        }
+
+        // New function to toggle mic on/off state
+        window.toggleMic = function() {
+            const micToggleButton = document.getElementById('micToggleButton');
+            const micMainIcon = document.getElementById('micMainIcon');
+            const micSlashIcon = document.getElementById('micSlashIcon');
+            
+            isMicOn = !isMicOn; // Toggle the state
+            
+            if (isMicOn) {
+                micToggleButton.classList.remove('mic-off');
+                micToggleButton.classList.add('mic-on');
+                micSlashIcon.style.display = 'none'; // Hide slash
+                micMainIcon.style.fill = 'white'; // Keep mic icon white when on
+                showStatus('Microphone: ON');
+            } else {
+                micToggleButton.classList.remove('mic-on');
+                micToggleButton.classList.add('mic-off');
+                micSlashIcon.style.display = 'block'; // Show slash
+                micMainIcon.style.fill = 'white'; // Ensure mic icon is white even when off
+                showStatus('Microphone: OFF');
+            }
+        };
         
         function showStatus(message) {
             const statusEl = document.getElementById('status');
@@ -951,7 +1213,22 @@
         // Event Listeners
         window.addEventListener('load', () => {
             initScene();
-            resizeViewer();
+            
+            // Set initial control panel position and height values
+            document.getElementById('panelVerticalPosSlider').value = currentPanelTop;
+            document.getElementById('panelVerticalPosValue').textContent = `${currentPanelTop}px`;
+            
+            // Set initial height for the control panel
+            document.getElementById('controlPanel').style.height = `${currentPanelHeight}px`;
+
+            // Call resizeViewer to set initial position and update slider ranges
+            resizeViewer(); 
+
+            // Make the control panel appear on load by explicitly adding the 'show' class
+            const panel = document.getElementById('controlPanel');
+            if (panel) {
+                panel.classList.add('show');
+            }
         });
         window.addEventListener('resize', resizeViewer);
         window.addEventListener('beforeunload', () => { 
@@ -960,3 +1237,4 @@
     </script>
 </body>
 </html>
+
