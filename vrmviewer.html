@@ -21,13 +21,13 @@
             display: block;
         }
         
-        #togglePanel {
+        /* Base style for all top-right action buttons */
+        .action-button {
             position: absolute;
-            top: 15px;
             right: 15px;
             z-index: 1001;
             background: rgba(0, 0, 0, 0.6);
-            color: white;
+            color: white; /* Default icon color */
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%; /* Make it circular */
             width: 50px; /* Set a fixed width */
@@ -37,13 +37,47 @@
             justify-content: center; /* Center icon horizontally */
             cursor: pointer;
             font-size: 24px; /* Icon size */
-            transition: background 0.3s, transform 0.2s;
+            transition: background 0.3s, transform 0.2s, background-color 0.3s;
         }
 
-        #togglePanel:hover {
+        .action-button:hover {
             background: rgba(0, 0, 0, 0.8);
             transform: scale(1.05);
         }
+
+        /* Specific positioning for each button */
+        #togglePanel {
+            top: 15px;
+        }
+
+        #messageBtn {
+            top: calc(15px + 50px + 10px); /* 15px (togglePanel top) + 50px (togglePanel height) + 10px (margin) */
+        }
+
+        #micBtn {
+            top: calc(15px + 50px + 10px + 50px + 10px); /* ... + messageBtn height + margin */
+        }
+
+        #speakerBtn {
+            top: calc(15px + 50px + 10px + 50px + 10px + 50px + 10px); /* ... + micBtn height + margin */
+        }
+
+        /* Mic/Speaker button states */
+        .mic-btn.on, .speaker-btn.on {
+            background-color: #4CAF50; /* Green */
+        }
+        .mic-btn.on i, .speaker-btn.on i {
+            color: white; /* White icon on green background */
+        }
+
+        .mic-btn.off, .speaker-btn.off {
+            background-color: #F44336; /* Red */
+        }
+        .mic-btn.off i, .speaker-btn.off i {
+            color: black; /* Black icon on red background for visibility */
+        }
+
+        /* Removed strike-through effect completely as per user request */
         
         .controls {
             position: absolute;
@@ -209,8 +243,11 @@
 <body>
     <div id="viewer"></div>
     
-    <button id="togglePanel" onclick="toggleControlPanel()"><i class="fa-solid fa-person"></i></button>
-    
+    <button id="togglePanel" class="action-button" onclick="toggleControlPanel()"><i class="fa-solid fa-person"></i></button>
+    <button id="messageBtn" class="action-button" onclick="showMessageInfo()"><i class="fa-solid fa-message"></i></button>
+    <button id="micBtn" class="action-button mic-btn on" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
+    <button id="speakerBtn" class="action-button speaker-btn on" onclick="toggleSpeaker()"><i class="fa-solid fa-volume-high"></i></button>
+
     <div class="controls" id="controlPanel">
         <h3>🎭 VRM Viewer Controls</h3>
         
@@ -314,6 +351,10 @@
         const boxTransparency = 0.7;    // Opacity value (0-1)
         const boxHeight = 250;          // Height in pixels
         const boxWidth = 350;             // New default: Width in pixels, now fixed
+
+        // State variables for mic and speaker buttons
+        let isMicOn = true;
+        let isSpeakerOn = true;
 
         // Function to capture mouse movement and update normalized coordinates
         function onMouseMove(event) {
@@ -476,8 +517,6 @@
             });
             
             showStatus('VRM Viewer initialized. Load a VRM file to begin.');
-            // Removed toggleControlPanel() call to make it closed by default
-            // toggleControlPanel(); 
 
             // Initialize rectangle box properties and apply defaults
             const rectangleBoxElement = document.getElementById('rectangleBox');
@@ -487,6 +526,10 @@
             rectangleBoxElement.style.backgroundColor = `rgba(255, 255, 255, ${boxTransparency})`;
             rectangleBoxElement.style.height = `${boxHeight}px`;
             rectangleBoxElement.style.width = `${boxWidth}px`; // Apply default width
+
+            // Initialize button states
+            updateMicButtonState();
+            updateSpeakerButtonState();
         }
         
         // Load VRM file
@@ -635,14 +678,49 @@
         
         window.toggleControlPanel = function() {
             const panel = document.getElementById('controlPanel');
-            const toggleButton = document.getElementById('togglePanel');
             if (panel.style.display === 'block') {
                 panel.style.display = 'none';
-                // No text needed for button with icon
             } else {
                 panel.style.display = 'block';
-                // No text needed for button with icon
             }
+        };
+
+        window.showMessageInfo = function() {
+            showStatus('Message button clicked! (Placeholder for chat functionality)');
+        };
+
+        function updateMicButtonState() {
+            const micBtn = document.getElementById('micBtn');
+            if (isMicOn) {
+                micBtn.classList.remove('off');
+                micBtn.classList.add('on');
+            } else {
+                micBtn.classList.remove('on');
+                micBtn.classList.add('off');
+            }
+        }
+
+        window.toggleMic = function() {
+            isMicOn = !isMicOn;
+            updateMicButtonState();
+            showStatus(`Microphone is now ${isMicOn ? 'ON' : 'OFF'}`);
+        };
+
+        function updateSpeakerButtonState() {
+            const speakerBtn = document.getElementById('speakerBtn');
+            if (isSpeakerOn) {
+                speakerBtn.classList.remove('off');
+                speakerBtn.classList.add('on');
+            } else {
+                speakerBtn.classList.remove('on');
+                speakerBtn.classList.add('off');
+            }
+        }
+
+        window.toggleSpeaker = function() {
+            isSpeakerOn = !isSpeakerOn;
+            updateSpeakerButtonState();
+            showStatus(`Speaker is now ${isSpeakerOn ? 'ON' : 'OFF'}`);
         };
 
         function updateInvertButtonText() {
