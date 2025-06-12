@@ -164,6 +164,22 @@
 
         .status { background: rgba(0, 100, 0, 0.8); }
         .error { background: rgba(100, 0, 0, 0.8); }
+
+        /* Rectangle Box Styling */
+        #rectangleBox {
+            position: absolute;
+            left: 50%;
+            top: 70%; /* Updated default vertical position */
+            transform: translate(-50%, -50%); /* Center horizontally and vertically */
+            width: 350px; /* Updated default width */
+            height: 250px; /* Updated default height */
+            background-color: rgba(255, 255, 255, 0.7); /* Updated default transparency */
+            border: 5px solid #00ff00; /* Thick green border */
+            border-radius: 15px; /* Rounded edges */
+            z-index: 500; /* Below control panel, above viewer */
+            display: block;
+            pointer-events: none; /* Allow mouse events to pass through to the VRM viewer */
+        }
         
     </style>
     
@@ -235,10 +251,15 @@
                 <button onclick="stopMusicListeningAnimation()">Stop Listen</button>
             </div>
         </div>
+
+        <!-- Removed Rectangle Box Controls section -->
         
         <div id="status" class="status"></div>
         <div id="error" class="error"></div>
     </div>
+
+    <!-- New Rectangle Box Element -->
+    <div id="rectangleBox"></div>
     
     <!-- GSAP CDN for smooth animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
@@ -257,7 +278,7 @@
         let isLookingAtMouse = true; // Mouse look-at animation - now always true by default
         const clock = new THREE.Clock();
         
-        let controlsEnabled = true; // Locked to enabled by default
+        // controlsEnabled is not used for camera movement anymore
         let isInverted = false; // Global state for inversion
 
         // Auto-blink specific global variables
@@ -276,6 +297,12 @@
 
         // Camera zoom factor
         let cameraZoomFactor = 1.5; // Initial default zoom factor, now 1.5
+
+        // Rectangle Box properties - now fixed defaults
+        const boxVerticalPosition = 70; // Percentage from top
+        const boxTransparency = 0.7;    // Opacity value (0-1)
+        const boxHeight = 250;          // Height in pixels
+        const boxWidth = 350;             // New default: Width in pixels, now fixed
 
         // Function to capture mouse movement and update normalized coordinates
         function onMouseMove(event) {
@@ -304,12 +331,10 @@
             
             ({ scene, camera, renderer, controls, animate, destroy } = result);
             
-            // Mouse controls are now always connected
-            controls.connect();
+            // Mouse controls for camera movement are intentionally disconnected/disabled
+            // No need to explicitly connect or disconnect here.
             
             // Initial camera setup, will be overridden by resetCamera on VRM load
-            // The resetCamera() function now handles camera position and target.
-            // Calling it here to ensure initial state matches expectations.
             resetCamera(); 
             
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
@@ -323,7 +348,7 @@
             loader.register((parser) => new VRMLoaderPlugin(parser));
             window.vrmLoader = loader;
 
-            // Add mouse move listener to the window
+            // Add mouse move listener to the window (for model head look-at)
             window.addEventListener('mousemove', onMouseMove);
             
             animate(() => {
@@ -441,6 +466,15 @@
             
             showStatus('VRM Viewer initialized. Load a VRM file to begin.');
             toggleControlPanel();
+
+            // Initialize rectangle box properties and apply defaults
+            const rectangleBoxElement = document.getElementById('rectangleBox');
+
+            // Apply fixed default properties to CSS
+            rectangleBoxElement.style.top = `${boxVerticalPosition}%`;
+            rectangleBoxElement.style.backgroundColor = `rgba(255, 255, 255, ${boxTransparency})`;
+            rectangleBoxElement.style.height = `${boxHeight}px`;
+            rectangleBoxElement.style.width = `${boxWidth}px`; // Apply default width
         }
         
         // Load VRM file
@@ -769,9 +803,6 @@
             showStatus(`Camera Zoom: x${cameraZoomFactor.toFixed(2)}`);
         };
 
-        // Removed setModelVerticalPosition function as the slider is removed
-        // window.setModelVerticalPosition = function(value) { ... }
-
 
         window.resetCamera = function() {
             if (currentVRM) {
@@ -804,9 +835,6 @@
                 showStatus('Camera reset to default position.');
             }
         };
-        
-        // Removed window.toggleControls function
-        // window.toggleControls = function() { ... }
         
         // Function to start music listening animation
         window.startMusicListeningAnimation = function() {
