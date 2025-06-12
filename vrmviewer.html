@@ -210,7 +210,7 @@
         .status { background: rgba(0, 100, 0, 0.8); }
         .error { background: rgba(100, 0, 0, 0.8); }
 
-        /* Rectangle Box Styling */
+        /* Rectangle Box Styling - Green */
         #rectangleBox {
             position: absolute;
             left: 50%;
@@ -225,7 +225,58 @@
             display: block;
             pointer-events: none; /* Allow mouse events to pass through to the VRM viewer */
         }
+
+        /* New Message Rectangle Box Styling - Red */
+        #messageRectangleBox {
+            position: absolute;
+            left: 50%;
+            top: 30%; /* Initial vertical position, updated to 30% */
+            transform: translate(-50%, -50%); /* Center horizontally and vertically */
+            width: 360px; /* Initial width, updated to 360px */
+            height: 290px; /* Initial height, updated to 290px */
+            background-color: rgba(255, 255, 255, 0.8); /* Slightly less transparent */
+            border: 5px solid #FF0000; /* Thick red border */
+            border-radius: 20px; /* Rounded edges */
+            z-index: 900; /* Above green box, below main controls */
+            display: none; /* Hidden by default */
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in element's total width and height */
+            color: #333;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        #messageRectangleBox h4 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2em;
+        }
         
+        /* New styles for the X close button */
+        .message-box-close-btn {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.2s;
+            padding: 0; /* remove default padding */
+        }
+
+        .message-box-close-btn:hover {
+            background-color: #c0392b;
+            transform: scale(1.1);
+        }
+
     </style>
     
     <!-- Import map for Three.js and dependencies -->
@@ -244,12 +295,12 @@
     <div id="viewer"></div>
     
     <button id="togglePanel" class="action-button" onclick="toggleControlPanel()"><i class="fa-solid fa-person"></i></button>
-    <button id="messageBtn" class="action-button" onclick="showMessageInfo()"><i class="fa-solid fa-message"></i></button>
+    <button id="messageBtn" class="action-button" onclick="toggleMessageBox()"><i class="fa-solid fa-message"></i></button>
     <button id="micBtn" class="action-button mic-btn on" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
     <button id="speakerBtn" class="action-button speaker-btn on" onclick="toggleSpeaker()"><i class="fa-solid fa-volume-high"></i></button>
 
     <div class="controls" id="controlPanel">
-        <h3>🎭 VRM Viewer Controls</h3>
+        <h3>鹿 VRM Viewer Controls</h3>
         
         <div class="control-group">
             <label for="vrmFile">Load VRM Model:</label>
@@ -272,10 +323,10 @@
         <div class="control-group">
             <label>Expressions:</label>
             <div class="button-grid">
-                <button onclick="setExpression('happy')">😊 Happy</button>
-                <button onclick="setExpression('angry')">😠 Angry</button>
-                <button onclick="setExpression('sad')">😢 Sad</button>
-                <button onclick="setExpression('surprised')">😲 Surprised</button>
+                <button onclick="setExpression('happy')">� Happy</button>
+                <button onclick="setExpression('angry')">丐 Angry</button>
+                <button onclick="setExpression('sad')">个 Sad</button>
+                <button onclick="setExpression('surprised')">亟 Surprised</button>
                 <button onclick="resetExpressions()">Reset</button>
             </div>
         </div>
@@ -306,8 +357,14 @@
         <div id="error" class="error"></div>
     </div>
 
-    <!-- New Rectangle Box Element -->
+    <!-- New Rectangle Box Element (Green) -->
     <div id="rectangleBox"></div>
+
+    <!-- New Message Rectangle Box Element (Red) -->
+    <div id="messageRectangleBox">
+        <button class="message-box-close-btn" onclick="toggleMessageBox()"><i class="fa-solid fa-xmark"></i></button>
+        <!-- Content of the message box goes here -->
+    </div>
     
     <!-- GSAP CDN for smooth animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
@@ -346,7 +403,7 @@
         // Camera zoom factor
         let cameraZoomFactor = 1.5; // Initial default zoom factor, now 1.5
 
-        // Rectangle Box properties - now fixed defaults
+        // Rectangle Box properties - now fixed defaults (green box)
         const boxVerticalPosition = 70; // Percentage from top
         const boxTransparency = 0.7;    // Opacity value (0-1)
         const boxHeight = 250;          // Height in pixels
@@ -355,6 +412,9 @@
         // State variables for mic and speaker buttons
         let isMicOn = true;
         let isSpeakerOn = true;
+
+        // State for the new message rectangle box
+        let isMessageBoxVisible = false;
 
         // Function to capture mouse movement and update normalized coordinates
         function onMouseMove(event) {
@@ -530,6 +590,9 @@
             // Initialize button states
             updateMicButtonState();
             updateSpeakerButtonState();
+
+            // Initialize message box properties (now fixed values, no sliders)
+            applyMessageBoxFixedProperties();
         }
         
         // Load VRM file
@@ -685,9 +748,36 @@
             }
         };
 
-        window.showMessageInfo = function() {
-            showStatus('Message button clicked! (Placeholder for chat functionality)');
+        window.toggleMessageBox = function() {
+            const messageBox = document.getElementById('messageRectangleBox');
+            isMessageBoxVisible = !isMessageBoxVisible;
+            messageBox.style.display = isMessageBoxVisible ? 'block' : 'none';
+            if (isMessageBoxVisible) {
+                showStatus('Message box opened.');
+            } else {
+                showStatus('Message box closed.');
+            }
         };
+
+        // This function will now apply fixed properties instead of reading from sliders
+        function applyMessageBoxFixedProperties() {
+            const messageBox = document.getElementById('messageRectangleBox');
+            // These values are directly hardcoded as per user request
+            const fixedWidth = 360;
+            const fixedHeight = 290;
+            const fixedVerticalPos = 30; // Percentage
+
+            messageBox.style.width = `${fixedWidth}px`;
+            messageBox.style.height = `${fixedHeight}px`;
+            messageBox.style.top = `${fixedVerticalPos}%`;
+        }
+
+        // This function is no longer needed to update properties dynamically, but kept for consistency
+        // as it might be called if sliders were re-introduced. It now just calls the fixed applicator.
+        window.updateMessageBoxProperties = function() {
+            applyMessageBoxFixedProperties();
+        };
+
 
         function updateMicButtonState() {
             const micBtn = document.getElementById('micBtn');
@@ -1037,4 +1127,3 @@
     </script>
 </body>
 </html>
-
