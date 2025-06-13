@@ -657,18 +657,9 @@
                 <div id="connectionStatus" class="connection-status-text"></div>
             </div>
 
-            <!-- New Model Selection Form Group -->
-            <div class="form-group">
-                <label for="modelSelect">OpenRouter Model:</label>
-                <select id="modelSelect">
-                    <option value="google/gemma-3n-e4b-it:free">google/gemma-3n-e4b-it:free</option>
-                    <option value="deepseek/deepseek-chat-v3-0324:free">deepseek/deepseek-chat-v3-0324:free</option>
-                </select>
-                <!-- Removed modelTestStatus div -->
-            </div>
+            <!-- The model selection form group has been removed -->
 
             <div class="modal-buttons">
-                <!-- Removed testModelBtn -->
                 <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
                 <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
             </div>
@@ -728,7 +719,7 @@
         // State for API key and connection status
         const state = {
             openRouterApiKey: '', // Initialize as empty, will be loaded safely
-            openRouterModel: localStorage.getItem('openRouterModel') || 'google/gemma-3n-e4b-it:free',
+            openRouterModel: 'deepseek/deepseek-chat-v3-0324:free', // Hardcoded default
             connectionStatus: 'disconnected', // 'connected', 'disconnected', 'checking', 'error'
             chatHistory: JSON.parse(localStorage.getItem('chatHistory')) || [], // Load chat history
             isSendingMessage: false,
@@ -745,7 +736,7 @@
             settingsModal: document.getElementById('settingsModal'),
             apiKeyInput: document.getElementById('apiKeyInput'),
             connectionStatusText: document.getElementById('connectionStatus'),
-            modelSelect: document.getElementById('modelSelect'), 
+            // modelSelect: document.getElementById('modelSelect'), // Removed
             cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
             saveSettingsBtn: document.getElementById('saveSettingsBtn'),
             settingsBtn: document.getElementById('settingsBtn'),
@@ -1016,6 +1007,11 @@
 
                 URL.revokeObjectURL(url);
                 showStatus(`VRM loaded: ${file.name}`);
+
+                // Log available expressions to console for debugging
+                if (currentVRM.expressionManager && currentVRM.expressionManager.expressionMap) {
+                    console.log('Available expressions:', Object.keys(currentVRM.expressionManager.expressionMap));
+                }
                 
             } catch (error) {
                 console.error('Error loading VRM:', error);
@@ -1256,8 +1252,8 @@
         };
         
         window.setExpression = function(expressionName) {
-            if (!currentVRM?.expressionManager) {
-                showError('Load a VRM model first');
+            if (!currentVRM?.expressionManager || !currentVRM.expressionManager.expressionMap) {
+                showError('Load a VRM model first or expression manager/map not found.');
                 return;
             }
             // Stop auto-blink when an expression is set
@@ -1266,25 +1262,36 @@
             window.resetExpressions(false); // Pass false to prevent showing status message
             const expressionMap = {
                 'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'],
-                'sad': ['sad', 'sorrow'], 'surprised': ['surprised', 'shock']
+                'sad': ['sad', 'sorrow'], 'surprised': ['surprised', 'shock'] // Corrected button value maps to these
             };
             const possibleNames = expressionMap[expressionName] || [expressionName];
+            
+            let found = false;
             for (const name of possibleNames) {
                 if (currentVRM.expressionManager.expressionMap[name]) {
                     currentVRM.expressionManager.setValue(name, 1.0);
                     showStatus(`Expression: ${name}`);
-                    return;
+                    found = true;
+                    break; // Exit loop once expression is found and set
                 }
             }
-            if(possibleNames[0] !== 'reset') showError(`Expression '${expressionName}' not found`);
+            
+            if (!found) {
+                showError(`Expression not found. Please check available expressions for your VRM model.`);
+            }
         };
         
         // This implementation manually iterates through all expressions and sets their value to 0.
         window.resetExpressions = function(showStatusMsg = true) {
-            if (!currentVRM || !currentVRM.expressionManager) return;
+            if (!currentVRM || !currentVRM.expressionManager || !currentVRM.expressionManager.expressionMap) {
+                if (showStatusMsg) { // Only show error if explicitly trying to reset expressions
+                    showError('No VRM model loaded or expression manager/map not found.');
+                }
+                return;
+            }
 
             try {
-                const expressionNames = Object.keys(currentVRM.expressionManager.keys); // Corrected property
+                const expressionNames = Object.keys(currentVRM.expressionManager.expressionMap);
                 expressionNames.forEach(name => {
                     currentVRM.expressionManager.setValue(name, 0);
                 });
@@ -1293,8 +1300,7 @@
                 }
                 // Restart auto-blink after expressions are reset
                 startAutoBlink();
-            }
-             catch (error) {
+            } catch (error) {
                 console.error('Error resetting expressions:', error);
                 showError('Could not reset expressions.');
             }
@@ -1302,10 +1308,10 @@
         
         window.setMouthOpen = function(value) {
             document.getElementById('mouthValue').textContent = parseFloat(value).toFixed(2);
-            if (!currentVRM?.expressionManager) return;
+            if (!currentVRM?.expressionManager || !currentVRM.expressionManager.expressionMap) return; // Added expressionMap check
             const mouthNames = ['aa', 'a', 'mouthOpen'];
             for (const name of mouthNames) {
-                if (currentVRM.expressionManager.getExpression(name)) {
+                if (currentVRM.expressionManager.expressionMap[name]) { // Check if expression exists
                     currentVRM.expressionManager.setValue(name, parseFloat(value));
                     return;
                 }
@@ -1314,10 +1320,10 @@
         
         // Internal function to set eye blink, without triggering auto-blink scheduling
         function setEyeBlinkInternal(value) {
-            if (!currentVRM?.expressionManager) return;
+            if (!currentVRM?.expressionManager || !currentVRM.expressionManager.expressionMap) return; // Added expressionMap check
             const blinkNames = ['blink', 'eyeBlink', 'close'];
             for (const name of blinkNames) {
-                if (currentVRM.expressionManager.getExpression(name)) {
+                if (currentVRM.expressionManager.expressionMap[name]) { // Check if expression exists
                     currentVRM.expressionManager.setValue(name, parseFloat(value));
                     return;
                 }
@@ -1326,7 +1332,8 @@
 
         // Function to start the auto-blink animation
         window.startAutoBlink = function() {
-            if (!currentVRM?.expressionManager) { 
+            // Added expressionMap check to ensure it's safe to proceed
+            if (!currentVRM?.expressionManager || !currentVRM.expressionManager.expressionMap) { 
                 return;
             }
 
@@ -1362,8 +1369,8 @@
                 clearTimeout(autoBlinkTimeoutId);
                 autoBlinkTimeoutId = null;
             }
-            // Ensure eyes are open when auto-blink stops
-            if (currentVRM?.expressionManager) { 
+            // Ensure eyes are open when auto-blink stops, if expression manager is available
+            if (currentVRM?.expressionManager && currentVRM.expressionManager.expressionMap) { 
                 setEyeBlinkInternal(0.0);
             }
         };
@@ -1518,7 +1525,7 @@
         // Settings Modal Functions
         window.toggleSettingsModal = function() {
             dom.apiKeyInput.value = state.openRouterApiKey;
-            dom.modelSelect.value = state.openRouterModel; // Set selected model
+            // No modelSelect to set value for anymore
             // Always call checkOpenRouterAPIKeyStatus with `initialLoad = true` when opening the modal
             checkOpenRouterAPIKeyStatus(true); 
             dom.settingsModal.classList.toggle('hidden');
@@ -1530,9 +1537,9 @@
 
         dom.saveSettingsBtn.addEventListener('click', () => {
             state.openRouterApiKey = dom.apiKeyInput.value.trim();
-            state.openRouterModel = dom.modelSelect.value; // Save selected model
+            // state.openRouterModel is now hardcoded, no need to save from UI
             localStorage.setItem('openRouterApiKey', state.openRouterApiKey);
-            localStorage.setItem('openRouterModel', state.openRouterModel); // Save model to local storage
+            // localStorage.removeItem('openRouterModel'); // Can optionally remove old stored model if exists
             checkOpenRouterAPIKeyStatus(); // Re-check status after saving
             dom.settingsModal.classList.add('hidden');
         });
@@ -1681,7 +1688,7 @@
                         'X-Title': 'VRM Viewer AI'
                     },
                     body: JSON.stringify({
-                        model: state.openRouterModel,
+                        model: state.openRouterModel, // Use the hardcoded default
                         messages: messages,
                         temperature: 0.7,
                         max_tokens: 150
