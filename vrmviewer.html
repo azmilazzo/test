@@ -343,7 +343,7 @@
             color: #555555;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #ADD8E6; /* Kept light blue border */
@@ -353,7 +353,7 @@
             color: #333333;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea; /* Changed focus border color to match VRM viewer theme */
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4); /* Changed shadow color */
@@ -560,7 +560,19 @@
                     autocomplete="off">
                 <div id="connectionStatus" class="connection-status-text"></div>
             </div>
+
+            <!-- New Model Selection Form Group -->
+            <div class="form-group">
+                <label for="modelSelect">OpenRouter Model:</label>
+                <select id="modelSelect">
+                    <option value="google/gemma-3n-e4b-it:free">google/gemma-3n-e4b-it:free</option>
+                    <option value="deepseek/deepseek-chat-v3-0324:free">deepseek/deepseek-chat-v3-0324:free</option>
+                </select>
+                <!-- Removed modelTestStatus div -->
+            </div>
+
             <div class="modal-buttons">
+                <!-- Removed testModelBtn -->
                 <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
                 <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
             </div>
@@ -620,6 +632,7 @@
         // State for API key and connection status
         const state = {
             openRouterApiKey: localStorage.getItem('openRouterApiKey') || '',
+            openRouterModel: localStorage.getItem('openRouterModel') || 'google/gemma-3n-e4b-it:free', // New state for model
             connectionStatus: 'disconnected' // 'connected', 'disconnected', 'checking', 'error'
         };
 
@@ -628,6 +641,9 @@
             settingsModal: document.getElementById('settingsModal'),
             apiKeyInput: document.getElementById('apiKeyInput'),
             connectionStatusText: document.getElementById('connectionStatus'),
+            modelSelect: document.getElementById('modelSelect'), // New DOM ref
+            // Removed modelTestStatus
+            // Removed testModelBtn
             cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
             saveSettingsBtn: document.getElementById('saveSettingsBtn'),
             settingsBtn: document.getElementById('settingsBtn')
@@ -1340,6 +1356,7 @@
         // Settings Modal Functions
         window.toggleSettingsModal = function() {
             dom.apiKeyInput.value = state.openRouterApiKey;
+            dom.modelSelect.value = state.openRouterModel; // Set selected model
             // Always call checkOpenRouterAPIKeyStatus with `initialLoad = true` when opening the modal
             checkOpenRouterAPIKeyStatus(true); 
             dom.settingsModal.classList.toggle('hidden');
@@ -1351,10 +1368,13 @@
 
         dom.saveSettingsBtn.addEventListener('click', () => {
             state.openRouterApiKey = dom.apiKeyInput.value.trim();
+            state.openRouterModel = dom.modelSelect.value; // Save selected model
             localStorage.setItem('openRouterApiKey', state.openRouterApiKey);
+            localStorage.setItem('openRouterModel', state.openRouterModel); // Save model to local storage
             checkOpenRouterAPIKeyStatus(); // Re-check status after saving
             dom.settingsModal.classList.add('hidden');
         });
+
 
         async function checkOpenRouterAPIKeyStatus(initialLoad = false) {
             // Trim whitespace and remove any non-ASCII characters that might cause issues
@@ -1416,7 +1436,7 @@
         }
 
 
-        function updateConnectionStatusDisplay(message) { // Removed default parameter as message is always provided
+        function updateConnectionStatusDisplay(message) { 
             dom.connectionStatusText.textContent = message;
             dom.connectionStatusText.classList.remove('connected', 'disconnected', 'error-status');
             if (state.connectionStatus === 'connected') {
@@ -1424,7 +1444,7 @@
             } else if (state.connectionStatus === 'disconnected') {
                 dom.connectionStatusText.classList.add('disconnected');
             } else if (state.connectionStatus === 'error') {
-                dom.connectionStatusText.classList.add('error-status');
+                dom.connectionStatusText.classList.add('error');
             }
         }
 
