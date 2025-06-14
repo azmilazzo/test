@@ -572,6 +572,7 @@
 
     </style>
     
+    <!-- Import map for Three.js and dependencies -->
     <script type="importmap">
     {
         "imports": {
@@ -603,9 +604,11 @@
         <div class="control-group">
             <label>Camera Controls:</label>
             <div class="button-grid">
-                </div>
+                <!-- Removed Reset Camera and Toggle Mouse buttons -->
+            </div>
         </div>
 
+        <!-- Camera Zoom Slider -->
         <div class="control-group">
             <div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div>
             <input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" />
@@ -642,14 +645,18 @@
             </div>
         </div>
 
+        <!-- Removed Rectangle Box Controls section -->
+        
         <div id="status" class="status"></div>
         <div id="error" class="error"></div>
     </div>
 
+    <!-- New Rectangle Box Element (Green) -->
     <div id="rectangleBox">
         <div id="transcriptDisplay"></div>
     </div>
 
+    <!-- New Message Rectangle Box Element (Red) -->
     <div id="messageRectangleBox">
         <button class="message-box-close-btn" onclick="toggleMessageBox()"><i class="fa-solid fa-xmark"></i></button>
         <h4>AI Chat Messenger</h4>
@@ -660,6 +667,7 @@
         </div>
     </div>
 
+    <!-- Settings Modal (from aichat.html, adapted) -->
     <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
             <h2>⚙️ API Settings</h2>
@@ -673,6 +681,8 @@
                 <div id="connectionStatus" class="connection-status-text"></div>
             </div>
 
+            <!-- The model selection form group has been removed -->
+
             <div class="modal-buttons">
                 <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
                 <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
@@ -680,6 +690,7 @@
         </div>
     </div>
     
+    <!-- GSAP CDN for smooth animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     
     <script type="module">
@@ -1908,29 +1919,58 @@ You don’t list facts like a bot — you reflect them as emotional impressions.
         }
 
         function initTTS() {
-            if (!state.ttsInitialized && 'speechSynthesis' in window) {
-                // Ensure voices are loaded before trying to use them
-                state.synth.onvoiceschanged = () => {
-                    state.ttsInitialized = true;
-                    console.log("TTS voices loaded.");
-                };
-                // If voices are already loaded, set initialized flag
-                if (state.synth.getVoices().length > 0) {
-                    state.ttsInitialized = true;
-                }
-            } else if (!('speechSynthesis' in window)) {
+            if (!('speechSynthesis' in window)) {
                 dom.speakerBtn.disabled = true;
                 showError('Text-to-speech not supported in this browser.');
+                return;
             }
+            
+            // Function to get and log voices
+            const loadVoices = () => {
+                const voices = state.synth.getVoices();
+                if (voices.length > 0) {
+                    state.ttsInitialized = true;
+                    console.log("TTS voices loaded.", voices);
+                    // If we were waiting for voices, we don't need to listen anymore
+                    state.synth.onvoiceschanged = null;
+                }
+            };
+            
+            // Try to load voices immediately
+            loadVoices();
+            
+            // If voices are not immediately available, set up an event listener
+            if (state.synth.getVoices().length === 0) {
+                state.synth.onvoiceschanged = loadVoices;
+            }
+
+            // A common issue is that browsers require a user interaction to start audio.
+            // We create a one-time event listener to "unlock" the audio context.
+            const unlockAudio = () => {
+                if (state.synth.paused) { 
+                    state.synth.resume(); 
+                }
+                const utterance = new SpeechSynthesisUtterance("");
+                state.synth.speak(utterance);
+                window.removeEventListener('click', unlockAudio);
+                window.removeEventListener('touchstart', unlockAudio);
+                console.log("TTS unlocked by user interaction.");
+            };
+
+            window.addEventListener('click', unlockAudio);
+            window.addEventListener('touchstart', unlockAudio);
         }
 
         function textToSpeech(text) {
-            if (!state.ttsEnabled || !state.ttsInitialized || state.isSpeaking) return;
-
-            // Add to queue if already speaking
+            if (!state.ttsEnabled || !state.ttsInitialized || !text) {
+                 console.warn("TTS skipped: disabled, not initialized, or no text.");
+                 return;
+            }
             state.speakingQueue.push(text);
-            if (state.synth.speaking) return;
-
+            if (state.synth.speaking) {
+                console.log("TTS is already speaking. Queuing message.");
+                return;
+            }
             processSpeakingQueue();
         }
 
@@ -1945,41 +1985,42 @@ You don’t list facts like a bot — you reflect them as emotional impressions.
             const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
             utterance.onstart = () => {
-                // You can add an animation for the VRM model here, like a mouth open expression
                 window.setMouthOpen(0.6); 
                 showStatus('Speaking...');
             };
 
             utterance.onend = () => {
-                // Reset mouth expression
                 window.setMouthOpen(0); 
                 showStatus('Finished speaking.');
-                processSpeakingQueue(); // Process next message in queue
+                processSpeakingQueue();
             };
 
             utterance.onerror = (event) => {
                 console.error('TTS error:', event);
                 window.setMouthOpen(0); 
                 showError('TTS failed: ' + event.error);
-                processSpeakingQueue(); // Attempt to process next even on error
+                processSpeakingQueue();
             };
 
-            // Optional: Set a specific voice
             const voices = state.synth.getVoices();
-            // Try to find a specific English voice, e.g., a Google UK English voice
             const desiredVoice = voices.find(voice => voice.name.includes('Google') && voice.lang.includes('en'));
             if (desiredVoice) {
                 utterance.voice = desiredVoice;
             } else {
-                // Fallback to any available English voice
                 const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
                 if (englishVoice) {
                     utterance.voice = englishVoice;
                 }
             }
+            
+            // Resume context just in case it was suspended
+            if (state.synth.paused) {
+                state.synth.resume();
+            }
 
             state.synth.speak(utterance);
         }
+
 
         function loadChatHistory() {
             try {
