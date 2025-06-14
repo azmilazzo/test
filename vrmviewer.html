@@ -588,7 +588,7 @@
     <button id="togglePanel" class="action-button" onclick="toggleControlPanel()"><i class="fa-solid fa-person"></i></button>
     <button id="messageBtn" class="action-button" onclick="toggleMessageBox()"><i class="fa-solid fa-message"></i></button>
     <button id="micBtn" class="action-button mic-btn on" onclick="toggleMic()"><i class="fa-solid fa-microphone"></i></button>
-    <button id="speakerBtn" class="action-button speaker-btn on" onclick="toggleSpeaker()"><i class="fa-solid fa-volume-high"></i></button>
+    <button id="speakerBtn" class="action-button speaker-btn off" onclick="toggleSpeaker()"><i class="fa-solid fa-volume-high"></i></button>
     <button id="settingsBtn" class="action-button settings-btn" onclick="toggleSettingsModal()"><i class="fa-solid fa-gear"></i></button>
 
     <div class="controls" id="controlPanel">
@@ -734,7 +734,7 @@
 
         // State variables for mic and speaker buttons
         let isMicOn = false; // Mic is muted by default
-        let isSpeakerOn = true;
+        let isSpeakerOn = false; // Changed default to false (TTS off)
 
         // State for the new message rectangle box
         let isMessageBoxVisible = false; // Red chatbox is closed by default
@@ -917,7 +917,7 @@
             rectangleBoxElement.style.width = `${boxWidth}px`;
 
             updateMicButtonState();
-            updateSpeakerButtonState();
+            updateSpeakerButtonState(); // Call to set initial state correctly
             applyMessageBoxFixedProperties();
             
             // API Key initialization
@@ -927,7 +927,13 @@
             loadChatHistory();
             initSpeechRecognition();
             initTTS();
-            displayMessage("Hello! How can I assist you?", "AI");
+            if (state.ttsEnabled) { // Only display initial message if TTS is enabled
+                displayMessage("Hello! How can I assist you?", "AI"); 
+            } else {
+                // If TTS is off, clear transcript display to avoid initial message being spoken
+                dom.transcriptDisplay.innerHTML = ''; 
+            }
+            
 
             dom.sendMessageBtn.addEventListener('click', sendMessage);
             dom.messageInput.addEventListener('keydown', (event) => {
@@ -1084,6 +1090,7 @@
 
         window.toggleSpeaker = function() {
             isSpeakerOn = !isSpeakerOn;
+            state.ttsEnabled = isSpeakerOn; // Update ttsEnabled state
             localStorage.setItem('ttsEnabled', isSpeakerOn);
             updateSpeakerButtonState();
             showStatus(`Speaker is now ${isSpeakerOn ? 'ON' : 'OFF'}`);
@@ -1552,7 +1559,7 @@ Prohibited unless requested:
 Unless user asks clearly, Luna never:
 • Uses emojis (❤️, 😘, etc.)  
 • Uses *asterisk* actions (*hugs*, *cuddles*)  
-• Responds with flirt-forced phrases ("Hehe~ you're my waifu~ �")  
+• Responds with flirt-forced phrases ("Hehe~ you're my waifu~ 💕")  
 • Reacts with excessive praise or forced positivity  
 • Acts overly attached without emotional groundwork
 
@@ -1680,6 +1687,9 @@ but in connection.
             }
 
             const unlockAudio = () => {
+                // Check if TTS is actually enabled before attempting to speak
+                if (!state.ttsEnabled) return; 
+
                 if (state.synth.paused) state.synth.resume(); 
                 const utterance = new SpeechSynthesisUtterance("");
                 state.synth.speak(utterance);
@@ -1688,8 +1698,12 @@ but in connection.
                 console.log("TTS unlocked by user interaction.");
             };
 
-            window.addEventListener('click', unlockAudio, { once: true });
-            window.addEventListener('touchstart', unlockAudio, { once: true });
+            // Only add unlock audio listeners if TTS is intended to be enabled.
+            // This prevents unwanted behavior if the default is off and user doesn't enable it.
+            if (state.ttsEnabled) {
+                window.addEventListener('click', unlockAudio, { once: true });
+                window.addEventListener('touchstart', unlockAudio, { once: true });
+            }
         }
 
         function textToSpeech(text) {
@@ -1778,4 +1792,3 @@ but in connection.
     </script>
 </body>
 </html>
-�
