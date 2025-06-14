@@ -734,11 +734,11 @@
         const boxWidth = 350;             // New default: Width in pixels, now fixed
 
         // State variables for mic and speaker buttons
-        let isMicOn = true;
+        let isMicOn = false; // Mic is muted by default
         let isSpeakerOn = true;
 
         // State for the new message rectangle box
-        let isMessageBoxVisible = false;
+        let isMessageBoxVisible = false; // Red chatbox is closed by default
 
         // State for API key and connection status
         const state = {
@@ -769,6 +769,7 @@
             sendMessageBtn: document.getElementById('sendMessageBtn'), // New DOM ref
             micBtn: document.getElementById('micBtn'),
             speakerBtn: document.getElementById('speakerBtn'),
+            transcriptDisplay: document.getElementById('transcriptDisplay'), // Reference for green box
         };
 
         // Safely load openRouterApiKey from localStorage
@@ -1653,9 +1654,6 @@
             const userMessage = dom.messageInput.value.trim();
             if (!userMessage || state.isSendingMessage) return;
 
-            // Get reference to the green transcript box display area
-            const transcriptDisplay = document.getElementById('transcriptDisplay');
-
             dom.messageInput.value = ''; // Clear input immediately
             adjustTextareaHeight(dom.messageInput); // Adjust height after clearing
 
@@ -1665,9 +1663,10 @@
             saveChatHistory();
 
             // Update the green transcript box with the user's message
-            if (transcriptDisplay) {
+            if (dom.transcriptDisplay) {
                 const sanitizedUserMessage = userMessage.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                transcriptDisplay.innerHTML = `<strong>You:</strong> ${sanitizedUserMessage}`;
+                dom.transcriptDisplay.innerHTML = `<strong>You:</strong> ${sanitizedUserMessage}`;
+                dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
             }
 
             state.isSendingMessage = true;
@@ -1684,9 +1683,10 @@
                 saveChatHistory();
 
                 // Update the green transcript box with the AI's response
-                if (transcriptDisplay) {
+                if (dom.transcriptDisplay) {
                     const sanitizedAiResponse = aiResponse.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                    transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${sanitizedAiResponse}`;
+                    dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${sanitizedAiResponse}`;
+                    dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
                 }
 
                 if (state.ttsEnabled) {
@@ -1700,8 +1700,9 @@
                 displayMessage(errorMessage, 'ai');
                 
                 // Update green box with error message
-                if (transcriptDisplay) {
-                    transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${errorMessage}`;
+                if (dom.transcriptDisplay) {
+                    dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${errorMessage}`;
+                    dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
                 }
 
                 showError("AI chat error: Could not get a response from the AI. Please check your API key and network.");
