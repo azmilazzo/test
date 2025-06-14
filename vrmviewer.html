@@ -11,11 +11,14 @@
         .action-button { position: absolute; right: 15px; z-index: 1001; background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; transition: all 0.3s; }
         .action-button:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
         #togglePanel { top: 15px; } #messageBtn { top: calc(15px + 60px); } #micBtn { top: calc(15px + 120px); } #speakerBtn { top: calc(15px + 180px); } #settingsBtn { top: calc(15px + 240px); }
+        
         .mic-btn.listening, .speaker-btn.on { background-color: #4CAF50; }
         .speaker-btn.off { background-color: #F44336; }
         .speaker-btn.off i { color: black; }
+        
         .mic-btn.listening { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
+        
         .settings-btn.connected { background-color: #4CAF50; } .settings-btn.disconnected { background-color: #FFC107; } .settings-btn.error-status { background-color: #F44336; }
         .controls { position: absolute; top: 10px; right: 15px; z-index: 1000; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; color: white; width: 300px; max-height: 70vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1); display: none; box-sizing: border-box; }
         .control-group { margin-bottom: 20px; } .control-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #f0f0f0; }
@@ -77,7 +80,13 @@
         <h3>VRM Viewer Controls</h3>
         <div class="control-group"><label for="vrmFile">Load VRM Model:</label><input type="file" id="vrmFile" accept=".vrm" /></div>
         <div class="control-group"><div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div><input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" /></div>
-        <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression('happy')">😀 Happy</button><button onclick="setExpression('angry')">😠 Angry</button><button onclick="setExpression('sad')">😥 Sad</button><button onclick="setExpression('surprised')">😮 Surprised</button><button onclick="resetExpressions()">Reset</button></div></div>
+        <div class="control-group"><label>Expressions:</label><div class="button-grid">
+            <button onclick="setExpression('happy')">😀 Happy</button>
+            <button onclick="setExpression('angry')">😠 Angry</button>
+            <button onclick="setExpression('sad')">😥 Sad</button>
+            <!-- **FIX #2** Removed Surprised Button -->
+            <button onclick="resetExpressions()">Reset</button>
+        </div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
         <div class="control-group"><label>Model Orientation:</label><div class="button-grid"><button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button></div></div>
         <div class="control-group"><label>Music Listening Animation:</label><div class="button-grid"><button onclick="startMusicListeningAnimation()">Start Listen</button><button onclick="stopMusicListeningAnimation()">Stop Listen</button></div></div>
@@ -196,8 +205,8 @@
             const chest = vrm.humanoid.getNormalizedBoneNode('chest'), head = vrm.humanoid.getNormalizedBoneNode('head'), neck = vrm.humanoid.getNormalizedBoneNode('neck');
             const baseUpperArmY = -0.45, baseUpperArmZ = -1.30, baseLowerArmZ = 0.20;
             const actualUpperArmY_left = isInverted ? -baseUpperArmY : baseUpperArmY;
-            const actualUpperArmZ_left = isInverted ? -baseUpperArmZ : baseUpperArmZ;
-            const actualLowerArmZ_left = isInverted ? -baseLowerArmZ : baseLowerArmZ;
+            const actualUpperArmZ_left = isInverted ? baseUpperArmZ : -baseUpperArmZ;
+            const actualLowerArmZ_left = isInverted ? baseLowerArmZ : -baseLowerArmZ;
             const actualUpperArmY_right = -actualUpperArmY_left, actualUpperArmZ_right = -actualUpperArmZ_left, actualLowerArmZ_right = -actualLowerArmZ_left;
             setOrAnimate(leftUA, 0, actualUpperArmY_left, actualUpperArmZ_left, 0.8); setOrAnimate(rightUA, 0, actualUpperArmY_right, actualUpperArmZ_right, 0.8);
             setOrAnimate(leftLA, 0, 0, actualLowerArmZ_left, 0.8); setOrAnimate(rightLA, 0, 0, actualLowerArmZ_right, 0.8);
@@ -226,7 +235,17 @@
         };
         
         window.setExpression = (name) => { if (!currentVRM) return; stopAutoBlink(); resetExpressions(false); currentVRM.expressionManager.setValue(name, 1.0); };
-        window.resetExpressions = (showMsg = true) => { if (!currentVRM) return; try { currentVRM.expressionManager.resetExpression(); if (showMsg) showStatus('Expressions reset'); startAutoBlink(); } catch(e) { showError('Could not reset expressions.'); } };
+        
+        // **FIX #2** Restored correct reset logic
+        window.resetExpressions = (showMsg = true) => { 
+            if (!currentVRM?.expressionManager?.expressionMap) return;
+            try { 
+                Object.keys(currentVRM.expressionManager.expressionMap).forEach(name => currentVRM.expressionManager.setValue(name, 0));
+                if (showMsg) showStatus('Expressions reset'); 
+                startAutoBlink(); 
+            } catch(e) { showError('Could not reset expressions.'); } 
+        };
+
         window.setMouthOpen = (val) => { if (!currentVRM) return; document.getElementById('mouthValue').textContent = parseFloat(val).toFixed(2); currentVRM.expressionManager.setValue('aa', parseFloat(val)); };
         function setEyeBlink(val) { if (currentVRM) currentVRM.expressionManager.setValue('blink', parseFloat(val)); }
         window.startAutoBlink = () => { if (!currentVRM) return; stopAutoBlink(); autoBlinkTimeoutId = setTimeout(() => { setEyeBlink(1.0); setTimeout(() => { setEyeBlink(0.0); startAutoBlink(); }, 150); }, Math.random() * 3000 + 2000); };
