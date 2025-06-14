@@ -229,17 +229,39 @@
         #rectangleBox {
             position: absolute;
             left: 50%;
-            top: 70%; /* Updated default vertical position */
-            transform: translate(-50%, -50%); /* Center horizontally and vertically */
-            width: 350px; /* Updated default width */
-            height: 250px; /* Updated default height */
-            background-color: rgba(255, 255, 255, 0.7); /* Updated default transparency */
-            border: 5px solid #00ff00; /* Thick green border */
-            border-radius: 15px; /* Rounded edges */
-            z-index: 500; /* Below control panel, above viewer */
+            top: 70%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 250px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 5px solid #00ff00;
+            border-radius: 15px;
+            z-index: 500;
             display: block;
-            pointer-events: none; /* Allow mouse events to pass through to the VRM viewer */
+            pointer-events: none;
+            /* New styles for displaying text */
+            padding: 15px;
+            box-sizing: border-box;
+            color: #111; /* Darker text for better contrast */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px; /* Slightly larger font */
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
         }
+
+        /* New inner div to hold the transcript content */
+        #transcriptDisplay {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto; /* Allow scrolling for long conversations */
+            word-wrap: break-word; /* Ensure text wraps */
+        }
+
+        #transcriptDisplay strong {
+            font-weight: 600; /* Semibold for the speaker name */
+        }
+
 
         /* New Message Rectangle Box Styling - Red */
         #messageRectangleBox {
@@ -550,7 +572,6 @@
 
     </style>
     
-    <!-- Import map for Three.js and dependencies -->
     <script type="importmap">
     {
         "imports": {
@@ -582,11 +603,9 @@
         <div class="control-group">
             <label>Camera Controls:</label>
             <div class="button-grid">
-                <!-- Removed Reset Camera and Toggle Mouse buttons -->
-            </div>
+                </div>
         </div>
 
-        <!-- Camera Zoom Slider -->
         <div class="control-group">
             <div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div>
             <input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" />
@@ -623,16 +642,14 @@
             </div>
         </div>
 
-        <!-- Removed Rectangle Box Controls section -->
-        
         <div id="status" class="status"></div>
         <div id="error" class="error"></div>
     </div>
 
-    <!-- New Rectangle Box Element (Green) -->
-    <div id="rectangleBox"></div>
+    <div id="rectangleBox">
+        <div id="transcriptDisplay"></div>
+    </div>
 
-    <!-- New Message Rectangle Box Element (Red) -->
     <div id="messageRectangleBox">
         <button class="message-box-close-btn" onclick="toggleMessageBox()"><i class="fa-solid fa-xmark"></i></button>
         <h4>AI Chat Messenger</h4>
@@ -643,7 +660,6 @@
         </div>
     </div>
 
-    <!-- Settings Modal (from aichat.html, adapted) -->
     <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
             <h2>⚙️ API Settings</h2>
@@ -657,8 +673,6 @@
                 <div id="connectionStatus" class="connection-status-text"></div>
             </div>
 
-            <!-- The model selection form group has been removed -->
-
             <div class="modal-buttons">
                 <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
                 <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
@@ -666,7 +680,6 @@
         </div>
     </div>
     
-    <!-- GSAP CDN for smooth animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
     
     <script type="module">
@@ -1629,12 +1642,22 @@
             const userMessage = dom.messageInput.value.trim();
             if (!userMessage || state.isSendingMessage) return;
 
+            // Get reference to the green transcript box display area
+            const transcriptDisplay = document.getElementById('transcriptDisplay');
+
             dom.messageInput.value = ''; // Clear input immediately
             adjustTextareaHeight(dom.messageInput); // Adjust height after clearing
 
+            // This updates the red chat message box
             displayMessage(userMessage, 'user');
             state.chatHistory.push({ role: "user", content: userMessage });
             saveChatHistory();
+
+            // Update the green transcript box with the user's message
+            if (transcriptDisplay) {
+                const sanitizedUserMessage = userMessage.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                transcriptDisplay.innerHTML = `<strong>You:</strong> ${sanitizedUserMessage}`;
+            }
 
             state.isSendingMessage = true;
             dom.sendMessageBtn.disabled = true;
@@ -1643,16 +1666,33 @@
 
             try {
                 const aiResponse = await callOpenRouterAI(userMessage);
+
+                // This updates the red chat message box
                 displayMessage(aiResponse, 'ai');
                 state.chatHistory.push({ role: "assistant", content: aiResponse });
                 saveChatHistory();
+
+                // Update the green transcript box with the AI's response
+                if (transcriptDisplay) {
+                    const sanitizedAiResponse = aiResponse.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${sanitizedAiResponse}`;
+                }
 
                 if (state.ttsEnabled) {
                     textToSpeech(aiResponse);
                 }
             } catch (error) {
                 console.error('Error sending message to AI:', error);
-                displayMessage("Sorry, I'm having trouble connecting right now. Please try again later.", 'ai');
+                const errorMessage = "Sorry, I'm having trouble connecting right now. Please try again later.";
+                
+                // Update red box with error
+                displayMessage(errorMessage, 'ai');
+                
+                // Update green box with error message
+                if (transcriptDisplay) {
+                    transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${errorMessage}`;
+                }
+
                 showError("AI chat error: Could not get a response from the AI. Please check your API key and network.");
             } finally {
                 state.isSendingMessage = false;
