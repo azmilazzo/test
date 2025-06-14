@@ -699,55 +699,48 @@
         // Global variables
         let scene, camera, renderer, controls, animate, destroy;
         let currentVRM = null;
-        let isAnimating = true; // Always true: controls perpetual idle animation (breathing + subtle sway)
-        let isMusicListening = false; // Controls the override for music listening animation
-        let isLookingAtMouse = true; // Mouse look-at animation - now always true by default
+        let isAnimating = true; 
+        let isMusicListening = false;
+        let isLookingAtMouse = true;
         const clock = new THREE.Clock();
         
-        // controlsEnabled is not used for camera movement anymore
-        let isInverted = false; // Global state for inversion
+        let isInverted = false;
 
-        // Auto-blink specific global variables
         let autoBlinkTimeoutId = null;
 
-        // Mouse look-at specific variables
-        let mouse = new THREE.Vector2(0, 0); // Stores normalized mouse coordinates (-1 to 1)
-        const mouseLookSensitivity = 0.5; // How much the head moves in response to mouse X
+        let mouse = new THREE.Vector2(0, 0); 
+        const mouseLookSensitivity = 0.5;
 
-        // Fixed vertical tilt values
-        const defaultBodyPitch = 0.1; // Default vertical body tilt (constant)
-        const defaultHeadPitch = 0;   // Default head pitch (relative to body) (constant)
+        const defaultBodyPitch = 0.1;
+        const defaultHeadPitch = 0;
 
-        // Model vertical offset - now a fixed default
-        const currentModelVerticalOffset = -0.2; // Fixed initial default value, not adjusted by slider
+        const currentModelVerticalOffset = -0.2;
 
-        // Camera zoom factor
-        let cameraZoomFactor = 1.5; // Initial default zoom factor, now 1.5
+        let cameraZoomFactor = 1.5;
 
-        // Rectangle Box properties - now fixed defaults (green box)
-        const boxVerticalPosition = 70; // Percentage from top
-        const boxTransparency = 0.7;    // Opacity value (0-1)
-        const boxHeight = 250;          // Height in pixels
-        const boxWidth = 350;             // New default: Width in pixels, now fixed
+        const boxVerticalPosition = 70;
+        const boxTransparency = 0.7;
+        const boxHeight = 250;
+        const boxWidth = 350;
 
         // State variables for mic and speaker buttons
         let isMicOn = false; // Mic is muted by default
-        let isSpeakerOn = false; // Changed default to false (TTS off)
+        // **REMOVED** let isSpeakerOn = false; 
 
-        // State for the new message rectangle box
-        let isMessageBoxVisible = false; // Red chatbox is closed by default
+        let isMessageBoxVisible = false;
 
         // State for API key and connection status
         const state = {
             geminiApiKey: '',
-            connectionStatus: 'disconnected', // 'connected', 'disconnected', 'checking', 'error'
-            chatHistory: JSON.parse(localStorage.getItem('chatHistory')) || [], // Load chat history
+            connectionStatus: 'disconnected', 
+            chatHistory: JSON.parse(localStorage.getItem('chatHistory')) || [],
             isSendingMessage: false,
-            ttsEnabled: localStorage.getItem('ttsEnabled') === 'true', // Ensure boolean conversion
+            // **FIXED** ttsEnabled now defaults to false and doesn't use localStorage
+            ttsEnabled: false, 
             speechRecognition: null,
             synth: window.speechSynthesis,
             ttsInitialized: false,
-            speakingQueue: [], // Queue for speech messages
+            speakingQueue: [],
             corruptedApiKeyLoaded: false,
         };
 
@@ -780,13 +773,11 @@
         })();
 
 
-        // Function to capture mouse movement and update normalized coordinates
         function onMouseMove(event) {
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1; 
         }
 
-        // Handle window resizing, especially for mobile viewports
         function resizeViewer() {
             const viewerElement = document.getElementById('viewer');
             const newHeight = window.innerHeight;
@@ -799,7 +790,6 @@
             }
         }
 
-        // Initialize the 3D scene
         function initScene() {
             const viewerElement = document.getElementById('viewer');
             const result = init(viewerElement);
@@ -922,7 +912,11 @@
             initSpeechRecognition();
             initTTS();
             
-            displayMessage("Hello! How can I assist you?", "AI"); 
+            // This now correctly respects the default-off TTS state
+            const initialMessage = "Hello! How can I assist you?";
+            displayMessage(initialMessage, "AI"); 
+            textToSpeech(initialMessage);
+
             if (!state.ttsEnabled) { 
                 dom.transcriptDisplay.innerHTML = ''; 
             }
@@ -1075,18 +1069,18 @@
             }
         };
 
+        // **FIXED** This function now uses state.ttsEnabled
         function updateSpeakerButtonState() {
-            dom.speakerBtn.classList.toggle('on', isSpeakerOn);
-            dom.speakerBtn.classList.toggle('off', !isSpeakerOn);
+            dom.speakerBtn.classList.toggle('on', state.ttsEnabled);
+            dom.speakerBtn.classList.toggle('off', !state.ttsEnabled);
         }
 
+        // **FIXED** This function now only uses state.ttsEnabled and doesn't save to localStorage
         window.toggleSpeaker = function() {
-            isSpeakerOn = !isSpeakerOn;
-            state.ttsEnabled = isSpeakerOn; 
-            localStorage.setItem('ttsEnabled', isSpeakerOn);
+            state.ttsEnabled = !state.ttsEnabled;
             updateSpeakerButtonState();
-            showStatus(`Speaker is now ${isSpeakerOn ? 'ON' : 'OFF'}`);
-            if (!isSpeakerOn) {
+            showStatus(`Speaker is now ${state.ttsEnabled ? 'ON' : 'OFF'}`);
+            if (!state.ttsEnabled) {
                 state.synth.cancel();
                 state.speakingQueue = [];
             }
@@ -1403,7 +1397,7 @@
                 const sanitizedAiResponse = aiResponse.replace(/</g, "<").replace(/>/g, ">");
                 dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${sanitizedAiResponse}`;
                 
-                if (state.ttsEnabled) textToSpeech(aiResponse);
+                textToSpeech(aiResponse);
             } catch (error) {
                 console.error('Error sending message to AI:', error);
                 const errorMessage = `Sorry, I'm having trouble connecting right now. (${error.message || 'Unknown Error'})`;
@@ -1423,7 +1417,6 @@
                 throw new Error("Please set your Google Gemini API key in the settings to chat.");
             }
             
-            // **UPDATED SYSTEM PROMPT**
             const systemPrompt = `[NAME]: Luna
 [ROLE]: Humanlike waifu-style companion. She speaks naturally, reflects deeply, adapts behavior based on trust, context, and subtle cues.
 
@@ -1611,10 +1604,15 @@ but in connection.
                 parts: [{ text: msg.content }]
             }));
 
-            if (contents.length > 0) {
-                 const firstUserTurnIndex = contents.findIndex(c => c.role === 'user');
+            // More robustly inject the system prompt before the first user message
+            if (state.chatHistory.length === 0) {
+                 // For the very first message ever sent
+                contents.push({ role: "user", parts: [{text: systemPrompt}]});
+            } else if (contents.every(c => c.role !== 'system')) {
+                // If it's not the first message, but the system prompt isn't there, find first user turn
+                const firstUserTurnIndex = contents.findIndex(c => c.role === 'user');
                  if (firstUserTurnIndex !== -1) {
-                    contents[firstUserTurnIndex].parts.unshift({text: systemPrompt + "\n\n"});
+                    contents.splice(firstUserTurnIndex, 0, { role: "user", parts: [{text: systemPrompt}]}, {role: "model", parts: [{text: "I understand. I am Luna."}]});
                  }
             }
             
@@ -1724,8 +1722,6 @@ but in connection.
             }
 
             const unlockAudio = () => {
-                if (!state.ttsEnabled) return; 
-
                 if (state.synth.paused) state.synth.resume(); 
                 const utterance = new SpeechSynthesisUtterance("");
                 state.synth.speak(utterance);
@@ -1733,11 +1729,9 @@ but in connection.
                 window.removeEventListener('touchstart', unlockAudio);
                 console.log("TTS unlocked by user interaction.");
             };
-
-            if (state.ttsEnabled) {
-                window.addEventListener('click', unlockAudio, { once: true });
-                window.addEventListener('touchstart', unlockAudio, { once: true });
-            }
+            
+            window.addEventListener('click', unlockAudio, { once: true });
+            window.addEventListener('touchstart', unlockAudio, { once: true });
         }
 
         function textToSpeech(text) {
