@@ -12,7 +12,6 @@
         .action-button:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
         #togglePanel { top: 15px; } #messageBtn { top: calc(15px + 60px); } #micBtn { top: calc(15px + 120px); } #speakerBtn { top: calc(15px + 180px); } #settingsBtn { top: calc(15px + 240px); }
         
-        /* CORRECTED Mic button style */
         .mic-btn.listening, .speaker-btn.on { background-color: #4CAF50; }
         .speaker-btn.off { background-color: #F44336; }
         .speaker-btn.off i { color: black; }
@@ -186,7 +185,7 @@
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
         
-        // **FIX #1** Restored original inversion logic
+        // **FIXED** Restored original inversion logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -198,13 +197,18 @@
             const leftLA = vrm.humanoid.getNormalizedBoneNode('leftLowerArm'), rightLA = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
             const hips = vrm.humanoid.getNormalizedBoneNode('hips'), spine = vrm.humanoid.getNormalizedBoneNode('spine');
             const chest = vrm.humanoid.getNormalizedBoneNode('chest'), head = vrm.humanoid.getNormalizedBoneNode('head'), neck = vrm.humanoid.getNormalizedBoneNode('neck');
+            
             const baseUpperArmY = -0.45, baseUpperArmZ = -1.30, baseLowerArmZ = 0.20;
             const actualUpperArmY_left = isInverted ? -baseUpperArmY : baseUpperArmY;
-            const actualUpperArmZ_left = isInverted ? baseUpperArmZ : -baseUpperArmZ;
-            const actualLowerArmZ_left = isInverted ? baseLowerArmZ : -baseLowerArmZ;
+            const actualUpperArmZ_left = isInverted ? -baseUpperArmZ : baseUpperArmZ;
+            const actualLowerArmZ_left = isInverted ? -baseLowerArmZ : baseLowerArmZ;
+
             const actualUpperArmY_right = -actualUpperArmY_left, actualUpperArmZ_right = -actualUpperArmZ_left, actualLowerArmZ_right = -actualLowerArmZ_left;
-            setOrAnimate(leftUA, 0, actualUpperArmY_left, actualUpperArmZ_left, 0.8); setOrAnimate(rightUA, 0, actualUpperArmY_right, actualUpperArmZ_right, 0.8);
-            setOrAnimate(leftLA, 0, 0, actualLowerArmZ_left, 0.8); setOrAnimate(rightLA, 0, 0, actualLowerArmZ_right, 0.8);
+            
+            setOrAnimate(leftUA, 0, actualUpperArmY_left, actualUpperArmZ_left, 0.8);
+            setOrAnimate(rightUA, 0, actualUpperArmY_right, actualUpperArmZ_right, 0.8);
+            setOrAnimate(leftLA, 0, 0, actualLowerArmZ_left, 0.8);
+            setOrAnimate(rightLA, 0, 0, actualLowerArmZ_right, 0.8);
             [hips, spine, chest, head, neck].forEach(bone => setOrAnimate(bone, 0,0,0, animate ? 0.8 : 0));
             if (spine) { if (animate) gsap.to(spine.position, { y: 0.06, duration: 0.8, ease: "power2.inOut", overwrite: true }); else spine.position.y = 0.06; }
         }
