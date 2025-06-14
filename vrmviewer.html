@@ -238,7 +238,7 @@
             border-radius: 15px;
             z-index: 500;
             display: block;
-            pointer-events: none;
+            /* Removed: pointer-events: none; */ 
             /* New styles for displaying text */
             padding: 15px;
             box-sizing: border-box;
@@ -1369,7 +1369,7 @@
 
             const sanitizedUserMessage = userMessage.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             dom.transcriptDisplay.innerHTML = `<strong>You:</strong> ${sanitizedUserMessage}`;
-            dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
+            // Removed: dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
 
             state.isSendingMessage = true;
             dom.sendMessageBtn.disabled = true;
@@ -1383,7 +1383,7 @@
 
                 const sanitizedAiResponse = aiResponse.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${sanitizedAiResponse}`;
-                dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
+                // Removed: dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
 
                 if (state.ttsEnabled) textToSpeech(aiResponse);
             } catch (error) {
@@ -1391,7 +1391,7 @@
                 const errorMessage = "Sorry, I'm having trouble connecting right now.";
                 displayMessage(errorMessage, 'ai');
                 dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${errorMessage}`;
-                dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
+                // Removed: dom.transcriptDisplay.scrollTop = dom.transcriptDisplay.scrollHeight;
                 showError("AI chat error. Check API key and network.");
             } finally {
                 state.isSendingMessage = false;
