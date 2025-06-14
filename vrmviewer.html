@@ -229,17 +229,39 @@
         #rectangleBox {
             position: absolute;
             left: 50%;
-            top: 70%; /* Updated default vertical position */
-            transform: translate(-50%, -50%); /* Center horizontally and vertically */
-            width: 350px; /* Updated default width */
-            height: 250px; /* Updated default height */
-            background-color: rgba(255, 255, 255, 0.7); /* Updated default transparency */
-            border: 5px solid #00ff00; /* Thick green border */
-            border-radius: 15px; /* Rounded edges */
-            z-index: 500; /* Below control panel, above viewer */
+            top: 70%;
+            transform: translate(-50%, -50%);
+            width: 350px;
+            height: 250px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 5px solid #00ff00;
+            border-radius: 15px;
+            z-index: 500;
             display: block;
-            pointer-events: none; /* Allow mouse events to pass through to the VRM viewer */
+            pointer-events: none;
+            /* New styles for displaying text */
+            padding: 15px;
+            box-sizing: border-box;
+            color: #111; /* Darker text for better contrast */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px; /* Slightly larger font */
+            line-height: 1.5;
+            display: flex;
+            align-items: flex-start;
         }
+
+        /* New inner div to hold the transcript content */
+        #transcriptDisplay {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto; /* Allow scrolling for long conversations */
+            word-wrap: break-word; /* Ensure text wraps */
+        }
+
+        #transcriptDisplay strong {
+            font-weight: 600; /* Semibold for the speaker name */
+        }
+
 
         /* New Message Rectangle Box Styling - Red */
         #messageRectangleBox {
@@ -630,7 +652,9 @@
     </div>
 
     <!-- New Rectangle Box Element (Green) -->
-    <div id="rectangleBox"></div>
+    <div id="rectangleBox">
+        <div id="transcriptDisplay"></div>
+    </div>
 
     <!-- New Message Rectangle Box Element (Red) -->
     <div id="messageRectangleBox">
@@ -1629,12 +1653,22 @@
             const userMessage = dom.messageInput.value.trim();
             if (!userMessage || state.isSendingMessage) return;
 
+            // Get reference to the green transcript box display area
+            const transcriptDisplay = document.getElementById('transcriptDisplay');
+
             dom.messageInput.value = ''; // Clear input immediately
             adjustTextareaHeight(dom.messageInput); // Adjust height after clearing
 
+            // This updates the red chat message box
             displayMessage(userMessage, 'user');
             state.chatHistory.push({ role: "user", content: userMessage });
             saveChatHistory();
+
+            // Update the green transcript box with the user's message
+            if (transcriptDisplay) {
+                const sanitizedUserMessage = userMessage.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                transcriptDisplay.innerHTML = `<strong>You:</strong> ${sanitizedUserMessage}`;
+            }
 
             state.isSendingMessage = true;
             dom.sendMessageBtn.disabled = true;
@@ -1643,16 +1677,33 @@
 
             try {
                 const aiResponse = await callOpenRouterAI(userMessage);
+
+                // This updates the red chat message box
                 displayMessage(aiResponse, 'ai');
                 state.chatHistory.push({ role: "assistant", content: aiResponse });
                 saveChatHistory();
+
+                // Update the green transcript box with the AI's response
+                if (transcriptDisplay) {
+                    const sanitizedAiResponse = aiResponse.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${sanitizedAiResponse}`;
+                }
 
                 if (state.ttsEnabled) {
                     textToSpeech(aiResponse);
                 }
             } catch (error) {
                 console.error('Error sending message to AI:', error);
-                displayMessage("Sorry, I'm having trouble connecting right now. Please try again later.", 'ai');
+                const errorMessage = "Sorry, I'm having trouble connecting right now. Please try again later.";
+                
+                // Update red box with error
+                displayMessage(errorMessage, 'ai');
+                
+                // Update green box with error message
+                if (transcriptDisplay) {
+                    transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${errorMessage}`;
+                }
+
                 showError("AI chat error: Could not get a response from the AI. Please check your API key and network.");
             } finally {
                 state.isSendingMessage = false;
@@ -1868,29 +1919,58 @@ You don’t list facts like a bot — you reflect them as emotional impressions.
         }
 
         function initTTS() {
-            if (!state.ttsInitialized && 'speechSynthesis' in window) {
-                // Ensure voices are loaded before trying to use them
-                state.synth.onvoiceschanged = () => {
-                    state.ttsInitialized = true;
-                    console.log("TTS voices loaded.");
-                };
-                // If voices are already loaded, set initialized flag
-                if (state.synth.getVoices().length > 0) {
-                    state.ttsInitialized = true;
-                }
-            } else if (!('speechSynthesis' in window)) {
+            if (!('speechSynthesis' in window)) {
                 dom.speakerBtn.disabled = true;
                 showError('Text-to-speech not supported in this browser.');
+                return;
             }
+            
+            // Function to get and log voices
+            const loadVoices = () => {
+                const voices = state.synth.getVoices();
+                if (voices.length > 0) {
+                    state.ttsInitialized = true;
+                    console.log("TTS voices loaded.", voices);
+                    // If we were waiting for voices, we don't need to listen anymore
+                    state.synth.onvoiceschanged = null;
+                }
+            };
+            
+            // Try to load voices immediately
+            loadVoices();
+            
+            // If voices are not immediately available, set up an event listener
+            if (state.synth.getVoices().length === 0) {
+                state.synth.onvoiceschanged = loadVoices;
+            }
+
+            // A common issue is that browsers require a user interaction to start audio.
+            // We create a one-time event listener to "unlock" the audio context.
+            const unlockAudio = () => {
+                if (state.synth.paused) { 
+                    state.synth.resume(); 
+                }
+                const utterance = new SpeechSynthesisUtterance("");
+                state.synth.speak(utterance);
+                window.removeEventListener('click', unlockAudio);
+                window.removeEventListener('touchstart', unlockAudio);
+                console.log("TTS unlocked by user interaction.");
+            };
+
+            window.addEventListener('click', unlockAudio);
+            window.addEventListener('touchstart', unlockAudio);
         }
 
         function textToSpeech(text) {
-            if (!state.ttsEnabled || !state.ttsInitialized || state.isSpeaking) return;
-
-            // Add to queue if already speaking
+            if (!state.ttsEnabled || !state.ttsInitialized || !text) {
+                 console.warn("TTS skipped: disabled, not initialized, or no text.");
+                 return;
+            }
             state.speakingQueue.push(text);
-            if (state.synth.speaking) return;
-
+            if (state.synth.speaking) {
+                console.log("TTS is already speaking. Queuing message.");
+                return;
+            }
             processSpeakingQueue();
         }
 
@@ -1905,41 +1985,42 @@ You don’t list facts like a bot — you reflect them as emotional impressions.
             const utterance = new SpeechSynthesisUtterance(textToSpeak);
 
             utterance.onstart = () => {
-                // You can add an animation for the VRM model here, like a mouth open expression
                 window.setMouthOpen(0.6); 
                 showStatus('Speaking...');
             };
 
             utterance.onend = () => {
-                // Reset mouth expression
                 window.setMouthOpen(0); 
                 showStatus('Finished speaking.');
-                processSpeakingQueue(); // Process next message in queue
+                processSpeakingQueue();
             };
 
             utterance.onerror = (event) => {
                 console.error('TTS error:', event);
                 window.setMouthOpen(0); 
                 showError('TTS failed: ' + event.error);
-                processSpeakingQueue(); // Attempt to process next even on error
+                processSpeakingQueue();
             };
 
-            // Optional: Set a specific voice
             const voices = state.synth.getVoices();
-            // Try to find a specific English voice, e.g., a Google UK English voice
             const desiredVoice = voices.find(voice => voice.name.includes('Google') && voice.lang.includes('en'));
             if (desiredVoice) {
                 utterance.voice = desiredVoice;
             } else {
-                // Fallback to any available English voice
                 const englishVoice = voices.find(voice => voice.lang.startsWith('en'));
                 if (englishVoice) {
                     utterance.voice = englishVoice;
                 }
             }
+            
+            // Resume context just in case it was suspended
+            if (state.synth.paused) {
+                state.synth.resume();
+            }
 
             state.synth.speak(utterance);
         }
+
 
         function loadChatHistory() {
             try {
