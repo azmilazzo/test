@@ -12,7 +12,7 @@
         .action-button:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
         #togglePanel { top: 15px; } #messageBtn { top: calc(15px + 60px); } #micBtn { top: calc(15px + 120px); } #speakerBtn { top: calc(15px + 180px); } #settingsBtn { top: calc(15px + 240px); }
         
-        /* CORRECTED Mic/Speaker button styles */
+        /* CORRECTED Mic button style */
         .mic-btn.listening, .speaker-btn.on { background-color: #4CAF50; }
         .speaker-btn.off { background-color: #F44336; }
         .speaker-btn.off i { color: black; }
@@ -162,7 +162,7 @@
                 }
             });
             dom.apiKeyInput.value = state.geminiApiKey; checkConnectionStatus(); loadChatHistory(); initSpeechRecognition(); initTTS();
-            displayMessage("Hello! I'm Luna. Hold the mic button to talk.", 'model');
+            displayMessage("Hello! Hold the mic button to talk.", 'model');
             dom.sendMessageBtn.addEventListener('click', () => handleUserInput());
             dom.messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserInput(); } });
             dom.micBtn.addEventListener('mousedown', startHoldToTalk); dom.micBtn.addEventListener('mouseup', stopHoldToTalk);
