@@ -238,7 +238,6 @@
             border-radius: 15px;
             z-index: 500;
             display: block;
-            /* Removed: pointer-events: none; */ 
             /* New styles for displaying text */
             padding: 15px;
             box-sizing: border-box;
@@ -683,6 +682,7 @@
             <!-- The model selection form group has been removed -->
 
             <div class="modal-buttons">
+                <button class="btn btn-tertiary" id="clearChatHistoryBtn">Clear Chat History</button>
                 <button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button>
                 <button class="btn btn-primary" id="saveSettingsBtn">Save</button>
             </div>
@@ -769,6 +769,7 @@
             micBtn: document.getElementById('micBtn'),
             speakerBtn: document.getElementById('speakerBtn'),
             transcriptDisplay: document.getElementById('transcriptDisplay'), // Reference for green box
+            clearChatHistoryBtn: document.getElementById('clearChatHistoryBtn'), // New DOM ref
         };
 
         // Safely load openRouterApiKey from localStorage
@@ -1302,6 +1303,19 @@
             checkConnectionStatus();
             dom.settingsModal.classList.add('hidden');
         });
+
+        // New function to clear chat history
+        function clearChatHistory() {
+            localStorage.removeItem('chatHistory'); // Clear from local storage
+            state.chatHistory = []; // Clear in-memory state
+            dom.chatMessages.innerHTML = ''; // Clear chat display
+            dom.transcriptDisplay.innerHTML = ''; // Clear green box display
+            displayMessage("Hello! How can I assist you?", "AI"); // Add initial message
+            showStatus('Chat history cleared.');
+        }
+
+        dom.clearChatHistoryBtn.addEventListener('click', clearChatHistory);
+
 
         async function checkConnectionStatus() {
             const apiKey = state.openRouterApiKey;
