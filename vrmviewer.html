@@ -81,12 +81,7 @@
         <h3>VRM Viewer Controls</h3>
         <div class="control-group"><label for="vrmFile">Load VRM Model:</label><input type="file" id="vrmFile" accept=".vrm" /></div>
         <div class="control-group"><div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div><input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" /></div>
-        <div class="control-group"><label>Expressions:</label><div class="button-grid">
-            <button onclick="setExpression('happy')">😀 Happy</button>
-            <button onclick="setExpression('angry')">😠 Angry</button>
-            <button onclick="setExpression('sad')">😥 Sad</button>
-            <button onclick="resetExpressions()">Reset</button>
-        </div></div>
+        <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression('happy')">😀 Happy</button><button onclick="setExpression('angry')">😠 Angry</button><button onclick="setExpression('sad')">😥 Sad</button><button onclick="resetExpressions()">Reset</button></div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
         <div class="control-group"><label>Model Orientation:</label><div class="button-grid"><button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button></div></div>
         <div class="control-group"><label>Music Listening Animation:</label><div class="button-grid"><button onclick="startMusicListeningAnimation()">Start Listen</button><button onclick="stopMusicListeningAnimation()">Stop Listen</button></div></div>
@@ -191,6 +186,7 @@
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
         
+        // **FIX #1** Restored original inversion logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -223,35 +219,20 @@
         };
 
         function updateInvertButtonText() { document.getElementById('invertModelBtn').textContent = `Invert Model (${isInverted ? 'ON' : 'OFF'})`; }
-        
-        // **FIX #1** Restored the correct, original model inversion logic
         window.toggleModelInversion = function() {
-            if (!currentVRM) return showError('Load a VRM model first to invert.');
-            const invertButton = document.getElementById('invertModelBtn');
-            invertButton.disabled = true;
-            const targetRotationY = currentVRM.scene.rotation.y + Math.PI;
-            gsap.to(currentVRM.scene.rotation, {
-                y: targetRotationY,
-                duration: 0.8,
-                ease: "power2.inOut",
-                onComplete: () => {
-                    isInverted = !isInverted;
-                    currentVRM.scene.rotation.y %= (2 * Math.PI);
-                    updateInvertButtonText();
-                    showStatus(`Model Inversion: ${isInverted ? 'ON' : 'OFF'}`);
-                    invertButton.disabled = false;
-                }
-            });
-            isInverted = !isInverted; 
-            setDefaultPose(currentVRM, true);
-            isInverted = !isInverted; 
+            if (!currentVRM) return showError('Load a VRM model first.');
+            const btn = document.getElementById('invertModelBtn'); btn.disabled = true;
+            gsap.to(currentVRM.scene.rotation, { y: currentVRM.scene.rotation.y + Math.PI, duration: 0.8, ease: "power2.inOut", onComplete: () => {
+                isInverted = !isInverted; currentVRM.scene.rotation.y %= (2 * Math.PI);
+                updateInvertButtonText(); btn.disabled = false;
+            }});
+            isInverted = !isInverted; setDefaultPose(currentVRM, true); isInverted = !isInverted; 
         };
         
         window.setExpression = (name) => { 
             if (!currentVRM?.expressionManager?.expressionMap) return;
             stopAutoBlink();
             resetExpressions(false);
-            // **FIX #2** Removed 'surprised' from the valid expressions
             const expressionMap = { 'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'], 'sad': ['sad', 'sorrow'] };
             const possibleNames = expressionMap[name] || [name];
             possibleNames.some(n => {
@@ -262,7 +243,6 @@
             });
         };
         
-        // **FIX #1** Restored correct reset logic
         window.resetExpressions = (showMsg = true) => { 
             if (!currentVRM?.expressionManager?.expressionMap) return;
             try { 
