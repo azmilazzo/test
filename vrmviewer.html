@@ -11,15 +11,11 @@
         .action-button { position: absolute; right: 15px; z-index: 1001; background: rgba(0, 0, 0, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; transition: all 0.3s; }
         .action-button:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
         #togglePanel { top: 15px; } #messageBtn { top: calc(15px + 60px); } #micBtn { top: calc(15px + 120px); } #speakerBtn { top: calc(15px + 180px); } #settingsBtn { top: calc(15px + 240px); }
-        
-        /* CORRECTED Mic button style */
         .mic-btn.listening, .speaker-btn.on { background-color: #4CAF50; }
         .speaker-btn.off { background-color: #F44336; }
         .speaker-btn.off i { color: black; }
-        
         .mic-btn.listening { animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
-        
         .settings-btn.connected { background-color: #4CAF50; } .settings-btn.disconnected { background-color: #FFC107; } .settings-btn.error-status { background-color: #F44336; }
         .controls { position: absolute; top: 10px; right: 15px; z-index: 1000; background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; color: white; width: 300px; max-height: 70vh; overflow-y: auto; border: 1px solid rgba(255, 255, 255, 0.1); display: none; box-sizing: border-box; }
         .control-group { margin-bottom: 20px; } .control-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #f0f0f0; }
@@ -185,7 +181,8 @@
                 showStatus(`VRM loaded: ${file.name}`);
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
-
+        
+        // **FIX #1** Restored original inversion logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -197,9 +194,13 @@
             const leftLA = vrm.humanoid.getNormalizedBoneNode('leftLowerArm'), rightLA = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
             const hips = vrm.humanoid.getNormalizedBoneNode('hips'), spine = vrm.humanoid.getNormalizedBoneNode('spine');
             const chest = vrm.humanoid.getNormalizedBoneNode('chest'), head = vrm.humanoid.getNormalizedBoneNode('head'), neck = vrm.humanoid.getNormalizedBoneNode('neck');
-            const upperArmY = isInverted ? 0.45 : -0.45, upperArmZ = -1.30, lowerArmZ = 0.20;
-            setOrAnimate(leftUA, 0, upperArmY, upperArmZ, 0.8); setOrAnimate(rightUA, 0, -upperArmY, -upperArmZ, 0.8);
-            setOrAnimate(leftLA, 0, 0, lowerArmZ, 0.8); setOrAnimate(rightLA, 0, 0, -lowerArmZ, 0.8);
+            const baseUpperArmY = -0.45, baseUpperArmZ = -1.30, baseLowerArmZ = 0.20;
+            const actualUpperArmY_left = isInverted ? -baseUpperArmY : baseUpperArmY;
+            const actualUpperArmZ_left = isInverted ? -baseUpperArmZ : baseUpperArmZ;
+            const actualLowerArmZ_left = isInverted ? -baseLowerArmZ : baseLowerArmZ;
+            const actualUpperArmY_right = -actualUpperArmY_left, actualUpperArmZ_right = -actualUpperArmZ_left, actualLowerArmZ_right = -actualLowerArmZ_left;
+            setOrAnimate(leftUA, 0, actualUpperArmY_left, actualUpperArmZ_left, 0.8); setOrAnimate(rightUA, 0, actualUpperArmY_right, actualUpperArmZ_right, 0.8);
+            setOrAnimate(leftLA, 0, 0, actualLowerArmZ_left, 0.8); setOrAnimate(rightLA, 0, 0, actualLowerArmZ_right, 0.8);
             [hips, spine, chest, head, neck].forEach(bone => setOrAnimate(bone, 0,0,0, animate ? 0.8 : 0));
             if (spine) { if (animate) gsap.to(spine.position, { y: 0.06, duration: 0.8, ease: "power2.inOut", overwrite: true }); else spine.position.y = 0.06; }
         }
@@ -217,9 +218,11 @@
         window.toggleModelInversion = function() {
             if (!currentVRM) return showError('Load a VRM model first.');
             const btn = document.getElementById('invertModelBtn'); btn.disabled = true;
-            isInverted = !isInverted;
-            gsap.to(currentVRM.scene.rotation, { y: isInverted ? Math.PI : 0, duration: 0.8, ease: "power2.inOut", onComplete: () => { updateInvertButtonText(); btn.disabled = false; } });
-            setDefaultPose(currentVRM, true);
+            gsap.to(currentVRM.scene.rotation, { y: currentVRM.scene.rotation.y + Math.PI, duration: 0.8, ease: "power2.inOut", onComplete: () => {
+                isInverted = !isInverted; currentVRM.scene.rotation.y %= (2 * Math.PI);
+                updateInvertButtonText(); btn.disabled = false;
+            }});
+            isInverted = !isInverted; setDefaultPose(currentVRM, true); isInverted = !isInverted; 
         };
         
         window.setExpression = (name) => { if (!currentVRM) return; stopAutoBlink(); resetExpressions(false); currentVRM.expressionManager.setValue(name, 1.0); };
