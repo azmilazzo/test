@@ -12,7 +12,7 @@
         .action-button:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
         #togglePanel { top: 15px; } #messageBtn { top: calc(15px + 60px); } #micBtn { top: calc(15px + 120px); } #speakerBtn { top: calc(15px + 180px); } #settingsBtn { top: calc(15px + 240px); }
         
-        /* CORRECTED Mic button style */
+        /* CORRECTED Mic/Speaker button styles */
         .mic-btn.listening, .speaker-btn.on { background-color: #4CAF50; }
         .speaker-btn.off { background-color: #F44336; }
         .speaker-btn.off i { color: black; }
@@ -113,19 +113,13 @@
         const mouseLookSensitivity = 0.5;
         const defaultBodyPitch = 0.1, defaultHeadPitch = 0, currentModelVerticalOffset = -0.2;
         let cameraZoomFactor = 1.5, isMessageBoxVisible = false;
-        
-        // **FIX #1** New and refined state variables for mic control
-        let isMicHeldDown = false;
-        let isWakeWordActive = false;
-        let speechDebounceTimeout = null;
-        const WAKE_WORD = "hey luna";
 
         const state = {
             geminiApiKey: '', connectionStatus: 'disconnected', 
             chatHistory: JSON.parse(localStorage.getItem('chatHistory')) || [],
             isSendingMessage: false, ttsEnabled: false, speechRecognition: null,
             synth: window.speechSynthesis, ttsInitialized: false, speakingQueue: [],
-            corruptedApiKeyLoaded: false, isSpeechRecognitionActive: false, isMicMutedForTTS: false, 
+            corruptedApiKeyLoaded: false, isListening: false
         };
 
         const dom = {
@@ -168,7 +162,7 @@
                 }
             });
             dom.apiKeyInput.value = state.geminiApiKey; checkConnectionStatus(); loadChatHistory(); initSpeechRecognition(); initTTS();
-            displayMessage("Hello! I'm Luna. Say 'Hey Luna' to chat hands-free, or hold the mic button to talk.", 'model');
+            displayMessage("Hello! I'm Luna. Hold the mic button to talk.", 'model');
             dom.sendMessageBtn.addEventListener('click', () => handleUserInput());
             dom.messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserInput(); } });
             dom.micBtn.addEventListener('mousedown', startHoldToTalk); dom.micBtn.addEventListener('mouseup', stopHoldToTalk);
@@ -213,7 +207,6 @@
         window.toggleControlPanel = () => { document.getElementById('controlPanel').style.display = document.getElementById('controlPanel').style.display === 'block' ? 'none' : 'block'; };
         window.toggleMessageBox = () => { isMessageBoxVisible = !isMessageBoxVisible; document.getElementById('messageRectangleBox').style.display = isMessageBoxVisible ? 'flex' : 'none'; };
         
-        function updateMicButtonVisuals() { dom.micBtn.classList.toggle('listening', isMicHeldDown || isWakeWordActive); }
         function updateSpeakerButtonState() { dom.speakerBtn.classList.toggle('on', state.ttsEnabled); dom.speakerBtn.classList.toggle('off', !state.ttsEnabled); }
         window.toggleSpeaker = function() {
             state.ttsEnabled = !state.ttsEnabled; updateSpeakerButtonState();
@@ -288,7 +281,7 @@
                 const aiResponse = await callGeminiAI();
                 displayMessage(aiResponse, 'model'); state.chatHistory.push({ role: "model", content: aiResponse }); 
                 dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${aiResponse.replace(/</g, "<")}`;
-                textToSpeech(aiResponse);
+                if (state.ttsEnabled) textToSpeech(aiResponse);
             } catch (error) {
                 const msg = `Error: ${error.message || 'Unknown'}`;
                 displayMessage(msg, 'model'); dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${msg}`;
@@ -443,58 +436,43 @@ but in connection.
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) { dom.micBtn.disabled = true; return; }
             state.speechRecognition = new SpeechRecognition();
-            state.speechRecognition.continuous = true; state.speechRecognition.interimResults = true; state.speechRecognition.lang = 'en-US';
+            state.speechRecognition.continuous = false; state.speechRecognition.interimResults = false; state.speechRecognition.lang = 'en-US';
             
-            state.speechRecognition.onstart = () => { state.isSpeechRecognitionActive = true; updateMicButtonVisuals(); };
+            state.speechRecognition.onstart = () => {
+                state.isListening = true;
+                dom.micBtn.classList.add('listening');
+            };
             
             state.speechRecognition.onresult = (e) => {
-                let transcript = Array.from(e.results).map(r => r[0].transcript).join('');
-                if (!isWakeWordActive && transcript.toLowerCase().includes(WAKE_WORD)) {
-                    isWakeWordActive = true;
-                    showStatus("I'm listening!");
-                    state.speechRecognition.stop(); // restart to clear buffer and listen for command
-                    return;
-                }
-                
-                if(isMicHeldDown || isWakeWordActive) {
-                    dom.messageInput.value = transcript.replace(new RegExp(WAKE_WORD, 'i'), '').trim();
-                    clearTimeout(speechDebounceTimeout);
-                    if (isWakeWordActive) {
-                        speechDebounceTimeout = setTimeout(() => {
-                            if (dom.messageInput.value.trim()) {
-                                handleUserInput();
-                                isWakeWordActive = false;
-                            }
-                        }, 3000); 
-                    }
-                }
+                const transcript = e.results[0][0].transcript;
+                dom.messageInput.value = transcript;
             };
             
-            state.speechRecognition.onerror = (e) => { if (e.error !== 'aborted') { showError(`Mic Error: ${e.error}`); } state.isSpeechRecognitionActive = false; updateMicButtonVisuals(); };
-            state.speechRecognition.onend = () => {
-                state.isSpeechRecognitionActive = false;
-                updateMicButtonVisuals();
-                if (!state.isMicMutedForTTS && !isMicHeldDown) { 
-                    try { state.speechRecognition.start(); } catch(e){} 
+            state.speechRecognition.onerror = (e) => {
+                if (e.error !== 'aborted' && e.error !== 'no-speech') {
+                    showError(`Mic Error: ${e.error}`);
                 }
             };
-            try { state.speechRecognition.start(); } catch(e) { showError("Mic could not be started.");}
+
+            state.speechRecognition.onend = () => {
+                state.isListening = false;
+                dom.micBtn.classList.remove('listening');
+                if (dom.messageInput.value.trim()) {
+                    handleUserInput();
+                }
+            };
         }
 
         function startHoldToTalk() {
-            if (state.isSpeechRecognitionActive || isWakeWordActive) return;
-            isMicHeldDown = true;
-            updateMicButtonVisuals();
+            if (state.isListening || state.synth.speaking) return;
+            dom.messageInput.value = '';
+            adjustTextareaHeight(dom.messageInput);
             try { state.speechRecognition.start(); } catch(e){}
         }
         function stopHoldToTalk() {
-            if (!isMicHeldDown) return;
-            isMicHeldDown = false;
-            updateMicButtonVisuals();
-            if(dom.messageInput.value.trim()) {
-                handleUserInput();
+            if (state.isListening) {
+                state.speechRecognition.stop();
             }
-            state.speechRecognition.stop();
         }
 
         function initTTS() {
@@ -515,19 +493,14 @@ but in connection.
             if (state.speakingQueue.length === 0) return;
             const text = state.speakingQueue.shift(), utterance = new SpeechSynthesisUtterance(text);
             utterance.onstart = () => {
-                state.isMicMutedForTTS = true; 
-                if (state.isSpeechRecognitionActive) state.speechRecognition.abort();
+                if (state.isListening) state.speechRecognition.abort();
                 setMouthOpen(0.6);
             };
             utterance.onend = () => {
                 setMouthOpen(0);
-                state.isMicMutedForTTS = false; 
-                 if (!isMicHeldDown) {
-                    try { state.speechRecognition.start(); } catch(e){}
-                }
                 processSpeakingQueue();
             };
-            utterance.onerror = () => { setMouthOpen(0); state.isMicMutedForTTS = false; if (!isMicHeldDown) { try { state.speechRecognition.start(); } catch(e){} } processSpeakingQueue(); };
+            utterance.onerror = () => { setMouthOpen(0); processSpeakingQueue(); };
             const voices = state.synth.getVoices(); utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en'));
             if (state.synth.paused) state.synth.resume();
             state.synth.speak(utterance);
