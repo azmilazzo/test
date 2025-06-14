@@ -191,7 +191,7 @@
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
         
-        // **FIX #1** Restored original inversion logic
+        // **FIXED** Restored original inversion logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -234,9 +234,20 @@
             isInverted = !isInverted; setDefaultPose(currentVRM, true); isInverted = !isInverted; 
         };
         
-        window.setExpression = (name) => { if (!currentVRM) return; stopAutoBlink(); resetExpressions(false); currentVRM.expressionManager.setValue(name, 1.0); };
+        window.setExpression = (name) => {
+            if (!currentVRM?.expressionManager?.expressionMap) return;
+            stopAutoBlink();
+            resetExpressions(false);
+            const expressionMap = { 'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'], 'sad': ['sad', 'sorrow'] };
+            const possibleNames = expressionMap[name] || [name];
+            const found = possibleNames.some(n => {
+                if (currentVRM.expressionManager.expressionMap[n]) {
+                    currentVRM.expressionManager.setValue(n, 1.0); return true;
+                }
+                return false;
+            });
+        };
         
-        // **FIX #2** Restored correct reset logic
         window.resetExpressions = (showMsg = true) => { 
             if (!currentVRM?.expressionManager?.expressionMap) return;
             try { 
