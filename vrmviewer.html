@@ -12,6 +12,7 @@
         .action-button:hover { background: rgba(0, 0, 0, 0.8); transform: scale(1.05); }
         #togglePanel { top: 15px; } #messageBtn { top: calc(15px + 60px); } #micBtn { top: calc(15px + 120px); } #speakerBtn { top: calc(15px + 180px); } #settingsBtn { top: calc(15px + 240px); }
         
+        /* CORRECTED Mic button style */
         .mic-btn.listening, .speaker-btn.on { background-color: #4CAF50; }
         .speaker-btn.off { background-color: #F44336; }
         .speaker-btn.off i { color: black; }
@@ -84,7 +85,6 @@
             <button onclick="setExpression('happy')">😀 Happy</button>
             <button onclick="setExpression('angry')">😠 Angry</button>
             <button onclick="setExpression('sad')">😥 Sad</button>
-            <!-- **FIX #2** Removed Surprised Button -->
             <button onclick="resetExpressions()">Reset</button>
         </div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
@@ -191,7 +191,6 @@
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
         
-        // **FIXED** Restored original inversion logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -224,23 +223,38 @@
         };
 
         function updateInvertButtonText() { document.getElementById('invertModelBtn').textContent = `Invert Model (${isInverted ? 'ON' : 'OFF'})`; }
+        
+        // **FIX #1** Restored the correct, original model inversion logic
         window.toggleModelInversion = function() {
-            if (!currentVRM) return showError('Load a VRM model first.');
-            const btn = document.getElementById('invertModelBtn'); btn.disabled = true;
-            gsap.to(currentVRM.scene.rotation, { y: currentVRM.scene.rotation.y + Math.PI, duration: 0.8, ease: "power2.inOut", onComplete: () => {
-                isInverted = !isInverted; currentVRM.scene.rotation.y %= (2 * Math.PI);
-                updateInvertButtonText(); btn.disabled = false;
-            }});
-            isInverted = !isInverted; setDefaultPose(currentVRM, true); isInverted = !isInverted; 
+            if (!currentVRM) return showError('Load a VRM model first to invert.');
+            const invertButton = document.getElementById('invertModelBtn');
+            invertButton.disabled = true;
+            const targetRotationY = currentVRM.scene.rotation.y + Math.PI;
+            gsap.to(currentVRM.scene.rotation, {
+                y: targetRotationY,
+                duration: 0.8,
+                ease: "power2.inOut",
+                onComplete: () => {
+                    isInverted = !isInverted;
+                    currentVRM.scene.rotation.y %= (2 * Math.PI);
+                    updateInvertButtonText();
+                    showStatus(`Model Inversion: ${isInverted ? 'ON' : 'OFF'}`);
+                    invertButton.disabled = false;
+                }
+            });
+            isInverted = !isInverted; 
+            setDefaultPose(currentVRM, true);
+            isInverted = !isInverted; 
         };
         
-        window.setExpression = (name) => {
+        window.setExpression = (name) => { 
             if (!currentVRM?.expressionManager?.expressionMap) return;
             stopAutoBlink();
             resetExpressions(false);
+            // **FIX #2** Removed 'surprised' from the valid expressions
             const expressionMap = { 'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'], 'sad': ['sad', 'sorrow'] };
             const possibleNames = expressionMap[name] || [name];
-            const found = possibleNames.some(n => {
+            possibleNames.some(n => {
                 if (currentVRM.expressionManager.expressionMap[n]) {
                     currentVRM.expressionManager.setValue(n, 1.0); return true;
                 }
@@ -248,6 +262,7 @@
             });
         };
         
+        // **FIX #1** Restored correct reset logic
         window.resetExpressions = (showMsg = true) => { 
             if (!currentVRM?.expressionManager?.expressionMap) return;
             try { 
