@@ -87,9 +87,9 @@
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
         }
         
         .settings-btn.connected {
@@ -406,7 +406,6 @@
             cursor: not-allowed;
         }
 
-
         .modal {
             position: fixed;
             top: 0;
@@ -591,12 +590,15 @@
         </div>
     </div>
 
+    <!-- **FIXED** This modal now contains the connection status div -->
     <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
             <h2>⚙️ API Settings</h2>
             <div class="form-group">
                 <label for="apiKeyInput">Google Gemini API Key:</label>
                 <input type="password" id="apiKeyInput" placeholder="Enter your Google Gemini API Key" autocomplete="off">
+                <!-- THIS DIV WAS MISSING AND IS NOW ADDED BACK -->
+                <div id="connectionStatus" class="connection-status-text"></div>
             </div>
             <div class="modal-buttons">
                 <button class="btn btn-tertiary" id="clearChatHistoryBtn">Clear Chat History</button>
@@ -1006,7 +1008,7 @@
                 if (finalTranscript) handleUserInput();
             };
             state.speechRecognition.onerror = (e) => { showError(`Speech Error: ${e.error}`); state.isSpeechRecognitionActive = false; updateMicButtonState(); };
-            state.speechRecognition.onend = () => { state.isSpeechRecognitionActive = false; updateMicButtonState(); if (isMicOn) { console.log("Speech recognition ended, restarting..."); state.speechRecognition.start(); } };
+            state.speechRecognition.onend = () => { state.isSpeechRecognitionActive = false; updateMicButtonState(); if (isMicOn && !state.isMicMutedForTTS) { console.log("Speech recognition ended, restarting..."); state.speechRecognition.start(); } };
         }
 
         function initTTS() {
@@ -1040,8 +1042,8 @@
 
         function saveChatHistory() { const history = state.chatHistory.map(m => ({...m, role: m.role === 'assistant' ? 'model' : m.role})); localStorage.setItem('chatHistory', JSON.stringify(history.slice(-20))); }
         function adjustTextareaHeight(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-        function updateConnectionStatusDisplay(msg) { dom.connectionStatusText.textContent = msg; dom.connectionStatusText.className = 'connection-status-text ' + state.connectionStatus; }
-        function updateSettingsButtonStatus() { dom.settingsBtn.className = 'action-button settings-btn ' + state.connectionStatus; }
+        function updateConnectionStatusDisplay(msg) { if(dom.connectionStatusText) { dom.connectionStatusText.textContent = msg; dom.connectionStatusText.className = 'connection-status-text ' + state.connectionStatus;} }
+        function updateSettingsButtonStatus() { if(dom.settingsBtn) dom.settingsBtn.className = 'action-button settings-btn ' + state.connectionStatus; }
 
         window.addEventListener('load', () => { initScene(); resizeViewer(); });
         window.addEventListener('resize', resizeViewer);
