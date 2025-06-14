@@ -161,15 +161,31 @@
                     const spine=currentVRM.humanoid?.getNormalizedBoneNode('spine'), hips=currentVRM.humanoid?.getNormalizedBoneNode('hips'), chest=currentVRM.humanoid?.getNormalizedBoneNode('chest'), head=currentVRM.humanoid?.getNormalizedBoneNode('head'), neck=currentVRM.humanoid?.getNormalizedBoneNode('neck');
                     if (spine && !gsap.isTweening(spine.position)) spine.position.y = 0.06 + Math.sin(t * 2) * 0.005;
                     const pitch = isInverted ? -defaultBodyPitch : defaultBodyPitch;
-                    if(isMusicListening){const hTA=0.15,hTF=2.5,bSY=0.01,bSP=0.005,bF=1.5;if(hips&&!gsap.isTweening(hips.rotation)){hips.rotation.y=Math.sin(t*bF)*bSY;hips.rotation.x=pitch+Math.cos(t*bF*0.9)*bSP}if(chest&&!gsap.isTweening(chest.rotation)){chest.rotation.y=Math.sin(t*bF*1.1+0.5)*bSY*0.5;chest.rotation.x=pitch*0.5+Math.cos(t*bF*1.0+0.1)*bSP*0.5}if(head&&!gsap.isTweening(head.rotation)){head.rotation.y=mouse.x*mouseLookSensitivity+Math.sin(t*hTF*0.7)*hTA*0.1;head.rotation.z=Math.sin(t*hTF)*hTA;head.rotation.x=defaultHeadPitch+Math.cos(t*hTF*0.6)*hTA*0.05}if(neck&&!gsap.isTweening(neck.rotation)){neck.rotation.y=mouse.x*mouseLookSensitivity*0.3;neck.rotation.x=defaultHeadPitch*0.3;neck.rotation.z=0}}else{gsap.killTweensOf(head?.rotation);gsap.killTweensOf(neck?.rotation);gsap.killTweensOf(hips?.rotation);gsap.killTweensOf(chest?.rotation);gsap.killTweensOf(spine?.rotation);const iSY=0.02,iSP=0.01,iF=0.75;if(hips){hips.rotation.y=Math.sin(t*iF)*iSY;hips.rotation.x=pitch+Math.cos(t*iF*0.8)*iSP;hips.rotation.z=0}if(chest){chest.rotation.y=Math.sin(t*iF*1.1+0.5)*iSY*0.5;chest.rotation.x=pitch*0.5+Math.cos(t*iF*0.9+0.3)*iSP*0.5;chest.rotation.z=0}
-                    // Apply mouse tracking only if enabled
-                    if (state.isMouseTrackingEnabled) {
-                        if(head)gsap.to(head.rotation,{y:mouse.x*mouseLookSensitivity,x:defaultHeadPitch,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
-                        if(neck)gsap.to(neck.rotation,{y:mouse.x*mouseLookSensitivity*0.3,x:defaultHeadPitch*0.3,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
-                    } else {
-                        // Reset head and neck rotation if mouse tracking is disabled
-                        if (head) gsap.to(head.rotation, {y: 0, x: defaultHeadPitch, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
-                        if (neck) gsap.to(neck.rotation, {y: 0, x: defaultHeadPitch * 0.3, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
+                    if(isMusicListening){
+                        const hTA=0.15,hTF=2.5,bSY=0.01,bSP=0.005,bF=1.5;
+                        if(hips&&!gsap.isTweening(hips.rotation)){hips.rotation.y=Math.sin(t*bF)*bSY;hips.rotation.x=pitch+Math.cos(t*bF*0.9)*bSP}
+                        if(chest&&!gsap.isTweening(chest.rotation)){chest.rotation.y=Math.sin(t*bF*1.1+0.5)*bSY*0.5;chest.rotation.x=pitch*0.5+Math.cos(t*bF*1.0+0.1)*bSP*0.5}
+                        if(head&&!gsap.isTweening(head.rotation)){head.rotation.y=mouse.x*mouseLookSensitivity+Math.sin(t*hTF*0.7)*hTA*0.1;head.rotation.z=Math.sin(t*hTF)*hTA;head.rotation.x=defaultHeadPitch+Math.cos(t*hTF*0.6)*hTA*0.05}
+                        if(neck&&!gsap.isTweening(neck.rotation)){neck.rotation.y=mouse.x*mouseLookSensitivity*0.3;neck.rotation.x=defaultHeadPitch*0.3;neck.rotation.z=0}
+                    } else { // Corrected: This 'else' block now correctly follows the 'if(isMusicListening)' block.
+                        gsap.killTweensOf(head?.rotation);
+                        gsap.killTweensOf(neck?.rotation);
+                        gsap.killTweensOf(hips?.rotation);
+                        gsap.killTweensOf(chest?.rotation);
+                        gsap.killTweensOf(spine?.rotation);
+                        const iSY=0.02,iSP=0.01,iF=0.75;
+                        if(hips){hips.rotation.y=Math.sin(t*iF)*iSY;hips.rotation.x=pitch+Math.cos(t*iF*0.8)*iSP;hips.rotation.z=0}
+                        if(chest){chest.rotation.y=Math.sin(t*iF*1.1+0.5)*iSY*0.5;chest.rotation.x=pitch*0.5+Math.cos(t*iF*0.9+0.3)*iSP*0.5;chest.rotation.z=0}
+                        
+                        // Apply mouse tracking only if enabled
+                        if (state.isMouseTrackingEnabled) {
+                            if(head)gsap.to(head.rotation,{y:mouse.x*mouseLookSensitivity,x:defaultHeadPitch,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
+                            if(neck)gsap.to(neck.rotation,{y:mouse.x*mouseLookSensitivity*0.3,x:defaultHeadPitch*0.3,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
+                        } else {
+                            // Reset head and neck rotation if mouse tracking is disabled
+                            if (head) gsap.to(head.rotation, {y: 0, x: defaultHeadPitch, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
+                            if (neck) gsap.to(neck.rotation, {y: 0, x: defaultHeadPitch * 0.3, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
+                        }
                     }
                 }
             });
