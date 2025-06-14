@@ -16,7 +16,7 @@
         
         #viewer {
             width: 100vw;
-            /* Height is set dynamically by JavaScript */
+            height: 100vh; /* Use vh for viewer */
             position: relative;
             display: block;
         }
@@ -46,471 +46,124 @@
         }
 
         /* Specific positioning for each button */
-        #togglePanel {
-            top: 15px;
-        }
-
-        #messageBtn {
-            top: calc(15px + 50px + 10px);
-        }
-
-        #micBtn {
-            top: calc(15px + 50px + 10px + 50px + 10px);
-        }
-
-        #speakerBtn {
-            top: calc(15px + 50px + 10px + 50px + 10px + 50px + 10px);
-        }
-
-        #settingsBtn {
-            top: calc(15px + 50px + 10px + 50px + 10px + 50px + 10px + 50px + 10px);
-        }
+        #togglePanel { top: 15px; }
+        #messageBtn { top: calc(15px + 50px + 10px); }
+        #micBtn { top: calc(15px + 50px + 10px + 50px + 10px); }
+        #speakerBtn { top: calc(15px + 50px + 10px + 50px + 10px + 50px + 10px); }
+        #settingsBtn { top: calc(15px + 50px + 10px + 50px + 10px + 50px + 10px + 50px + 10px); }
 
         /* Mic/Speaker button states */
-        .mic-btn.on, .speaker-btn.on {
-            background-color: #4CAF50; /* Green */
-        }
-        .mic-btn.on i, .speaker-btn.on i {
-            color: white; /* White icon on green background */
-        }
-
-        .mic-btn.off, .speaker-btn.off {
-            background-color: #F44336; /* Red */
-        }
-        .mic-btn.off i, .speaker-btn.off i {
-            color: black; /* Black icon on red background for visibility */
-        }
+        .mic-btn.on, .speaker-btn.on { background-color: #4CAF50; }
+        .mic-btn.on i, .speaker-btn.on i { color: white; }
+        .mic-btn.off, .speaker-btn.off { background-color: #F44336; }
+        .mic-btn.off i, .speaker-btn.off i { color: black; }
         
-        /* NEW: Listening animation for mic button */
-        .mic-btn.listening {
-            animation: pulse 1.5s infinite;
-        }
-
+        .mic-btn.listening { animation: pulse 1.5s infinite; }
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
             100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
         }
         
-        .settings-btn.connected {
-            background-color: #4CAF50; /* Green when connected */
-        }
-
-        .settings-btn.disconnected {
-            background-color: #FFC107; /* Orange when disconnected */
-        }
-
-        .settings-btn.error-status {
-            background-color: #F44336; /* Red when error */
-        }
+        .settings-btn.connected { background-color: #4CAF50; }
+        .settings-btn.disconnected { background-color: #FFC107; }
+        .settings-btn.error-status { background-color: #F44336; }
 
 
         .controls {
             position: absolute;
-            top: 10px;
-            right: 15px;
-            z-index: 1000;
-            background: rgba(28, 28, 30, 0.85);
-            backdrop-filter: blur(10px);
-            padding: 20px;
-            border-radius: 12px;
-            color: white;
-            width: 300px;
-            max-height: 70vh;
-            overflow-y: auto;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: none;
-            box-sizing: border-box;
+            top: 10px; right: 15px; z-index: 1000;
+            background: rgba(28, 28, 30, 0.85); backdrop-filter: blur(10px);
+            padding: 20px; border-radius: 12px; color: white;
+            width: 300px; max-height: 70vh; overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.1); display: none; box-sizing: border-box;
         }
         
-        .control-group {
-            margin-bottom: 20px;
-        }
+        .control-group { margin-bottom: 20px; }
+        .control-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #f0f0f0; }
+        .control-group .slider-label { display: flex; justify-content: space-between; align-items: center; }
         
-        .control-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #f0f0f0;
-        }
+        input[type="file"] { width: 100%; padding: 8px; margin-bottom: 10px; border: none; border-radius: 5px; background: rgba(255, 255, 255, 0.1); color: white; box-sizing: border-box; }
+        input[type="file"]::file-selector-button { background: #667eea; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; transition: background 0.3s; }
+        input[type="file"]::file-selector-button:hover { background: #5a6fd8; }
 
-        .control-group .slider-label {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        input[type="file"] {
-            width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border: none;
-            border-radius: 5px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            box-sizing: border-box;
-        }
-        
-        input[type="file"]::file-selector-button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        input[type="file"]::file-selector-button:hover {
-            background: #5a6fd8;
-        }
+        button { background: #667eea; color: white; border: none; padding: 8px 12px; margin: 4px 2px; border-radius: 5px; cursor: pointer; transition: background 0.3s; flex-grow: 1; }
+        button:hover { background: #5a6fd8; }
+        button:disabled { background: #4a5c9f; cursor: not-allowed; }
 
-        button {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            margin: 4px 2px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-            flex-grow: 1;
-        }
+        .button-grid { display: flex; flex-wrap: wrap; gap: 5px; }
         
-        button:hover {
-            background: #5a6fd8;
-        }
+        input[type="range"] { width: 100%; margin: 5px 0; -webkit-appearance: none; appearance: none; height: 8px; background: rgba(255, 255, 255, 0.2); border-radius: 5px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #667eea; cursor: pointer; transition: background 0.15s ease-in-out; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+        input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #667eea; cursor: pointer; transition: background 0.15s ease-in-out; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
         
-        button:disabled {
-            background: #4a5c9f;
-            cursor: not-allowed;
-        }
-
-        .button-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-        }
-        
-        input[type="range"] {
-            width: 100%;
-            margin: 5px 0;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
-            outline: none;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            transition: background 0.15s ease-in-out;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            transition: background 0.15s ease-in-out;
-            box-shadow: 0 0 5px rgba(0,0,0,0.3);
-        }
-        
-        .status, .error {
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 15px;
-            display: none;
-            text-align: center;
-        }
-
+        .status, .error { padding: 10px; border-radius: 5px; margin-top: 15px; display: none; text-align: center; }
         .status { background: rgba(0, 100, 0, 0.8); }
         .error { background: rgba(100, 0, 0, 0.8); }
 
         #rectangleBox {
-            position: absolute;
-            left: 50%;
-            top: 70%;
-            transform: translate(-50%, -50%);
-            width: 350px;
-            height: 250px;
-            background-color: rgba(255, 255, 255, 0.7);
-            border: 5px solid #00ff00;
-            border-radius: 15px;
-            z-index: 500;
-            display: block;
-            padding: 15px;
-            box-sizing: border-box;
-            color: #111;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 18px;
-            line-height: 1.5;
-            display: flex;
-            align-items: flex-start;
+            position: absolute; left: 50%; top: 70%; transform: translate(-50%, -50%);
+            width: 350px; height: 250px; background-color: rgba(255, 255, 255, 0.7);
+            border: 5px solid #00ff00; border-radius: 15px; z-index: 500; display: block;
+            padding: 15px; box-sizing: border-box; color: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 18px; line-height: 1.5; display: flex; align-items: flex-start;
         }
-
-        #transcriptDisplay {
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            word-wrap: break-word;
-        }
-
-        #transcriptDisplay strong {
-            font-weight: 600;
-        }
+        #transcriptDisplay { width: 100%; height: 100%; overflow-y: auto; word-wrap: break-word; }
+        #transcriptDisplay strong { font-weight: 600; }
 
         #messageRectangleBox {
-            position: absolute;
-            left: 50%;
-            top: 30%;
-            transform: translate(-50%, -50%);
-            width: 360px;
-            height: 290px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 5px solid #FF0000;
-            border-radius: 20px;
-            z-index: 900;
-            display: none;
-            padding: 10px;
-            box-sizing: border-box;
-            color: #333;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            flex-direction: column;
+            position: absolute; left: 50%; top: 30%; transform: translate(-50%, -50%);
+            width: 360px; height: 290px; background-color: rgba(255, 255, 255, 0.8);
+            border: 5px solid #FF0000; border-radius: 20px; z-index: 900; display: none;
+            padding: 10px; box-sizing: border-box; color: #333; box-shadow: 0 5px 15px rgba(0,0,0,0.3); flex-direction: column;
         }
-
-        #messageRectangleBox h4 {
-            margin-top: 0;
-            color: #333;
-            font-size: 1.2em;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+        #messageRectangleBox h4 { margin-top: 0; color: #333; font-size: 1.2em; text-align: center; margin-bottom: 10px; }
         
         .message-box-close-btn {
-            position: absolute;
-            top: -15px;
-            right: -15px;
-            background: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s, transform 0.2s;
-            padding: 0;
+            position: absolute; top: -15px; right: -15px; background: #e74c3c; color: white;
+            border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 16px; transition: background-color 0.3s, transform 0.2s; padding: 0;
         }
-
-        .message-box-close-btn:hover {
-            background-color: #c0392b;
-            transform: scale(1.1);
-        }
+        .message-box-close-btn:hover { background-color: #c0392b; transform: scale(1.1); }
 
         #chatMessages {
-            flex-grow: 1;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 10px;
-            background-color: #f9f9f9;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
+            flex-grow: 1; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px;
+            background-color: #f9f9f9; display: flex; flex-direction: column; gap: 5px;
         }
+        .chat-message { max-width: 80%; padding: 8px 12px; border-radius: 15px; position: relative; line-height: 1.4; }
+        .chat-message.user { align-self: flex-end; background-color: #e0f7fa; color: #333; border-bottom-right-radius: 3px; }
+        .chat-message.ai { align-self: flex-start; background-color: #f0f0f0; color: #333; border-bottom-left-radius: 3px; }
+        .chat-message .timestamp { font-size: 0.7em; color: #777; position: absolute; bottom: -15px; white-space: nowrap; }
+        .chat-message.user .timestamp { right: 5px; }
+        .chat-message.ai .timestamp { left: 5px; }
 
-        .chat-message {
-            max-width: 80%;
-            padding: 8px 12px;
-            border-radius: 15px;
-            position: relative;
-            line-height: 1.4;
-        }
-
-        .chat-message.user {
-            align-self: flex-end;
-            background-color: #e0f7fa;
-            color: #333;
-            border-bottom-right-radius: 3px;
-        }
-
-        .chat-message.ai {
-            align-self: flex-start;
-            background-color: #f0f0f0;
-            color: #333;
-            border-bottom-left-radius: 3px;
-        }
-
-        .chat-message .timestamp {
-            font-size: 0.7em;
-            color: #777;
-            position: absolute;
-            bottom: -15px;
-            white-space: nowrap;
-        }
-
-        .chat-message.user .timestamp {
-            right: 5px;
-        }
-
-        .chat-message.ai .timestamp {
-            left: 5px;
-        }
-
-        .chat-input-area {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-
-        #messageInput {
-            flex-grow: 1;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            resize: none;
-            font-size: 14px;
-            max-height: 80px;
-            overflow-y: auto;
-        }
-
-        #sendMessageBtn {
-            padding: 8px 15px;
-            border-radius: 8px;
-            background-color: #667eea;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        #sendMessageBtn:hover {
-            background-color: #5a6fd8;
-        }
-
-        #sendMessageBtn:disabled {
-            background-color: #b0c4de;
-            cursor: not-allowed;
-        }
+        .chat-input-area { display: flex; gap: 5px; align-items: center; }
+        #messageInput { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 8px; resize: none; font-size: 14px; max-height: 80px; overflow-y: auto; }
+        #sendMessageBtn { padding: 8px 15px; border-radius: 8px; background-color: #667eea; color: white; cursor: pointer; transition: background-color 0.3s; }
+        #sendMessageBtn:hover { background-color: #5a6fd8; }
+        #sendMessageBtn:disabled { background-color: #b0c4de; cursor: not-allowed; }
 
         .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            height: 100dvh;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh; height: 100dvh; background: rgba(0, 0, 0, 0.6);
+            display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch;
         }
-
         .modal-content {
-            background: #FFFFFF;
-            border-radius: 15px;
-            padding: 30px;
-            width: 100%;
-            max-width: 450px;
-            max-height: 90%;
-            overflow-y: auto;
-            border: 3px solid #667eea;
-            color: #333333;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            position: relative;
-            z-index: 1001;
+            background: #FFFFFF; border-radius: 15px; padding: 30px; width: 100%; max-width: 450px; max-height: 90%; overflow-y: auto;
+            border: 3px solid #667eea; color: #333333; box-shadow: 0 5px 20px rgba(0,0,0,0.2); position: relative; z-index: 1001;
         }
+        .modal h2 { margin-bottom: 25px; color: #667eea; text-align: center; font-size: 1.8em; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555555; }
+        .form-group input, .form-group select { width: 100%; padding: 12px; border: 2px solid #ADD8E6; border-radius: 10px; font-size: 16px; background: #F0F8FF; color: #333333; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4); }
+        .form-group .connection-status-text { margin-top: 10px; font-size: 0.9em; font-weight: bold; text-align: center; color: #555; }
+        .form-group .connection-status-text.connected { color: #4CAF50; } .form-group .connection-status-text.disconnected { color: #FFC107; } .form-group .connection-status-text.error-status { color: #F44336; }
 
-        .modal h2 {
-            margin-bottom: 25px;
-            color: #667eea;
-            text-align: center;
-            font-size: 1.8em;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: #555555;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ADD8E6;
-            border-radius: 10px;
-            font-size: 16px;
-            background: #F0F8FF;
-            color: #333333;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.4);
-        }
-        
-        .form-group .connection-status-text {
-            margin-top: 10px;
-            font-size: 0.9em;
-            font-weight: bold;
-            text-align: center;
-            color: #555;
-        }
-
-        .form-group .connection-status-text.connected { color: #4CAF50; }
-        .form-group .connection-status-text.disconnected { color: #FFC107; }
-        .form-group .connection-status-text.error-status { color: #F44336; }
-
-        .modal-buttons {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-            text-align: center;
-        }
-
-        .btn-primary { background: #667eea; color: #FFFFFF; }
-        .btn-primary:hover { background: #5a6fd8; transform: translateY(-2px); }
-        .btn-secondary { background: #F44336; color: #FFFFFF; }
-        .btn-secondary:hover { background: #D32F2F; transform: translateY(-2px); }
-        .btn-tertiary { background: #E0E0E0; color: #333; border: 1px solid #BDBDBD; }
-        .btn-tertiary:hover { background: #C0C0C0; transform: translateY(-2px); }
+        .modal-buttons { display: flex; gap: 15px; margin-top: 30px; justify-content: space-between; flex-wrap: wrap; }
+        .btn { flex: 1; min-width: 120px; padding: 12px 20px; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: all 0.3s ease; border: none; text-align: center; }
+        .btn-primary { background: #667eea; color: #FFFFFF; } .btn-primary:hover { background: #5a6fd8; transform: translateY(-2px); }
+        .btn-secondary { background: #F44336; color: #FFFFFF; } .btn-secondary:hover { background: #D32F2F; transform: translateY(-2px); }
+        .btn-tertiary { background: #E0E0E0; color: #333; border: 1px solid #BDBDBD; } .btn-tertiary:hover { background: #C0C0C0; transform: translateY(-2px); }
 
         .hidden { display: none !important; }
     </style>
@@ -533,7 +186,6 @@
     <button id="messageBtn" class="action-button" onclick="toggleMessageBox()" title="Toggle Chat"><i class="fa-solid fa-message"></i></button>
     <button id="micBtn" class="action-button mic-btn off" onclick="toggleMic()" title="Toggle Microphone"><i class="fa-solid fa-microphone"></i></button>
     <button id="speakerBtn" class="action-button speaker-btn off" onclick="toggleSpeaker()" title="Toggle Speaker"><i class="fa-solid fa-volume-high"></i></button>
-    <!-- **FIXED** Added onclick back to this button -->
     <button id="settingsBtn" class="action-button settings-btn" onclick="toggleSettingsModal()" title="Settings"><i class="fa-solid fa-gear"></i></button>
 
     <div class="controls" id="controlPanel">
@@ -833,6 +485,7 @@
             }
         }
 
+        // **FIX #2** Corrected arm rotation logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -849,7 +502,11 @@
             const hips = vrm.humanoid.getNormalizedBoneNode('hips'), spine = vrm.humanoid.getNormalizedBoneNode('spine');
             const chest = vrm.humanoid.getNormalizedBoneNode('chest'), head = vrm.humanoid.getNormalizedBoneNode('head'), neck = vrm.humanoid.getNormalizedBoneNode('neck');
             
-            const upperArmY = isInverted ? 0.45 : -0.45, upperArmZ = isInverted ? 1.30 : -1.30, lowerArmZ = isInverted ? -0.20 : 0.20;
+            // The local Y rotation (in/out from body) needs to flip when inverted
+            const upperArmY = isInverted ? 0.45 : -0.45; 
+            // The local Z rotation (forward/backward) stays the same relative to the arm
+            const upperArmZ = -1.30;
+            const lowerArmZ = 0.20;
             
             setOrAnimate(leftUpperArm, 0, upperArmY, upperArmZ, 0.8);
             setOrAnimate(rightUpperArm, 0, -upperArmY, -upperArmZ, 0.8);
@@ -878,7 +535,9 @@
             
             if (isMicOn) {
                 showStatus(`Microphone ON.`);
-                if (!state.isSpeechRecognitionActive) state.speechRecognition.start();
+                if (!state.isSpeechRecognitionActive) {
+                    try { state.speechRecognition.start(); } catch(e) { console.error("Could not start mic:", e); }
+                }
             } else {
                 showStatus(`Microphone OFF.`);
                 state.isMicMutedForTTS = false; 
@@ -899,19 +558,18 @@
             if (!currentVRM) return showError('Load a VRM model first.');
             const btn = document.getElementById('invertModelBtn');
             btn.disabled = true;
+            isInverted = !isInverted; // Toggle state first
             gsap.to(currentVRM.scene.rotation, {
-                y: currentVRM.scene.rotation.y + Math.PI,
+                y: isInverted ? Math.PI : 0,
                 duration: 0.8,
                 ease: "power2.inOut",
                 onComplete: () => {
-                    isInverted = !isInverted;
-                    currentVRM.scene.rotation.y %= (2 * Math.PI);
                     updateInvertButtonText();
                     showStatus(`Model Inversion: ${isInverted ? 'ON' : 'OFF'}`);
                     btn.disabled = false;
                 }
             });
-            setDefaultPose(currentVRM, true);
+            setDefaultPose(currentVRM, true); // Apply pose based on new state
         };
         
         window.setExpression = function(name) { if (!currentVRM) return; stopAutoBlink(); resetExpressions(false); const found = ['happy','angry','sad','surprised'].includes(name); if(found) currentVRM.expressionManager.setValue(name, 1.0); };
@@ -921,7 +579,35 @@
         window.startAutoBlink = function() { if (!currentVRM) return; stopAutoBlink(); autoBlinkTimeoutId = setTimeout(() => { setEyeBlink(1.0); setTimeout(() => { setEyeBlink(0.0); startAutoBlink(); }, 150); }, Math.random() * 3000 + 2000); };
         window.stopAutoBlink = function() { if (autoBlinkTimeoutId) clearTimeout(autoBlinkTimeoutId); setEyeBlink(0.0); };
         window.setCameraZoom = function(val) { cameraZoomFactor = parseFloat(val); document.getElementById('cameraZoomValue').textContent = cameraZoomFactor.toFixed(2); resetCamera(); };
-        window.resetCamera = function() { if (currentVRM) { const box = new THREE.Box3().setFromObject(currentVRM.scene); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3()); const fovRad = camera.fov * (Math.PI / 180); const distance = (size.y / 2) / Math.tan(fovRad / 2) * 1.1 / cameraZoomFactor; camera.position.set(center.x, center.y + size.y * 0.1, center.z + distance); controls.target.set(center.x, center.y, center.z); } else { camera.position.set(0, 1.0, 1.8 / cameraZoomFactor); controls.target.set(0, 0.8, 0); } controls.update(); };
+        
+        // **FIX #3** Corrected camera distance calculation
+        window.resetCamera = function() {
+            if (currentVRM) {
+                const box = new THREE.Box3().setFromObject(currentVRM.scene);
+                const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                
+                const fovRad = camera.fov * (Math.PI / 180);
+                // Calculate distance needed to fit model height
+                const distanceForHeight = (size.y / 2) / Math.tan(fovRad / 2);
+                // Calculate distance needed to fit model width
+                const effectiveFovWidth = 2 * Math.atan(Math.tan(fovRad / 2) * camera.aspect);
+                const distanceForWidth = (size.x / 2) / Math.tan(effectiveFovWidth / 2);
+                
+                // Use the greater of the two distances
+                const cameraDistance = Math.max(distanceForHeight, distanceForWidth);
+                
+                const finalDistance = cameraDistance * 1.1 / cameraZoomFactor;
+                
+                camera.position.set(center.x, center.y + size.y * 0.1, center.z + finalDistance); 
+                controls.target.set(center.x, center.y, center.z);
+            } else {
+                camera.position.set(0, 1.0, 1.8 / cameraZoomFactor);
+                controls.target.set(0, 0.8, 0);
+            }
+            controls.update();
+        };
+
         window.startMusicListeningAnimation = function() { if (!currentVRM) return; isMusicListening = true; showStatus('Music listening started.'); setExpression('happy'); };
         window.stopMusicListeningAnimation = function() { if (!currentVRM) return; isMusicListening = false; showStatus('Music listening stopped.'); resetExpressions(); setDefaultPose(currentVRM, true); };
         
@@ -988,6 +674,7 @@
             return data.candidates?.[0]?.content.parts[0].text || "I'm not sure how to respond to that.";
         }
         
+        // **FIX #1** Fully overhauled STT/TTS integration
         function initSpeechRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) { dom.micBtn.disabled = true; showError('Speech recognition not supported.'); return; }
@@ -1006,8 +693,19 @@
                 dom.messageInput.value = finalTranscript || interimTranscript; adjustTextareaHeight(dom.messageInput);
                 if (finalTranscript) handleUserInput();
             };
-            state.speechRecognition.onerror = (e) => { showError(`Speech Error: ${e.error}`); state.isSpeechRecognitionActive = false; updateMicButtonState(); };
-            state.speechRecognition.onend = () => { state.isSpeechRecognitionActive = false; updateMicButtonState(); if (isMicOn && !state.isMicMutedForTTS) { console.log("Speech recognition ended, restarting..."); state.speechRecognition.start(); } };
+            state.speechRecognition.onerror = (e) => { 
+                if (e.error !== 'aborted') showError(`Speech Error: ${e.error}`); 
+                state.isSpeechRecognitionActive = false; updateMicButtonState(); 
+            };
+            state.speechRecognition.onend = () => {
+                state.isSpeechRecognitionActive = false;
+                updateMicButtonState();
+                // This is the keep-alive. Only restart if mic is supposed to be on AND it wasn't stopped for TTS.
+                if (isMicOn && !state.isMicMutedForTTS) {
+                    console.log("Speech recognition ended, restarting...");
+                    try { state.speechRecognition.start(); } catch(e) { console.error("Could not restart mic:", e); }
+                }
+            };
         }
 
         function initTTS() {
@@ -1026,11 +724,41 @@
         function processSpeakingQueue() {
             if (state.speakingQueue.length === 0) return;
             const text = state.speakingQueue.shift(), utterance = new SpeechSynthesisUtterance(text);
-            utterance.onstart = () => { if (isMicOn) { console.log("TTS started, pausing mic."); state.isMicMutedForTTS = true; state.speechRecognition.stop(); } setMouthOpen(0.6); showStatus('Speaking...'); };
-            utterance.onend = () => { setMouthOpen(0); if (state.isMicMutedForTTS) { console.log("TTS ended, restarting mic."); state.speechRecognition.start(); state.isMicMutedForTTS = false; } processSpeakingQueue(); };
-            utterance.onerror = (e) => { console.error('TTS error:', e); setMouthOpen(0); if (state.isMicMutedForTTS) { state.speechRecognition.start(); state.isMicMutedForTTS = false; } processSpeakingQueue(); };
-            const voices = state.synth.getVoices(); utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en'));
-            if (state.synth.paused) state.synth.resume(); state.synth.speak(utterance);
+            utterance.onstart = () => { 
+                if (isMicOn) { 
+                    console.log("TTS started, pausing mic."); 
+                    state.isMicMutedForTTS = true; 
+                    state.speechRecognition.abort(); // Use abort for immediate stop
+                } 
+                setMouthOpen(0.6); 
+                showStatus('Speaking...'); 
+            };
+            utterance.onend = () => { 
+                setMouthOpen(0); 
+                if (state.isMicMutedForTTS) { 
+                    console.log("TTS ended, restarting mic."); 
+                    state.isMicMutedForTTS = false; 
+                    if (isMicOn) { // Double check if user didn't turn it off during speech
+                        try { state.speechRecognition.start(); } catch(e) { console.error("Could not restart mic after TTS:", e); }
+                    }
+                } 
+                processSpeakingQueue(); 
+            };
+            utterance.onerror = (e) => { 
+                console.error('TTS error:', e); 
+                setMouthOpen(0); 
+                if (state.isMicMutedForTTS) { 
+                    state.isMicMutedForTTS = false;
+                    if (isMicOn) {
+                        try { state.speechRecognition.start(); } catch(e) { console.error("Could not restart mic after TTS error:", e); }
+                    }
+                } 
+                processSpeakingQueue(); 
+            };
+            const voices = state.synth.getVoices(); 
+            utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en'));
+            if (state.synth.paused) state.synth.resume(); 
+            state.synth.speak(utterance);
         }
 
         function loadChatHistory() {
