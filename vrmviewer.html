@@ -678,6 +678,16 @@ Example:
             const utterance = new SpeechSynthesisUtterance(speechItem.text);
             const mouthShapes = { aa: 0, ou: 0 };
 
+            // NEW: Define lip-sync intensity based on emotion
+            const lipSyncIntensity = {
+                happy: 0.6,
+                sad: 0.4,
+                thoughtful: 0.4,
+                neutral: 0.7,
+                angry: 1.0,
+                surprised: 1.0
+            }[speechItem.emotion] || 0.7;
+
             const onEndOrError = (e) => {
                 if (e.type === 'error') console.error("Speech synthesis error:", e);
                 if (lipSyncTween) lipSyncTween.kill();
@@ -693,9 +703,11 @@ Example:
 
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
+                
+                // MODIFIED: Use the intensity mapping in the animation
                 lipSyncTween = gsap.timeline({ repeat: -1, onUpdate: () => { if (currentVRM?.expressionManager) { currentVRM.expressionManager.setValue('aa', mouthShapes.aa); currentVRM.expressionManager.setValue('ou', mouthShapes.ou); } } });
-                lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.5, 1.0), ou: gsap.utils.random(0.1, 0.5), duration: gsap.utils.random(0.1, 0.2), ease: "power1.out" });
-                lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4), ou: gsap.utils.random(0.0, 0.2), duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
+                lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.5, 1.0) * lipSyncIntensity, ou: gsap.utils.random(0.1, 0.5) * lipSyncIntensity, duration: gsap.utils.random(0.1, 0.2), ease: "power1.out" });
+                lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4) * lipSyncIntensity, ou: gsap.utils.random(0.0, 0.2) * lipSyncIntensity, duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
             };
 
             utterance.onend = onEndOrError;
