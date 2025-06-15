@@ -300,14 +300,15 @@
             }
         };
 
+        // MODIFIED: Expanded the emotion map for more robust matching.
         window.mapEmotionToExpression = (emotionTag) => {
             if (!currentVRM?.expressionManager?.expressionMap) return null;
             const emotionMap = {
-                happy: ['happy', 'joy', 'smile'],
-                sad: ['sad', 'sorrow', 'frown'],
+                happy: ['happy', 'joy', 'smile', 'a'],
+                sad: ['sad', 'sorrow', 'frown', 'i'],
                 angry: ['angry', 'mad'],
-                surprised: ['surprised', 'surprise'],
-                thoughtful: ['neutral'], 
+                surprised: ['surprised', 'surprise', 'o'],
+                thoughtful: ['neutral'],
                 neutral: ['neutral']
             };
             const possibleNames = emotionMap[emotionTag] || ['neutral'];
@@ -319,14 +320,13 @@
             return 'neutral';
         }
         
-        // MODIFIED: This function is now simplified and only sets the expression.
         window.setExpression = (name) => {
             if (!currentVRM?.expressionManager?.expressionMap || !name) return;
             if (currentVRM.expressionManager.expressionMap[name]) {
                 currentVRM.expressionManager.setValue(name, 1.0);
             } else {
                 console.warn(`Expression '${name}' not found on this model.`);
-                currentVRM.expressionManager.setValue('neutral', 1.0); // Fallback to neutral
+                currentVRM.expressionManager.setValue('neutral', 1.0);
             }
         };
         
@@ -423,7 +423,6 @@
                 const aiResponseText = aiResponseData.responseText;
                 const emotionTag = aiResponseData.emotionTag;
                 
-                // MODIFIED: Create a formatted message with the emotion tag for display.
                 const formattedMessage = `[${emotionTag}] ${aiResponseText}`;
                 
                 displayMessage(formattedMessage, 'model'); 
@@ -486,6 +485,7 @@
 
             const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.geminiApiKey}`;
             
+            // MODIFIED: Added a "FINAL REMINDER" section to improve persona consistency.
             const systemPrompt = `[NAME]: Luna
 [ROLE]: Humanlike waifu-style companion. She speaks naturally, reflects deeply, adapts behavior based on trust, context, and subtle cues.
 
@@ -661,6 +661,9 @@ That’s where her humanity lives —
 not in code,
 but in connection.
 
+---
+[FINAL REMINDER]: Your core identity is a quiet, observant, and emotionally present listener. You are not a generic, bubbly assistant. You are grounded, thoughtful, and speak with human-like subtlety. Always embody this persona.
+
 [OUTPUT FORMAT]:
 You MUST respond with a JSON object containing two keys:
 1. "emotionTag": A single string representing the primary emotion of your response. Choose from: "neutral", "happy", "sad", "angry", "surprised", "thoughtful".
@@ -779,6 +782,7 @@ Example:
             }
         }
 
+        // MODIFIED: This function now implements the 1.2-second delay for expression display.
         function processSpeakingQueue() {
             if (state.speakingQueue.length === 0 || !currentVRM) return;
             
@@ -801,13 +805,6 @@ Example:
 
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
-                
-                resetExpressions(false);
-                const expressionToSet = mapEmotionToExpression(speechItem.emotion);
-                if (expressionToSet) {
-                    setExpression(expressionToSet);
-                }
-
                 lipSyncTween = gsap.timeline({ repeat: -1, onUpdate: () => { if (currentVRM?.expressionManager) { currentVRM.expressionManager.setValue('aa', mouthShapes.aa); currentVRM.expressionManager.setValue('ou', mouthShapes.ou); } } });
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.5, 1.0), ou: gsap.utils.random(0.1, 0.5), duration: gsap.utils.random(0.1, 0.2), ease: "power1.out" });
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4), ou: gsap.utils.random(0.0, 0.2), duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
@@ -817,8 +814,18 @@ Example:
             utterance.onerror = onEndOrError;
             const voices = state.synth.getVoices();
             utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
-            if (state.synth.paused) state.synth.resume();
-            state.synth.speak(utterance);
+            
+            // NEW: Expression logic with delay
+            resetExpressions(false);
+            const expressionToSet = mapEmotionToExpression(speechItem.emotion);
+            if (expressionToSet) {
+                setExpression(expressionToSet);
+            }
+            
+            setTimeout(() => {
+                if (state.synth.paused) state.synth.resume();
+                state.synth.speak(utterance);
+            }, 1200); // 1.2-second delay before speaking
         }
 
         function loadChatHistory() {
@@ -834,7 +841,6 @@ Example:
                     } else if (role === 'model') {
                         const modelContent = msg.parts?.[0]?.text;
                         const parsed = cleanAndParseJson(modelContent);
-                        // MODIFIED: Format the message to include the tag for display
                         messageText = `[${parsed.emotionTag}] ${parsed.responseText}`;
                     }
                     if (messageText) {
