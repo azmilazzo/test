@@ -198,7 +198,6 @@
                         gsap.killTweensOf(chest?.rotation);
                         gsap.killTweensOf(spine?.rotation);
                         
-                        // MODIFIED: This block now handles head movement during speech.
                         if (state.synth.speaking) {
                             gsap.killTweensOf(head?.rotation);
                             gsap.killTweensOf(neck?.rotation);
@@ -213,7 +212,6 @@
                                 neck.rotation.x = head.rotation.x * 0.5;
                             }
                         } else {
-                            // Original idle/mouse tracking logic
                             gsap.killTweensOf(head?.rotation);
                             gsap.killTweensOf(neck?.rotation);
                             const iSY=0.02,iSP=0.01,iF=0.75;
@@ -696,11 +694,11 @@ Example:
             const utterance = new SpeechSynthesisUtterance(speechItem.text);
             const mouthShapes = { aa: 0, ou: 0 };
 
-            // MODIFIED: Increased neutral intensity
+            // MODIFIED: Increased lip-sync intensity values
             const lipSyncIntensity = {
-                happy: 0.6,
-                sad: 0.4,
-                thoughtful: 0.4,
+                happy: 0.8,
+                sad: 0.6,
+                thoughtful: 0.6,
                 neutral: 0.8,
                 angry: 1.0,
                 surprised: 1.0
