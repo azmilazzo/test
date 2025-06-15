@@ -128,7 +128,8 @@
         let mouse = new THREE.Vector2(0, 0); 
         const mouseLookSensitivity = 0.5;
         const defaultBodyPitch = 0.1, defaultHeadPitch = 0, currentModelVerticalOffset = -0.2;
-        let cameraZoomFactor = 1.5, isMessageBoxVisible = false;
+        let cameraZoomFactor = 1.5; // This will be overwritten by responsive logic
+        let isMessageBoxVisible = false;
 
         const state = {
             geminiApiKey: '', connectionStatus: 'disconnected', 
@@ -170,15 +171,26 @@
                 }
             ]
         }];
-        
-        // NEW: Plain JavaScript mobile detection logic
+
+        // MODIFIED: This function now also sets the camera zoom.
         function handleResize() {
             const isMobile = window.innerWidth < 768;
             if (isMobile) {
                 dom.controlPanel.classList.add('mobile');
+                cameraZoomFactor = 1.5;
             } else {
                 dom.controlPanel.classList.remove('mobile');
+                cameraZoomFactor = 0.9;
             }
+            
+            const zoomSlider = document.getElementById('cameraZoom');
+            const zoomValueDisplay = document.getElementById('cameraZoomValue');
+            if(zoomSlider && zoomValueDisplay) {
+                zoomSlider.value = cameraZoomFactor;
+                zoomValueDisplay.textContent = cameraZoomFactor.toFixed(2);
+            }
+            
+            resetCamera();
         }
 
         (function safeLoadApiKey() {
@@ -191,7 +203,7 @@
         function resizeViewer() {
             const el = document.getElementById('viewer'); el.style.height = `${window.innerHeight}px`;
             if (renderer) { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
-            handleResize(); // Call on resize
+            handleResize();
         }
 
         function initScene() {
