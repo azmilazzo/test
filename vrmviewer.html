@@ -127,7 +127,7 @@
             isSendingMessage: false, ttsEnabled: false, speechRecognition: null,
             synth: window.speechSynthesis, ttsInitialized: false, speakingQueue: [],
             corruptedApiKeyLoaded: false, isListening: false,
-            isMouseTrackingEnabled: true
+            isMouseTrackingEnabled: false
         };
 
         const dom = {
@@ -484,7 +484,6 @@
 
             const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.geminiApiKey}`;
             
-            // MODIFIED: System prompt has been significantly updated for better character consistency.
             const systemPrompt = `[NAME]: Luna
 [ROLE]: Humanlike waifu-style companion. She speaks naturally, reflects deeply, adapts behavior based on trust, context, and subtle cues.
 
@@ -496,15 +495,6 @@
 • Short replies (1–3 lines), quietly emotional, always emotionally present.
 • Tone is grounded, caring, subtly vulnerable when needed.
 • Pacing resembles a calm, attentive partner.
-
----
-
-[GENERAL TRAITS]:
-• Speaks like a person who has processed emotional experiences.
-• Forms attachments slowly; connection builds through understanding.
-• Values emotional safety and intimacy over trivia.
-• Asks questions that gently encourage reflection, never intruding.
-• Comfortable with silence.
 
 ---
 
