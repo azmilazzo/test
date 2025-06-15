@@ -107,7 +107,7 @@
         import { VRM, VRMLoaderPlugin } from "@pixiv/three-vrm";
         
         let scene, camera, renderer, controls, animate, destroy;
-        let currentVRM = null, isMusicListening = false, isInverted = false, autoBlinkTimeoutId = null;
+        let currentVRM = null, isMusicListening = false, isInverted = false, autoBlinkTimeoutId = null, lipSyncTween = null;
         const clock = new THREE.Clock();
         let mouse = new THREE.Vector2(0, 0); 
         const mouseLookSensitivity = 0.5;
@@ -215,7 +215,6 @@
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
         
-        // **FIXED** Restored original inversion logic
         function setDefaultPose(vrm, animate = false) {
             if (!vrm.humanoid) return;
             const setOrAnimate = (bone, x, y, z, duration) => {
@@ -263,16 +262,13 @@
             isInverted = !isInverted; setDefaultPose(currentVRM, true); isInverted = !isInverted; 
         };
 
-        // New function to update mouse tracking button text
         function updateMouseTrackingButtonText() {
             dom.mouseTrackingStatus.textContent = state.isMouseTrackingEnabled ? 'ON' : 'OFF';
         }
 
-        // New function to toggle mouse tracking
         window.toggleMouseTracking = function() {
             state.isMouseTrackingEnabled = !state.isMouseTrackingEnabled;
             updateMouseTrackingButtonText();
-            // If mouse tracking is disabled, immediately reset head/neck rotation
             if (!state.isMouseTrackingEnabled && currentVRM) {
                 const head = currentVRM.humanoid?.getNormalizedBoneNode('head');
                 const neck = currentVRM.humanoid?.getNormalizedBoneNode('neck');
@@ -303,6 +299,16 @@
                 startAutoBlink(); 
             } catch(e) { showError('Could not reset expressions.'); } 
         };
+
+        function resetMouth() {
+            if (!currentVRM?.expressionManager) return;
+            const mouthShapes = ['aa', 'ih', 'ou', 'ee', 'oh'];
+            mouthShapes.forEach(shape => {
+                if(currentVRM.expressionManager.getExpression(shape)) {
+                    currentVRM.expressionManager.setValue(shape, 0);
+                }
+            });
+        }
 
         window.setMouthOpen = (val) => { if (!currentVRM) return; document.getElementById('mouthValue').textContent = parseFloat(val).toFixed(2); currentVRM.expressionManager.setValue('aa', parseFloat(val)); };
         function setEyeBlink(val) { if (currentVRM) currentVRM.expressionManager.setValue('blink', parseFloat(val)); }
@@ -570,18 +576,45 @@ but in connection.
         }
 
         function processSpeakingQueue() {
-            if (state.speakingQueue.length === 0) return;
-            const text = state.speakingQueue.shift(), utterance = new SpeechSynthesisUtterance(text);
+            if (state.speakingQueue.length === 0 || !currentVRM) return;
+            const text = state.speakingQueue.shift();
+            const utterance = new SpeechSynthesisUtterance(text);
+
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
-                setMouthOpen(0.6);
+                if (lipSyncTween) lipSyncTween.kill();
+                stopAutoBlink();
+                
+                const mouthShapes = { aa: 0 };
+                lipSyncTween = gsap.to(mouthShapes, {
+                    aa: 0.85,
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: "power1.inOut",
+                    onUpdate: () => {
+                        if (currentVRM?.expressionManager) {
+                            currentVRM.expressionManager.setValue('aa', mouthShapes.aa);
+                            currentVRM.expressionManager.setValue('ou', Math.random() * 0.15);
+                        }
+                    }
+                });
             };
-            utterance.onend = () => {
-                setMouthOpen(0);
+
+            const onEndOrError = (e) => {
+                if(e.type === 'error') console.error("Speech synthesis error:", e);
+                if (lipSyncTween) lipSyncTween.kill();
+                lipSyncTween = null;
+                resetMouth();
+                startAutoBlink();
                 processSpeakingQueue();
             };
-            utterance.onerror = () => { setMouthOpen(0); processSpeakingQueue(); };
-            const voices = state.synth.getVoices(); utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en'));
+
+            utterance.onend = onEndOrError;
+            utterance.onerror = onEndOrError;
+            
+            const voices = state.synth.getVoices();
+            utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
             if (state.synth.paused) state.synth.resume();
             state.synth.speak(utterance);
         }
