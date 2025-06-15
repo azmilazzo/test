@@ -571,8 +571,22 @@ but in connection.
 
         function textToSpeech(text) {
             if (!state.ttsEnabled || !state.ttsInitialized || !text) return;
-            state.speakingQueue.push(text); if (state.synth.speaking) return;
-            processSpeakingQueue();
+
+            // Split text into sentences. This regex is more robust.
+            const sentences = text.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g);
+
+            if (sentences) {
+                sentences.forEach(sentence => {
+                    const trimmedSentence = sentence.trim();
+                    if (trimmedSentence) {
+                        state.speakingQueue.push(trimmedSentence);
+                    }
+                });
+            }
+
+            if (!state.synth.speaking) {
+                processSpeakingQueue();
+            }
         }
 
         function processSpeakingQueue() {
@@ -587,14 +601,17 @@ but in connection.
                 lipSyncTween = null;
                 resetMouth();
                 startAutoBlink();
-                processSpeakingQueue(); // Process next item in queue
+                
+                // Important: Process the next sentence in the queue AFTER this one finishes.
+                if (state.speakingQueue.length > 0) {
+                    processSpeakingQueue();
+                }
             };
             
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
                 stopAutoBlink();
 
-                // Create a repeating timeline for a more natural, varied talking animation
                 lipSyncTween = gsap.timeline({
                     repeat: -1,
                     onUpdate: () => {
@@ -610,14 +627,6 @@ but in connection.
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4), ou: gsap.utils.random(0.0, 0.2), duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
 
             };
-
-            // The onboundary event is unreliable, so we don't use it for the main animation.
-            // It's left here commented out for educational purposes.
-            /*
-            utterance.onboundary = (event) => {
-                console.log("Boundary event fired!", event.name);
-            };
-            */
             
             utterance.onend = onEndOrError;
             utterance.onerror = onEndOrError;
