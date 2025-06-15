@@ -734,7 +734,20 @@ but in connection.
             state.synth.speak(utterance);
         }
 
-        function loadChatHistory() { dom.chatMessages.innerHTML = ''; if (state.chatHistory.length === 0) displayMessage("Hello! How can I assist you?", 'model'); else state.chatHistory.forEach(msg => displayMessage(msg.parts[0].text, msg.role)); }
+        function loadChatHistory() {
+            dom.chatMessages.innerHTML = '';
+            if (state.chatHistory.length === 0) {
+                displayMessage("Hello! How can I assist you?", 'model');
+            } else {
+                state.chatHistory.forEach(msg => {
+                    // This correctly handles both old and new chat history formats.
+                    const messageText = msg.parts?.[0]?.text || msg.content;
+                    if (messageText) {
+                        displayMessage(messageText, msg.role);
+                    }
+                });
+            }
+        }
         function saveChatHistory() { localStorage.setItem('chatHistory', JSON.stringify(state.chatHistory.slice(-20))); }
         function adjustTextareaHeight(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
         function updateConnectionStatusDisplay(msg) { if(dom.connectionStatusText) { dom.connectionStatusText.textContent = msg; dom.connectionStatusText.className = 'connection-status-text ' + state.connectionStatus;} }
