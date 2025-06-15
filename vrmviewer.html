@@ -580,36 +580,45 @@ but in connection.
             const text = state.speakingQueue.shift();
             const utterance = new SpeechSynthesisUtterance(text);
 
-            utterance.onstart = () => {
-                if (state.isListening) state.speechRecognition.abort();
-                if (lipSyncTween) lipSyncTween.kill();
-                stopAutoBlink();
-                
-                const mouthShapes = { aa: 0 };
-                lipSyncTween = gsap.to(mouthShapes, {
-                    aa: 0.85,
-                    duration: 0.2,
-                    yoyo: true,
-                    repeat: -1,
-                    ease: "power1.inOut",
-                    onUpdate: () => {
-                        if (currentVRM?.expressionManager) {
-                            currentVRM.expressionManager.setValue('aa', mouthShapes.aa);
-                            currentVRM.expressionManager.setValue('ou', Math.random() * 0.15);
-                        }
-                    }
-                });
-            };
-
             const onEndOrError = (e) => {
-                if(e.type === 'error') console.error("Speech synthesis error:", e);
+                if (e.type === 'error') console.error("Speech synthesis error:", e);
                 if (lipSyncTween) lipSyncTween.kill();
                 lipSyncTween = null;
                 resetMouth();
                 startAutoBlink();
-                processSpeakingQueue();
+                processSpeakingQueue(); // Process next item in queue
+            };
+            
+            utterance.onstart = () => {
+                if (state.isListening) state.speechRecognition.abort();
+                stopAutoBlink();
             };
 
+            utterance.onboundary = (event) => {
+                if (event.name === 'word') {
+                    // Kill previous tween to start a new one, creating a continuous motion
+                    if (lipSyncTween) lipSyncTween.kill();
+
+                    // Animate mouth open and closed for each word
+                    const mouthShapes = { aa: 0, ou: 0 };
+                    lipSyncTween = gsap.to(mouthShapes, {
+                        aa: Math.random() * 0.4 + 0.5, // Random peak opening (0.5 to 0.9)
+                        ou: Math.random() * 0.3,       // Subtle random 'ou' shape
+                        duration: 0.15,                 // Fast opening
+                        yoyo: true,
+                        repeat: 1,
+                        ease: "power2.out",
+                        yoyoEase: "power1.in",
+                        onUpdate: () => {
+                            if (currentVRM?.expressionManager) {
+                                currentVRM.expressionManager.setValue('aa', mouthShapes.aa);
+                                currentVRM.expressionManager.setValue('ou', mouthShapes.ou);
+                            }
+                        }
+                    });
+                }
+            };
+            
             utterance.onend = onEndOrError;
             utterance.onerror = onEndOrError;
             
