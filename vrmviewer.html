@@ -82,7 +82,13 @@
         <h3>VRM Viewer Controls</h3>
         <div class="control-group"><label for="vrmFile">Load VRM Model:</label><input type="file" id="vrmFile" accept=".vrm" /></div>
         <div class="control-group"><div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div><input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" /></div>
-        <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression(mapEmotionToExpression('happy'))">😀 Happy</button><button onclick="setExpression(mapEmotionToExpression('angry'))">😠 Angry</button><button onclick="setExpression(mapEmotionToExpression('sad'))">😥 Sad</button><button onclick="resetExpressions()">Reset</button></div></div>
+        <!-- MODIFIED: Onclick handlers now explicitly reset before setting a new expression. -->
+        <div class="control-group"><label>Expressions:</label><div class="button-grid">
+            <button onclick="resetExpressions(false); setExpression(mapEmotionToExpression('happy'))">😀 Happy</button>
+            <button onclick="resetExpressions(false); setExpression(mapEmotionToExpression('angry'))">😠 Angry</button>
+            <button onclick="resetExpressions(false); setExpression(mapEmotionToExpression('sad'))">😥 Sad</button>
+            <button onclick="resetExpressions()">Reset</button>
+        </div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
         <div class="control-group"><label>Model Orientation:</label><div class="button-grid"><button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button></div></div>
         <div class="control-group"><label>Music Listening Animation:</label><div class="button-grid"><button onclick="startMusicListeningAnimation()">Start Listen</button><button onclick="stopMusicListeningAnimation()">Stop Listen</button></div></div>
@@ -316,10 +322,9 @@
             return 'neutral';
         }
         
+        // MODIFIED: Simplified to only set the expression value.
         window.setExpression = (name) => {
             if (!currentVRM?.expressionManager?.expressionMap || !name) return;
-            stopAutoBlink();
-            resetExpressions(false);
             
             if (currentVRM.expressionManager.expressionMap[name]) {
                 currentVRM.expressionManager.setValue(name, 1.0);
@@ -331,6 +336,7 @@
         
         window.resetExpressions = (showMsg = true) => { 
             if (!currentVRM?.expressionManager?.expressionMap) return;
+            stopAutoBlink();
             try { 
                 Object.keys(currentVRM.expressionManager.expressionMap).forEach(name => currentVRM.expressionManager.setValue(name, 0));
                 if (showMsg) showStatus('Expressions reset'); 
@@ -365,7 +371,7 @@
             controls.update();
         };
 
-        window.startMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = true; setExpression(mapEmotionToExpression('happy')); };
+        window.startMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = true; resetExpressions(false); setExpression(mapEmotionToExpression('happy')); };
         window.stopMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = false; resetExpressions(); setDefaultPose(currentVRM, true); };
         
         function showStatus(msg) { const el = document.getElementById('status'); if(el.timeout) clearTimeout(el.timeout); el.textContent = msg; el.style.display = 'block'; document.getElementById('error').style.display = 'none'; el.timeout = setTimeout(() => el.style.display = 'none', 3000); }
@@ -417,24 +423,22 @@
             [dom.sendMessageBtn, dom.messageInput, dom.micBtn].forEach(el => el.disabled = true);
 
             try {
-                // MODIFIED: The function now returns a parsed object
                 const aiResponseData = await callGeminiAI();
                 const aiResponseText = aiResponseData.responseText;
                 const emotionTag = aiResponseData.emotionTag;
                 
                 displayMessage(aiResponseText, 'model'); 
-                // MODIFIED: Save the full response object to history for correct reloading.
                 state.chatHistory.push({ role: "model", parts: [{ text: JSON.stringify(aiResponseData) }]});
                 dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${aiResponseText.replace(/</g, "<")}`;
                 
                 if (state.ttsEnabled) {
                     textToSpeech(aiResponseText, emotionTag);
                 } else {
-                    // If TTS is off, still show the expression for a few seconds.
                     const expressionToSet = mapEmotionToExpression(emotionTag);
                     if (expressionToSet) {
+                        resetExpressions(false);
                         setExpression(expressionToSet);
-                        setTimeout(() => resetExpressions(false), 4000); // Reset after 4s
+                        setTimeout(() => resetExpressions(false), 4000);
                     }
                 }
 
@@ -465,24 +469,19 @@
             }
         }
 
-        // NEW HELPER FUNCTION: Cleans and parses the AI's JSON response
         function cleanAndParseJson(text) {
             if (!text) {
                 return { emotionTag: 'sad', responseText: "I'm having trouble thinking right now." };
             }
-            // Strip markdown fences
             const cleanedText = text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
-
             try {
                 return JSON.parse(cleanedText);
             } catch (e) {
                 console.warn("AI did not return valid JSON, using as plain text.", cleanedText);
-                // If parsing fails, return the text wrapped in a default object
                 return { emotionTag: 'neutral', responseText: cleanedText };
             }
         }
         
-        // MODIFIED: This function now returns a parsed object instead of a string
         async function callGeminiAI() {
             if (!state.geminiApiKey) throw new Error("API key not set.");
 
@@ -735,7 +734,6 @@ Example:
             
             const textResponse = responseData.candidates?.[0]?.content.parts[0].text;
             
-            // MODIFIED: Return the clean, parsed object
             return cleanAndParseJson(textResponse);
         }
         
@@ -768,12 +766,10 @@ Example:
             window.addEventListener('click', unlockAudio, { once: true });
         }
         
-        // MODIFIED: Function now accepts an emotion tag
         function textToSpeech(text, emotionTag) {
             if (!state.ttsEnabled || !state.ttsInitialized || !text) return;
             const sentences = text.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g);
             if (sentences) {
-                // MODIFIED: Queue now stores objects with text and emotion
                 sentences.forEach(sentence => {
                     const trimmed = sentence.trim();
                     if (trimmed) state.speakingQueue.push({ text: trimmed, emotion: emotionTag });
@@ -784,7 +780,6 @@ Example:
             }
         }
 
-        // MODIFIED: This function now handles the expression lifecycle.
         function processSpeakingQueue() {
             if (state.speakingQueue.length === 0 || !currentVRM) return;
             
@@ -798,7 +793,6 @@ Example:
                 lipSyncTween = null;
                 resetMouth();
                 
-                // MODIFIED: Reset expression only if the queue is empty
                 if (state.speakingQueue.length === 0) {
                     resetExpressions(false);
                 } else {
@@ -809,7 +803,7 @@ Example:
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
                 
-                // MODIFIED: Set expression at the start of speech
+                resetExpressions(false);
                 const expressionToSet = mapEmotionToExpression(speechItem.emotion);
                 if (expressionToSet) {
                     setExpression(expressionToSet);
