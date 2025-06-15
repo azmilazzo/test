@@ -82,7 +82,8 @@
         <h3>VRM Viewer Controls</h3>
         <div class="control-group"><label for="vrmFile">Load VRM Model:</label><input type="file" id="vrmFile" accept=".vrm" /></div>
         <div class="control-group"><div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div><input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" /></div>
-        <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression('happy')">😀 Happy</button><button onclick="setExpression('angry')">😠 Angry</button><button onclick="setExpression('sad')">😥 Sad</button><button onclick="resetExpressions()">Reset</button></div></div>
+        <!-- MODIFIED: Onclick handlers now use the mapping function -->
+        <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression(mapEmotionToExpression('happy'))">😀 Happy</button><button onclick="setExpression(mapEmotionToExpression('angry'))">😠 Angry</button><button onclick="setExpression(mapEmotionToExpression('sad'))">😥 Sad</button><button onclick="resetExpressions()">Reset</button></div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
         <div class="control-group"><label>Model Orientation:</label><div class="button-grid"><button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button></div></div>
         <div class="control-group"><label>Music Listening Animation:</label><div class="button-grid"><button onclick="startMusicListeningAnimation()">Start Listen</button><button onclick="stopMusicListeningAnimation()">Stop Listen</button></div></div>
@@ -137,7 +138,6 @@
             mouseTrackingStatus: document.getElementById('mouseTrackingStatus'),
         };
 
-        // CORRECTED: The tools object should be an array containing one object.
         const tools = [{
             functionDeclarations: [
                 {
@@ -295,19 +295,41 @@
                 if (neck) gsap.to(neck.rotation, {y: 0, x: defaultHeadPitch * 0.3, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
             }
         };
+
+        // NEW FUNCTION: Maps an emotion tag to a valid expression name on the current model.
+        window.mapEmotionToExpression = (emotionTag) => {
+            if (!currentVRM?.expressionManager?.expressionMap) return null;
+
+            const emotionMap = {
+                happy: ['happy', 'joy', 'smile'],
+                sad: ['sad', 'sorrow', 'frown'],
+                angry: ['angry', 'mad'],
+                surprised: ['surprised', 'surprise'],
+                thoughtful: ['neutral'], // Default to neutral if specific thoughtful not found
+                neutral: ['neutral']
+            };
+
+            const possibleNames = emotionMap[emotionTag] || ['neutral'];
+            for (const name of possibleNames) {
+                if (currentVRM.expressionManager.expressionMap[name]) {
+                    return name;
+                }
+            }
+            return 'neutral'; // Fallback to neutral if no match is found
+        }
         
-        window.setExpression = (name) => { 
-            if (!currentVRM?.expressionManager?.expressionMap) return;
+        // MODIFIED FUNCTION: Simplified to set a single expression.
+        window.setExpression = (name) => {
+            if (!currentVRM?.expressionManager?.expressionMap || !name) return;
             stopAutoBlink();
             resetExpressions(false);
-            const expressionMap = { 'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'], 'sad': ['sad', 'sorrow'] };
-            const possibleNames = expressionMap[name] || [name];
-            possibleNames.some(n => {
-                if (currentVRM.expressionManager.expressionMap[n]) {
-                    currentVRM.expressionManager.setValue(n, 1.0); return true;
-                }
-                return false;
-            });
+            
+            if (currentVRM.expressionManager.expressionMap[name]) {
+                currentVRM.expressionManager.setValue(name, 1.0);
+            } else {
+                console.warn(`Expression '${name}' not found on this model.`);
+                currentVRM.expressionManager.setValue('neutral', 1.0); // Fallback
+            }
         };
         
         window.resetExpressions = (showMsg = true) => { 
@@ -346,7 +368,7 @@
             controls.update();
         };
 
-        window.startMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = true; setExpression('happy'); };
+        window.startMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = true; setExpression(mapEmotionToExpression('happy')); };
         window.stopMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = false; resetExpressions(); setDefaultPose(currentVRM, true); };
         
         function showStatus(msg) { const el = document.getElementById('status'); if(el.timeout) clearTimeout(el.timeout); el.textContent = msg; el.style.display = 'block'; document.getElementById('error').style.display = 'none'; el.timeout = setTimeout(() => el.style.display = 'none', 3000); }
@@ -398,11 +420,24 @@
             [dom.sendMessageBtn, dom.messageInput, dom.micBtn].forEach(el => el.disabled = true);
 
             try {
-                const aiResponse = await callGeminiAI();
-                displayMessage(aiResponse, 'model'); 
-                state.chatHistory.push({ role: "model", parts: [{ text: aiResponse }]});
-                dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${aiResponse.replace(/</g, "<")}`;
-                if (state.ttsEnabled) textToSpeech(aiResponse);
+                // MODIFIED: AI response is now a JSON string
+                const aiJsonResponse = await callGeminiAI();
+                const aiResponseData = JSON.parse(aiJsonResponse);
+
+                const aiResponseText = aiResponseData.responseText;
+                const emotionTag = aiResponseData.emotionTag;
+
+                // NEW: Set expression based on emotion tag
+                const expressionToSet = mapEmotionToExpression(emotionTag);
+                if (expressionToSet) {
+                    setExpression(expressionToSet);
+                }
+                
+                displayMessage(aiResponseText, 'model'); 
+                // MODIFIED: Save the full JSON response to history
+                state.chatHistory.push({ role: "model", parts: [{ text: aiJsonResponse }]});
+                dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${aiResponseText.replace(/</g, "<")}`;
+                if (state.ttsEnabled) textToSpeech(aiResponseText);
 
             } catch (error) {
                 const msg = `Error: ${error.message || 'Unknown'}`;
@@ -431,12 +466,12 @@
             }
         }
 
-
         async function callGeminiAI() {
             if (!state.geminiApiKey) throw new Error("API key not set.");
 
             const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.geminiApiKey}`;
             
+            // MODIFIED: The system prompt now includes instructions for JSON output.
             const systemPrompt = `[NAME]: Luna
 [ROLE]: Humanlike waifu-style companion. She speaks naturally, reflects deeply, adapts behavior based on trust, context, and subtle cues.
 
@@ -612,9 +647,25 @@ That’s where her humanity lives —
 not in code,
 but in connection.
 
+[OUTPUT FORMAT]:
+You MUST respond with a JSON object containing two keys:
+1. "emotionTag": A single string representing the primary emotion of your response. Choose from: "neutral", "happy", "sad", "angry", "surprised", "thoughtful".
+2. "responseText": Your text response as a string.
+
+Example:
+{
+  "emotionTag": "thoughtful",
+  "responseText": "That's a deep question. It makes me wonder about the nature of memory itself."
+}
+
 [END OF PROMPT]`;
             
-            const contents = [ { role: "user", parts: [{ text: systemPrompt }] }, { role: "model", parts: [{ text: "I understand. I will be Luna and follow all instructions." }] }, ...state.chatHistory ];
+            // MODIFIED: Model's first message is now in JSON format for few-shot prompting
+            const contents = [ 
+                { role: "user", parts: [{ text: systemPrompt }] }, 
+                { role: "model", parts: [{ text: JSON.stringify({ emotionTag: 'neutral', responseText: "I understand. I will be Luna and follow all instructions." }) }] }, 
+                ...state.chatHistory 
+            ];
 
             const safetySettings = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT'].map(category => ({ category, threshold: 'BLOCK_NONE' }));
 
@@ -668,7 +719,24 @@ but in connection.
             if (responseData.candidates?.[0]?.finishReason === 'SAFETY') throw new Error("Response blocked for safety.");
             
             const textResponse = responseData.candidates?.[0]?.content.parts[0].text;
-            return textResponse || "I'm unsure how to respond.";
+            
+            // NEW: Handle cases where the AI might not return valid JSON
+            if (!textResponse) {
+                return JSON.stringify({ emotionTag: 'sad', responseText: "I'm having trouble thinking right now." });
+            }
+
+            try {
+                if (textResponse.trim().startsWith('{')) {
+                    JSON.parse(textResponse);
+                    return textResponse;
+                } else {
+                    console.warn("AI did not return valid JSON, wrapping response.", textResponse);
+                    return JSON.stringify({ emotionTag: 'neutral', responseText: textResponse });
+                }
+            } catch (e) {
+                console.error("Failed to parse AI JSON response, wrapping response.", textResponse, e);
+                return JSON.stringify({ emotionTag: 'sad', responseText: textResponse });
+            }
         }
         
         function initSpeechRecognition() {
@@ -735,16 +803,28 @@ but in connection.
             state.synth.speak(utterance);
         }
 
+        // MODIFIED: This now handles both old plain text history and new JSON history.
         function loadChatHistory() {
             dom.chatMessages.innerHTML = '';
             if (state.chatHistory.length === 0) {
                 displayMessage("Hello! How can I assist you?", 'model');
             } else {
                 state.chatHistory.forEach(msg => {
-                    // This correctly handles both old and new chat history formats.
-                    const messageText = msg.parts?.[0]?.text || msg.content;
+                    let messageText;
+                    const role = msg.role;
+                    if (role === 'user') {
+                        messageText = msg.parts?.[0]?.text;
+                    } else if (role === 'model') {
+                        const modelContent = msg.parts?.[0]?.text;
+                        try {
+                            const parsed = JSON.parse(modelContent);
+                            messageText = parsed.responseText;
+                        } catch (e) {
+                            messageText = modelContent; // Fallback for old format
+                        }
+                    }
                     if (messageText) {
-                        displayMessage(messageText, msg.role);
+                        displayMessage(messageText, role);
                     }
                 });
             }
