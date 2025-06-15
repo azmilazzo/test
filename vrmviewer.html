@@ -137,7 +137,8 @@
             mouseTrackingStatus: document.getElementById('mouseTrackingStatus'),
         };
 
-        const tools = {
+        // CORRECTED: The tools object should be an array containing one object.
+        const tools = [{
             functionDeclarations: [
                 {
                     name: "perform_web_search",
@@ -154,7 +155,7 @@
                     parameters: { type: "OBJECT", properties: {} }
                 }
             ]
-        };
+        }];
 
         (function safeLoadApiKey() {
             const storedApiKey = localStorage.getItem('geminiApiKey');
