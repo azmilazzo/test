@@ -82,7 +82,6 @@
         <h3>VRM Viewer Controls</h3>
         <div class="control-group"><label for="vrmFile">Load VRM Model:</label><input type="file" id="vrmFile" accept=".vrm" /></div>
         <div class="control-group"><div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div><input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" /></div>
-        <!-- MODIFIED: Onclick handlers now use the mapping function -->
         <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression(mapEmotionToExpression('happy'))">😀 Happy</button><button onclick="setExpression(mapEmotionToExpression('angry'))">😠 Angry</button><button onclick="setExpression(mapEmotionToExpression('sad'))">😥 Sad</button><button onclick="resetExpressions()">Reset</button></div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
         <div class="control-group"><label>Model Orientation:</label><div class="button-grid"><button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button></div></div>
@@ -296,7 +295,6 @@
             }
         };
 
-        // NEW FUNCTION: Maps an emotion tag to a valid expression name on the current model.
         window.mapEmotionToExpression = (emotionTag) => {
             if (!currentVRM?.expressionManager?.expressionMap) return null;
 
@@ -305,7 +303,7 @@
                 sad: ['sad', 'sorrow', 'frown'],
                 angry: ['angry', 'mad'],
                 surprised: ['surprised', 'surprise'],
-                thoughtful: ['neutral'], // Default to neutral if specific thoughtful not found
+                thoughtful: ['neutral'], 
                 neutral: ['neutral']
             };
 
@@ -315,10 +313,9 @@
                     return name;
                 }
             }
-            return 'neutral'; // Fallback to neutral if no match is found
+            return 'neutral';
         }
         
-        // MODIFIED FUNCTION: Simplified to set a single expression.
         window.setExpression = (name) => {
             if (!currentVRM?.expressionManager?.expressionMap || !name) return;
             stopAutoBlink();
@@ -328,7 +325,7 @@
                 currentVRM.expressionManager.setValue(name, 1.0);
             } else {
                 console.warn(`Expression '${name}' not found on this model.`);
-                currentVRM.expressionManager.setValue('neutral', 1.0); // Fallback
+                currentVRM.expressionManager.setValue('neutral', 1.0);
             }
         };
         
@@ -420,24 +417,26 @@
             [dom.sendMessageBtn, dom.messageInput, dom.micBtn].forEach(el => el.disabled = true);
 
             try {
-                // MODIFIED: AI response is now a JSON string
-                const aiJsonResponse = await callGeminiAI();
-                const aiResponseData = JSON.parse(aiJsonResponse);
-
+                // MODIFIED: The function now returns a parsed object
+                const aiResponseData = await callGeminiAI();
                 const aiResponseText = aiResponseData.responseText;
                 const emotionTag = aiResponseData.emotionTag;
-
-                // NEW: Set expression based on emotion tag
-                const expressionToSet = mapEmotionToExpression(emotionTag);
-                if (expressionToSet) {
-                    setExpression(expressionToSet);
-                }
                 
                 displayMessage(aiResponseText, 'model'); 
-                // MODIFIED: Save the full JSON response to history
-                state.chatHistory.push({ role: "model", parts: [{ text: aiJsonResponse }]});
+                // MODIFIED: Save the full response object to history for correct reloading.
+                state.chatHistory.push({ role: "model", parts: [{ text: JSON.stringify(aiResponseData) }]});
                 dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${aiResponseText.replace(/</g, "<")}`;
-                if (state.ttsEnabled) textToSpeech(aiResponseText);
+                
+                if (state.ttsEnabled) {
+                    textToSpeech(aiResponseText, emotionTag);
+                } else {
+                    // If TTS is off, still show the expression for a few seconds.
+                    const expressionToSet = mapEmotionToExpression(emotionTag);
+                    if (expressionToSet) {
+                        setExpression(expressionToSet);
+                        setTimeout(() => resetExpressions(false), 4000); // Reset after 4s
+                    }
+                }
 
             } catch (error) {
                 const msg = `Error: ${error.message || 'Unknown'}`;
@@ -466,12 +465,29 @@
             }
         }
 
+        // NEW HELPER FUNCTION: Cleans and parses the AI's JSON response
+        function cleanAndParseJson(text) {
+            if (!text) {
+                return { emotionTag: 'sad', responseText: "I'm having trouble thinking right now." };
+            }
+            // Strip markdown fences
+            const cleanedText = text.trim().replace(/^```json\s*/, '').replace(/\s*```$/, '');
+
+            try {
+                return JSON.parse(cleanedText);
+            } catch (e) {
+                console.warn("AI did not return valid JSON, using as plain text.", cleanedText);
+                // If parsing fails, return the text wrapped in a default object
+                return { emotionTag: 'neutral', responseText: cleanedText };
+            }
+        }
+        
+        // MODIFIED: This function now returns a parsed object instead of a string
         async function callGeminiAI() {
             if (!state.geminiApiKey) throw new Error("API key not set.");
 
             const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.geminiApiKey}`;
             
-            // MODIFIED: The system prompt now includes instructions for JSON output.
             const systemPrompt = `[NAME]: Luna
 [ROLE]: Humanlike waifu-style companion. She speaks naturally, reflects deeply, adapts behavior based on trust, context, and subtle cues.
 
@@ -660,7 +676,6 @@ Example:
 
 [END OF PROMPT]`;
             
-            // MODIFIED: Model's first message is now in JSON format for few-shot prompting
             const contents = [ 
                 { role: "user", parts: [{ text: systemPrompt }] }, 
                 { role: "model", parts: [{ text: JSON.stringify({ emotionTag: 'neutral', responseText: "I understand. I will be Luna and follow all instructions." }) }] }, 
@@ -720,23 +735,8 @@ Example:
             
             const textResponse = responseData.candidates?.[0]?.content.parts[0].text;
             
-            // NEW: Handle cases where the AI might not return valid JSON
-            if (!textResponse) {
-                return JSON.stringify({ emotionTag: 'sad', responseText: "I'm having trouble thinking right now." });
-            }
-
-            try {
-                if (textResponse.trim().startsWith('{')) {
-                    JSON.parse(textResponse);
-                    return textResponse;
-                } else {
-                    console.warn("AI did not return valid JSON, wrapping response.", textResponse);
-                    return JSON.stringify({ emotionTag: 'neutral', responseText: textResponse });
-                }
-            } catch (e) {
-                console.error("Failed to parse AI JSON response, wrapping response.", textResponse, e);
-                return JSON.stringify({ emotionTag: 'sad', responseText: textResponse });
-            }
+            // MODIFIED: Return the clean, parsed object
+            return cleanAndParseJson(textResponse);
         }
         
         function initSpeechRecognition() {
@@ -767,34 +767,59 @@ Example:
             const unlockAudio = () => { if (state.synth.paused) state.synth.resume(); const u = new SpeechSynthesisUtterance(""); state.synth.speak(u); window.removeEventListener('click', unlockAudio); };
             window.addEventListener('click', unlockAudio, { once: true });
         }
-
-        function textToSpeech(text) {
+        
+        // MODIFIED: Function now accepts an emotion tag
+        function textToSpeech(text, emotionTag) {
             if (!state.ttsEnabled || !state.ttsInitialized || !text) return;
             const sentences = text.match(/[^.!?]+[.!?]+\s*|[^.!?]+$/g);
-            if (sentences) { sentences.forEach(sentence => { const trimmed = sentence.trim(); if (trimmed) state.speakingQueue.push(trimmed); }); }
-            if (!state.synth.speaking) { processSpeakingQueue(); }
+            if (sentences) {
+                // MODIFIED: Queue now stores objects with text and emotion
+                sentences.forEach(sentence => {
+                    const trimmed = sentence.trim();
+                    if (trimmed) state.speakingQueue.push({ text: trimmed, emotion: emotionTag });
+                });
+            }
+            if (!state.synth.speaking) {
+                processSpeakingQueue();
+            }
         }
 
+        // MODIFIED: This function now handles the expression lifecycle.
         function processSpeakingQueue() {
             if (state.speakingQueue.length === 0 || !currentVRM) return;
-            const text = state.speakingQueue.shift();
-            const utterance = new SpeechSynthesisUtterance(text);
+            
+            const speechItem = state.speakingQueue.shift();
+            const utterance = new SpeechSynthesisUtterance(speechItem.text);
             const mouthShapes = { aa: 0, ou: 0 };
+
             const onEndOrError = (e) => {
                 if (e.type === 'error') console.error("Speech synthesis error:", e);
                 if (lipSyncTween) lipSyncTween.kill();
                 lipSyncTween = null;
                 resetMouth();
-                startAutoBlink();
-                if (state.speakingQueue.length > 0) { processSpeakingQueue(); }
+                
+                // MODIFIED: Reset expression only if the queue is empty
+                if (state.speakingQueue.length === 0) {
+                    resetExpressions(false);
+                } else {
+                    processSpeakingQueue();
+                }
             };
+
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
-                stopAutoBlink();
+                
+                // MODIFIED: Set expression at the start of speech
+                const expressionToSet = mapEmotionToExpression(speechItem.emotion);
+                if (expressionToSet) {
+                    setExpression(expressionToSet);
+                }
+
                 lipSyncTween = gsap.timeline({ repeat: -1, onUpdate: () => { if (currentVRM?.expressionManager) { currentVRM.expressionManager.setValue('aa', mouthShapes.aa); currentVRM.expressionManager.setValue('ou', mouthShapes.ou); } } });
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.5, 1.0), ou: gsap.utils.random(0.1, 0.5), duration: gsap.utils.random(0.1, 0.2), ease: "power1.out" });
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4), ou: gsap.utils.random(0.0, 0.2), duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
             };
+
             utterance.onend = onEndOrError;
             utterance.onerror = onEndOrError;
             const voices = state.synth.getVoices();
@@ -803,7 +828,6 @@ Example:
             state.synth.speak(utterance);
         }
 
-        // MODIFIED: This now handles both old plain text history and new JSON history.
         function loadChatHistory() {
             dom.chatMessages.innerHTML = '';
             if (state.chatHistory.length === 0) {
@@ -816,12 +840,8 @@ Example:
                         messageText = msg.parts?.[0]?.text;
                     } else if (role === 'model') {
                         const modelContent = msg.parts?.[0]?.text;
-                        try {
-                            const parsed = JSON.parse(modelContent);
-                            messageText = parsed.responseText;
-                        } catch (e) {
-                            messageText = modelContent; // Fallback for old format
-                        }
+                        const parsed = cleanAndParseJson(modelContent);
+                        messageText = parsed.responseText;
                     }
                     if (messageText) {
                         displayMessage(messageText, role);
