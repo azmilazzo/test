@@ -200,10 +200,11 @@
                         
                         // MODIFIED: This block now handles head movement during speech.
                         if (state.synth.speaking) {
-                            // Gentle, procedural head movement while talking
+                            gsap.killTweensOf(head?.rotation);
+                            gsap.killTweensOf(neck?.rotation);
                             const headSway = 0.05; const headNod = 0.03; const headTilt = 0.02;
                             if (head) {
-                                head.rotation.y = (mouse.x * mouseLookSensitivity * 0.5) + (Math.sin(t * 1.5) * headSway);
+                                head.rotation.y = (Math.sin(t * 1.5) * headSway);
                                 head.rotation.x = defaultHeadPitch + (Math.cos(t * 2.2) * headNod);
                                 head.rotation.z = Math.sin(t * 1.8) * headTilt;
                             }
@@ -695,14 +696,15 @@ Example:
             const utterance = new SpeechSynthesisUtterance(speechItem.text);
             const mouthShapes = { aa: 0, ou: 0 };
 
+            // MODIFIED: Increased neutral intensity
             const lipSyncIntensity = {
                 happy: 0.6,
                 sad: 0.4,
                 thoughtful: 0.4,
-                neutral: 0.7,
+                neutral: 0.8,
                 angry: 1.0,
                 surprised: 1.0
-            }[speechItem.emotion] || 0.7;
+            }[speechItem.emotion] || 0.8;
 
             const onEndOrError = (e) => {
                 if (e.type === 'error') console.error("Speech synthesis error:", e);
