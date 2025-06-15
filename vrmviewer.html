@@ -803,9 +803,11 @@ Example of a valid response: I'm glad you're here. [emotion: happy]`;
 
         function startTalkingAnimation() {
             if (!currentVRM || talkingAnimationTimeline) return;
-            stopAllEmotionalAnimations();
+            // CORRECTED: Do NOT stop emotional animations here. Layer talking on top.
             const head = currentVRM.humanoid.getNormalizedBoneNode('head');
-            if(!head) return;
+            const neck = currentVRM.humanoid.getNormalizedBoneNode('neck');
+            if(!head || !neck) return;
+            
             talkingAnimationTimeline = gsap.timeline({ repeat: -1, yoyo: true });
             talkingAnimationTimeline.to(head.rotation, {
                 x: `+=${gsap.utils.random(-0.02, 0.02)}`,
@@ -813,14 +815,25 @@ Example of a valid response: I'm glad you're here. [emotion: happy]`;
                 z: `+=${gsap.utils.random(-0.02, 0.02)}`,
                 duration: 1.2,
                 ease: "sine.inOut"
-            });
+            })
+            .to(neck.rotation, {
+                y: `+=${gsap.utils.random(-0.01, 0.01)}`,
+                duration: 1.2,
+                ease: "sine.inOut"
+            }, "<"); // The "<" starts the neck animation at the same time as the head
         }
 
         function stopTalkingAnimation() {
             if (talkingAnimationTimeline) {
                 talkingAnimationTimeline.kill();
                 talkingAnimationTimeline = null;
-                resetToNeutral();
+                // CORRECTED: Don't reset the whole body. Just smoothly return the head to neutral.
+                if (currentVRM) {
+                    const head = currentVRM.humanoid.getNormalizedBoneNode('head');
+                    const neck = currentVRM.humanoid.getNormalizedBoneNode('neck');
+                    if(head) gsap.to(head.rotation, { x: 0, y: 0, z: 0, duration: 0.5, ease: "power2.out" });
+                    if(neck) gsap.to(neck.rotation, { x: 0, y: 0, z: 0, duration: 0.5, ease: "power2.out" });
+                }
             }
         }
         
