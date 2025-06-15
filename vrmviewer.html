@@ -128,7 +128,7 @@
         let mouse = new THREE.Vector2(0, 0); 
         const mouseLookSensitivity = 0.5;
         const defaultBodyPitch = 0.1, defaultHeadPitch = 0, currentModelVerticalOffset = -0.2;
-        let cameraZoomFactor = 1.5; // This will be overwritten by responsive logic
+        let cameraZoomFactor = 1.5;
         let isMessageBoxVisible = false;
 
         const state = {
@@ -172,7 +172,6 @@
             ]
         }];
 
-        // MODIFIED: This function now also sets the camera zoom.
         function handleResize() {
             const isMobile = window.innerWidth < 768;
             if (isMobile) {
@@ -272,7 +271,7 @@
             updateMouseTrackingButtonText();
             updateDateTime();
             setInterval(updateDateTime, 1000);
-            handleResize(); // Initial check
+            handleResize();
         }
         
         async function loadVRM(file) {
