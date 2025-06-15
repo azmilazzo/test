@@ -63,6 +63,7 @@
         .btn-secondary { background: #F44336; color: #FFFFFF; } .btn-secondary:hover { background: #D32F2F; transform: translateY(-2px); }
         .btn-tertiary { background: #E0E0E0; color: #333; border: 1px solid #BDBDBD; } .btn-tertiary:hover { background: #C0C0C0; transform: translateY(-2px); }
         .hidden { display: none !important; }
+        #datetime-display { position: absolute; top: 15px; left: 15px; z-index: 1001; background: rgba(0, 0, 0, 0.6); color: white; padding: 10px 15px; border-radius: 8px; font-size: 16px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; border: 1px solid rgba(255, 255, 255, 0.2); text-align: center; line-height: 1.4; }
     </style>
     
     <script type="importmap">
@@ -70,6 +71,7 @@
     </script>
 </head>
 <body>
+    <div id="datetime-display"></div>
     <div id="viewer"></div>
     <button id="togglePanel" class="action-button" onclick="toggleControlPanel()" title="Toggle Controls"><i class="fa-solid fa-person"></i></button>
     <button id="messageBtn" class="action-button" onclick="toggleMessageBox()" title="Toggle Chat"><i class="fa-solid fa-message"></i></button>
@@ -197,6 +199,8 @@
             dom.micBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startHoldToTalk(); });
             dom.micBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopHoldToTalk(); });
             updateMouseTrackingButtonText(); // Initialize button text
+            updateDateTime(); // Initial call
+            setInterval(updateDateTime, 1000);
         }
         
         async function loadVRM(file) {
@@ -642,6 +646,15 @@ but in connection.
         function adjustTextareaHeight(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
         function updateConnectionStatusDisplay(msg) { if(dom.connectionStatusText) { dom.connectionStatusText.textContent = msg; dom.connectionStatusText.className = 'connection-status-text ' + state.connectionStatus;} }
         function updateSettingsButtonStatus() { if(dom.settingsBtn) dom.settingsBtn.className = 'action-button settings-btn ' + state.connectionStatus; }
+        
+        function updateDateTime() {
+            const el = document.getElementById('datetime-display');
+            if (!el) return;
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateString = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+            el.innerHTML = `${timeString}<br>${dateString}`;
+        }
 
         window.addEventListener('load', () => { initScene(); resizeViewer(); });
         window.addEventListener('resize', resizeViewer);
