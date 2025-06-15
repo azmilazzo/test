@@ -579,10 +579,11 @@ but in connection.
             if (state.speakingQueue.length === 0 || !currentVRM) return;
             const text = state.speakingQueue.shift();
             const utterance = new SpeechSynthesisUtterance(text);
+            const mouthShapes = { aa: 0, ou: 0 }; // A proxy object to animate
 
             const onEndOrError = (e) => {
                 if (e.type === 'error') console.error("Speech synthesis error:", e);
-                if (lipSyncTween) lipSyncTween.kill();
+                if (lipSyncTween) lipSyncTween.kill(); // Kill the timeline
                 lipSyncTween = null;
                 resetMouth();
                 startAutoBlink();
@@ -592,32 +593,31 @@ but in connection.
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
                 stopAutoBlink();
-            };
 
-            utterance.onboundary = (event) => {
-                if (event.name === 'word') {
-                    // Kill previous tween to start a new one, creating a continuous motion
-                    if (lipSyncTween) lipSyncTween.kill();
-
-                    // Animate mouth open and closed for each word
-                    const mouthShapes = { aa: 0, ou: 0 };
-                    lipSyncTween = gsap.to(mouthShapes, {
-                        aa: Math.random() * 0.4 + 0.5, // Random peak opening (0.5 to 0.9)
-                        ou: Math.random() * 0.3,       // Subtle random 'ou' shape
-                        duration: 0.15,                 // Fast opening
-                        yoyo: true,
-                        repeat: 1,
-                        ease: "power2.out",
-                        yoyoEase: "power1.in",
-                        onUpdate: () => {
-                            if (currentVRM?.expressionManager) {
-                                currentVRM.expressionManager.setValue('aa', mouthShapes.aa);
-                                currentVRM.expressionManager.setValue('ou', mouthShapes.ou);
-                            }
+                // Create a repeating timeline for a more natural, varied talking animation
+                lipSyncTween = gsap.timeline({
+                    repeat: -1,
+                    onUpdate: () => {
+                        if (currentVRM?.expressionManager) {
+                            currentVRM.expressionManager.setValue('aa', mouthShapes.aa);
+                            currentVRM.expressionManager.setValue('ou', mouthShapes.ou);
                         }
-                    });
-                }
+                    }
+                });
+
+                // Add random-looking mouth movements to the timeline
+                lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.5, 1.0), ou: gsap.utils.random(0.1, 0.5), duration: gsap.utils.random(0.1, 0.2), ease: "power1.out" });
+                lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4), ou: gsap.utils.random(0.0, 0.2), duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
+
             };
+
+            // The onboundary event is unreliable, so we don't use it for the main animation.
+            // It's left here commented out for educational purposes.
+            /*
+            utterance.onboundary = (event) => {
+                console.log("Boundary event fired!", event.name);
+            };
+            */
             
             utterance.onend = onEndOrError;
             utterance.onerror = onEndOrError;
