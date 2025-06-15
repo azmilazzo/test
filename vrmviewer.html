@@ -130,6 +130,7 @@
         const defaultBodyPitch = 0.1, defaultHeadPitch = 0, currentModelVerticalOffset = -0.2;
         let cameraZoomFactor = 1.5;
         let isMessageBoxVisible = false;
+        let speechEndTimeout = null; // NEW: Timer for detecting end of speech
 
         const state = {
             geminiApiKey: '', connectionStatus: 'disconnected', 
@@ -171,7 +172,7 @@
                 }
             ]
         }];
-
+        
         function handleResize() {
             const isMobile = window.innerWidth < 768;
             if (isMobile) {
@@ -274,6 +275,9 @@
             handleResize();
         }
         
+        // ... (The rest of the functions like loadVRM, setDefaultPose, etc. are correct and remain unchanged) ...
+        // ... I am including the full code block for completeness, but the key change is in initSpeechRecognition and the hold-to-talk functions.
+
         async function loadVRM(file) {
             showStatus('Loading VRM model...');
             const url = URL.createObjectURL(file);
@@ -679,22 +683,29 @@ Example:
             state.speechRecognition.onend = () => {
                 state.isListening = false;
                 dom.micBtn.classList.remove('listening');
+                // MODIFIED: Logic to send message on final end event is now here.
+                if (dom.messageInput.value.trim()) {
+                    handleUserInput();
+                }
             };
         }
 
+        // MODIFIED: This function only starts recognition and clears a timeout
         function startHoldToTalk() {
             if (state.isListening || state.synth.speaking) return;
+            if (speechEndTimeout) clearTimeout(speechEndTimeout); // Clear any pending stop commands
             dom.messageInput.value = '';
             adjustTextareaHeight(dom.messageInput);
             try { state.speechRecognition.start(); } catch(e){}
         }
 
+        // MODIFIED: This function now sets a timeout to stop recognition
         function stopHoldToTalk() {
             if (state.isListening) {
-                state.speechRecognition.stop();
-                if (dom.messageInput.value.trim()) {
-                    handleUserInput();
-                }
+                // Wait a moment before stopping, to catch the last word
+                speechEndTimeout = setTimeout(() => {
+                    state.speechRecognition.stop();
+                }, 1500); // 1.5 second grace period
             }
         }
 
