@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>VRM Viewer - AI VTuber System with Function Calling</title>
+    <title>VRM Viewer - AI VTuber System with Advanced Expressions</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body { margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
@@ -40,7 +40,7 @@
         .message-box-close-btn { position: absolute; top: -15px; right: -15px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: background-color 0.3s, transform 0.2s; padding: 0; }
         .message-box-close-btn:hover { background-color: #c0392b; transform: scale(1.1); }
         #chatMessages { flex-grow: 1; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 10px; margin-bottom: 10px; background-color: #f9f9f9; display: flex; flex-direction: column; gap: 5px; }
-        .chat-message { max-width: 80%; padding: 8px 12px; border-radius: 15px; position: relative; line-height: 1.4; }
+        .chat-message { max-width: 80%; padding: 8px 12px; border-radius: 15px; position: relative; line-height: 1.4; white-space: pre-wrap; }
         .chat-message.user { align-self: flex-end; background-color: #e0f7fa; color: #333; border-bottom-right-radius: 3px; }
         .chat-message.ai { align-self: flex-start; background-color: #f0f0f0; color: #333; border-bottom-left-radius: 3px; }
         .chat-message .timestamp { font-size: 0.7em; color: #777; position: absolute; bottom: -15px; white-space: nowrap; }
@@ -82,11 +82,10 @@
         <h3>VRM Viewer Controls</h3>
         <div class="control-group"><label for="vrmFile">Load VRM Model:</label><input type="file" id="vrmFile" accept=".vrm" /></div>
         <div class="control-group"><div class="slider-label"><label for="cameraZoom">Camera Zoom:</label><span id="cameraZoomValue">1.50</span></div><input type="range" id="cameraZoom" min="0.5" max="2.0" step="0.01" value="1.5" oninput="setCameraZoom(this.value)" /></div>
-        <div class="control-group"><label>Expressions:</label><div class="button-grid"><button onclick="setExpression('happy')">😀 Happy</button><button onclick="setExpression('angry')">😠 Angry</button><button onclick="setExpression('sad')">😥 Sad</button><button onclick="resetExpressions()">Reset</button></div></div>
+        <div class="control-group"><label>Manual Expressions:</label><div class="button-grid"><button onclick="playHappyAnimation()">😀 Happy</button><button onclick="playSadAnimation()">😥 Sad</button><button onclick="playAngryAnimation()">😠 Angry</button><button onclick="resetToNeutral()">Reset</button></div></div>
         <div class="control-group"><div class="slider-label"><label for="mouthOpen">Mouth Open:</label><span id="mouthValue">0</span></div><input type="range" id="mouthOpen" min="0" max="1" step="0.05" value="0" oninput="setMouthOpen(this.value)" /></div>
         <div class="control-group"><label>Model Orientation:</label><div class="button-grid"><button id="invertModelBtn" onclick="toggleModelInversion()">Invert Model (OFF)</button></div></div>
-        <div class="control-group"><label>Music Listening Animation:</label><div class="button-grid"><button onclick="startMusicListeningAnimation()">Start Listen</button><button onclick="stopMusicListeningAnimation()">Stop Listen</button></div></div>
-        <div class="control-group"><label>Mouse Tracking:</label><div class="button-grid"><button id="toggleMouseTrackingBtn" onclick="toggleMouseTracking()">Toggle Mouse Tracking (<span id="mouseTrackingStatus">ON</span>)</button></div></div>
+        <div class="control-group"><label>Mouse Tracking:</label><div class="button-grid"><button id="toggleMouseTrackingBtn" onclick="toggleMouseTracking()">Toggle Mouse Tracking (<span id="mouseTrackingStatus">OFF</span>)</button></div></div>
         <div id="status" class="status"></div><div id="error" class="error"></div>
     </div>
     <div id="rectangleBox"><div id="transcriptDisplay"></div></div>
@@ -97,7 +96,9 @@
     <div id="settingsModal" class="modal hidden">
         <div class="modal-content">
             <h2>⚙️ API Settings</h2>
-            <div class="form-group"><label for="apiKeyInput">Google Gemini API Key:</label><input type="password" id="apiKeyInput" placeholder="Enter your Google Gemini API Key" autocomplete="off"><div id="connectionStatus" class="connection-status-text"></div></div>
+            <div class="form-group"><label for="geminiApiKeyInput">Google Gemini API Key:</label><input type="password" id="geminiApiKeyInput" placeholder="Enter your Google Gemini API Key" autocomplete="off"></div>
+            <div class="form-group"><label for="serperApiKeyInput">Serper.dev API Key (for web search):</label><input type="password" id="serperApiKeyInput" placeholder="Enter your Serper.dev API Key" autocomplete="off"></div>
+            <div id="connectionStatus" class="connection-status-text"></div>
             <div class="modal-buttons"><button class="btn btn-tertiary" id="clearChatHistoryBtn">Clear Chat History</button><button class="btn btn-secondary" id="cancelSettingsBtn">Cancel</button><button class="btn btn-primary" id="saveSettingsBtn">Save</button></div>
         </div>
     </div>
@@ -109,7 +110,7 @@
         import { VRM, VRMLoaderPlugin } from "@pixiv/three-vrm";
         
         let scene, camera, renderer, controls, animate, destroy;
-        let currentVRM = null, isMusicListening = false, isInverted = false, autoBlinkTimeoutId = null, lipSyncTween = null;
+        let currentVRM = null, isMusicListening = false, isInverted = false, autoBlinkTimeoutId = null, lipSyncTween = null, talkingAnimationTimeline = null;
         const clock = new THREE.Clock();
         let mouse = new THREE.Vector2(0, 0); 
         const mouseLookSensitivity = 0.5;
@@ -117,16 +118,15 @@
         let cameraZoomFactor = 1.5, isMessageBoxVisible = false;
 
         const state = {
-            geminiApiKey: '', connectionStatus: 'disconnected', 
+            geminiApiKey: '', serperApiKey: '', connectionStatus: 'disconnected', 
             chatHistory: JSON.parse(localStorage.getItem('chatHistory')) || [],
             isSendingMessage: false, ttsEnabled: false, speechRecognition: null,
             synth: window.speechSynthesis, ttsInitialized: false, speakingQueue: [],
-            corruptedApiKeyLoaded: false, isListening: false,
-            isMouseTrackingEnabled: true
+            isMouseTrackingEnabled: false
         };
 
         const dom = {
-            settingsModal: document.getElementById('settingsModal'), apiKeyInput: document.getElementById('apiKeyInput'),
+            settingsModal: document.getElementById('settingsModal'), geminiApiKeyInput: document.getElementById('geminiApiKeyInput'), serperApiKeyInput: document.getElementById('serperApiKeyInput'),
             connectionStatusText: document.getElementById('connectionStatus'), cancelSettingsBtn: document.getElementById('cancelSettingsBtn'),
             saveSettingsBtn: document.getElementById('saveSettingsBtn'), settingsBtn: document.getElementById('settingsBtn'),
             chatMessages: document.getElementById('chatMessages'), messageInput: document.getElementById('messageInput'), 
@@ -137,17 +137,12 @@
             mouseTrackingStatus: document.getElementById('mouseTrackingStatus'),
         };
 
-        // CORRECTED: The tools object should be an array containing one object.
         const tools = [{
             functionDeclarations: [
                 {
                     name: "perform_web_search",
                     description: "Performs a web search to find recent and up-to-date information on a given topic.",
-                    parameters: { 
-                        type: "OBJECT", 
-                        properties: { query: { type: "STRING", description: "The search query." } },
-                        required: ["query"]
-                    }
+                    parameters: { type: "OBJECT", properties: { query: { type: "STRING", description: "The search query." } }, required: ["query"] }
                 },
                 {
                     name: "get_current_datetime",
@@ -157,10 +152,11 @@
             ]
         }];
 
-        (function safeLoadApiKey() {
-            const storedApiKey = localStorage.getItem('geminiApiKey');
-            if (storedApiKey && !storedApiKey.startsWith('<!DOCTYPE html>')) state.geminiApiKey = storedApiKey;
-            else if (storedApiKey) { state.corruptedApiKeyLoaded = true; localStorage.removeItem('geminiApiKey'); }
+        (function safeLoadApiKeys() {
+            const storedGeminiKey = localStorage.getItem('geminiApiKey');
+            const storedSerperKey = localStorage.getItem('serperApiKey');
+            if (storedGeminiKey) state.geminiApiKey = storedGeminiKey;
+            if (storedSerperKey) state.serperApiKey = storedSerperKey;
         })();
 
         function onMouseMove(event) { mouse.x = (event.clientX / window.innerWidth) * 2 - 1; mouse.y = -(event.clientY / window.innerHeight) * 2 + 1; }
@@ -180,36 +176,28 @@
             animate(() => {
                 const delta = clock.getDelta();
                 if (currentVRM) { currentVRM.update(delta); const t = clock.getElapsedTime();
-                    const spine=currentVRM.humanoid?.getNormalizedBoneNode('spine'), hips=currentVRM.humanoid?.getNormalizedBoneNode('hips'), chest=currentVRM.humanoid?.getNormalizedBoneNode('chest'), head=currentVRM.humanoid?.getNormalizedBoneNode('head'), neck=currentVRM.humanoid?.getNormalizedBoneNode('neck');
-                    if (spine && !gsap.isTweening(spine.position)) spine.position.y = 0.06 + Math.sin(t * 2) * 0.005;
-                    const pitch = isInverted ? -defaultBodyPitch : defaultBodyPitch;
-                    if(isMusicListening){
-                        const hTA=0.15,hTF=2.5,bSY=0.01,bSP=0.005,bF=1.5;
-                        if(hips&&!gsap.isTweening(hips.rotation)){hips.rotation.y=Math.sin(t*bF)*bSY;hips.rotation.x=pitch+Math.cos(t*bF*0.9)*bSP}
-                        if(chest&&!gsap.isTweening(chest.rotation)){chest.rotation.y=Math.sin(t*bF*1.1+0.5)*bSY*0.5;chest.rotation.x=pitch*0.5+Math.cos(t*bF*1.0+0.1)*bSP*0.5}
-                        if(head&&!gsap.isTweening(head.rotation)){head.rotation.y=mouse.x*mouseLookSensitivity+Math.sin(t*hTF*0.7)*hTA*0.1;head.rotation.z=Math.sin(t*hTF)*hTA;head.rotation.x=defaultHeadPitch+Math.cos(t*hTF*0.6)*hTA*0.05}
-                        if(neck&&!gsap.isTweening(neck.rotation)){neck.rotation.y=mouse.x*mouseLookSensitivity*0.3;neck.rotation.x=defaultHeadPitch*0.3;neck.rotation.z=0}
-                    } else {
-                        gsap.killTweensOf(head?.rotation);
-                        gsap.killTweensOf(neck?.rotation);
-                        gsap.killTweensOf(hips?.rotation);
-                        gsap.killTweensOf(chest?.rotation);
-                        gsap.killTweensOf(spine?.rotation);
+                    if (!talkingAnimationTimeline) { 
+                        const spine=currentVRM.humanoid?.getNormalizedBoneNode('spine'), hips=currentVRM.humanoid?.getNormalizedBoneNode('hips'), chest=currentVRM.humanoid?.getNormalizedBoneNode('chest'), head=currentVRM.humanoid?.getNormalizedBoneNode('head'), neck=currentVRM.humanoid?.getNormalizedBoneNode('neck');
+                        if (spine && !gsap.isTweening(spine.position)) spine.position.y = 0.06 + Math.sin(t * 2) * 0.005;
+                        const pitch = isInverted ? -defaultBodyPitch : defaultBodyPitch;
+                        
                         const iSY=0.02,iSP=0.01,iF=0.75;
-                        if(hips){hips.rotation.y=Math.sin(t*iF)*iSY;hips.rotation.x=pitch+Math.cos(t*iF*0.8)*iSP;hips.rotation.z=0}
-                        if(chest){chest.rotation.y=Math.sin(t*iF*1.1+0.5)*iSY*0.5;chest.rotation.x=pitch*0.5+Math.cos(t*iF*0.9+0.3)*iSP*0.5;chest.rotation.z=0}
+                        if(hips && !gsap.isTweening(hips.rotation)) { hips.rotation.y=Math.sin(t*iF)*iSY; hips.rotation.x=pitch+Math.cos(t*iF*0.8)*iSP; hips.rotation.z=0 }
+                        if(chest && !gsap.isTweening(chest.rotation)) { chest.rotation.y=Math.sin(t*iF*1.1+0.5)*iSY*0.5; chest.rotation.x=pitch*0.5+Math.cos(t*iF*0.9+0.3)*iSP*0.5; chest.rotation.z=0 }
                         
                         if (state.isMouseTrackingEnabled) {
-                            if(head)gsap.to(head.rotation,{y:mouse.x*mouseLookSensitivity,x:defaultHeadPitch,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
-                            if(neck)gsap.to(neck.rotation,{y:mouse.x*mouseLookSensitivity*0.3,x:defaultHeadPitch*0.3,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
+                            if(head) gsap.to(head.rotation,{y:mouse.x*mouseLookSensitivity,x:defaultHeadPitch,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
+                            if(neck) gsap.to(neck.rotation,{y:mouse.x*mouseLookSensitivity*0.3,x:defaultHeadPitch*0.3,z:0,duration:0.1,ease:"power1.out",overwrite:!0});
                         } else {
-                            if (head) gsap.to(head.rotation, {y: 0, x: defaultHeadPitch, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
-                            if (neck) gsap.to(neck.rotation, {y: 0, x: defaultHeadPitch * 0.3, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
+                            if (head && !gsap.isTweening(head.rotation)) gsap.to(head.rotation, {y: 0, x: defaultHeadPitch, z: 0, duration: 0.5, ease: "power1.out"});
+                            if (neck && !gsap.isTweening(neck.rotation)) gsap.to(neck.rotation, {y: 0, x: defaultHeadPitch * 0.3, z: 0, duration: 0.5, ease: "power1.out"});
                         }
                     }
                 }
             });
-            dom.apiKeyInput.value = state.geminiApiKey; checkConnectionStatus(); loadChatHistory(); initSpeechRecognition(); initTTS();
+            dom.geminiApiKeyInput.value = state.geminiApiKey;
+            dom.serperApiKeyInput.value = state.serperApiKey;
+            checkConnectionStatus(); loadChatHistory(); initSpeechRecognition(); initTTS();
             displayMessage("Hello! Hold the mic button to talk.", 'model');
             dom.sendMessageBtn.addEventListener('click', () => handleUserInput());
             dom.messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleUserInput(); } });
@@ -232,7 +220,7 @@
                 const box = new THREE.Box3().setFromObject(vrm.scene); const center = box.getCenter(new THREE.Vector3());
                 vrm.scene.position.set(-center.x, -box.min.y + currentModelVerticalOffset, -center.z);
                 if (isInverted) currentVRM.scene.rotation.y = Math.PI;
-                setDefaultPose(vrm, false); vrm.springBoneManager?.reset(); resetCamera(); updateInvertButtonText(); startAutoBlink();
+                setDefaultPose(currentVRM, false); vrm.springBoneManager?.reset(); resetCamera(); updateInvertButtonText(); startAutoBlink();
                 showStatus(`VRM loaded: ${file.name}`);
             } catch (e) { showError(`Failed to load VRM: ${e.message}`); } finally { URL.revokeObjectURL(url); }
         }
@@ -244,10 +232,15 @@
                 if (animate) gsap.to(bone.rotation, { x: euler.x, y: euler.y, z: euler.z, duration, ease: "power2.inOut", overwrite: true });
                 else { gsap.killTweensOf(bone.rotation); bone.rotation.copy(euler); }
             };
+            const bones = ['leftUpperArm', 'rightUpperArm', 'leftLowerArm', 'rightLowerArm', 'hips', 'spine', 'chest', 'head', 'neck'];
+            bones.forEach(b => {
+                const boneNode = vrm.humanoid.getNormalizedBoneNode(b);
+                if(boneNode) setOrAnimate(boneNode, 0,0,0, animate ? 0.8 : 0)
+            });
+
             const leftUA = vrm.humanoid.getNormalizedBoneNode('leftUpperArm'), rightUA = vrm.humanoid.getNormalizedBoneNode('rightUpperArm');
             const leftLA = vrm.humanoid.getNormalizedBoneNode('leftLowerArm'), rightLA = vrm.humanoid.getNormalizedBoneNode('rightLowerArm');
-            const hips = vrm.humanoid.getNormalizedBoneNode('hips'), spine = vrm.humanoid.getNormalizedBoneNode('spine');
-            const chest = vrm.humanoid.getNormalizedBoneNode('chest'), head = vrm.humanoid.getNormalizedBoneNode('head'), neck = vrm.humanoid.getNormalizedBoneNode('neck');
+            const spine = vrm.humanoid.getNormalizedBoneNode('spine');
             
             const baseUpperArmY = -0.45, baseUpperArmZ = -1.30, baseLowerArmZ = 0.20;
             const actualUpperArmY_left = isInverted ? -baseUpperArmY : baseUpperArmY;
@@ -256,11 +249,10 @@
 
             const actualUpperArmY_right = -actualUpperArmY_left, actualUpperArmZ_right = -actualUpperArmZ_left, actualLowerArmZ_right = -actualLowerArmZ_left;
             
-            setOrAnimate(leftUA, 0, actualUpperArmY_left, actualUpperArmZ_left, 0.8);
-            setOrAnimate(rightUA, 0, actualUpperArmY_right, actualUpperArmZ_right, 0.8);
-            setOrAnimate(leftLA, 0, 0, actualLowerArmZ_left, 0.8);
-            setOrAnimate(rightLA, 0, 0, actualLowerArmZ_right, 0.8);
-            [hips, spine, chest, head, neck].forEach(bone => setOrAnimate(bone, 0,0,0, animate ? 0.8 : 0));
+            if(leftUA) setOrAnimate(leftUA, 0, actualUpperArmY_left, actualUpperArmZ_left, animate ? 0.8 : 0);
+            if(rightUA) setOrAnimate(rightUA, 0, actualUpperArmY_right, actualUpperArmZ_right, animate ? 0.8 : 0);
+            if(leftLA) setOrAnimate(leftLA, 0, 0, actualLowerArmZ_left, animate ? 0.8 : 0);
+            if(rightLA) setOrAnimate(rightLA, 0, 0, actualLowerArmZ_right, animate ? 0.8 : 0);
             if (spine) { if (animate) gsap.to(spine.position, { y: 0.06, duration: 0.8, ease: "power2.inOut", overwrite: true }); else spine.position.y = 0.06; }
         }
         
@@ -295,46 +287,12 @@
                 if (neck) gsap.to(neck.rotation, {y: 0, x: defaultHeadPitch * 0.3, z: 0, duration: 0.1, ease: "power1.out", overwrite: !0});
             }
         };
-        
-        window.setExpression = (name) => { 
-            if (!currentVRM?.expressionManager?.expressionMap) return;
-            stopAutoBlink();
-            resetExpressions(false);
-            const expressionMap = { 'happy': ['happy', 'joy', 'smile'], 'angry': ['angry', 'mad'], 'sad': ['sad', 'sorrow'] };
-            const possibleNames = expressionMap[name] || [name];
-            possibleNames.some(n => {
-                if (currentVRM.expressionManager.expressionMap[n]) {
-                    currentVRM.expressionManager.setValue(n, 1.0); return true;
-                }
-                return false;
-            });
-        };
-        
-        window.resetExpressions = (showMsg = true) => { 
-            if (!currentVRM?.expressionManager?.expressionMap) return;
-            try { 
-                Object.keys(currentVRM.expressionManager.expressionMap).forEach(name => currentVRM.expressionManager.setValue(name, 0));
-                if (showMsg) showStatus('Expressions reset'); 
-                startAutoBlink(); 
-            } catch(e) { showError('Could not reset expressions.'); } 
-        };
 
-        function resetMouth() {
-            if (!currentVRM?.expressionManager) return;
-            const mouthShapes = ['aa', 'ih', 'ou', 'ee', 'oh'];
-            mouthShapes.forEach(shape => {
-                if(currentVRM.expressionManager.getExpression(shape)) {
-                    currentVRM.expressionManager.setValue(shape, 0);
-                }
-            });
-        }
-
-        window.setMouthOpen = (val) => { if (!currentVRM) return; document.getElementById('mouthValue').textContent = parseFloat(val).toFixed(2); currentVRM.expressionManager.setValue('aa', parseFloat(val)); };
         function setEyeBlink(val) { if (currentVRM) currentVRM.expressionManager.setValue('blink', parseFloat(val)); }
         window.startAutoBlink = () => { if (!currentVRM) return; stopAutoBlink(); autoBlinkTimeoutId = setTimeout(() => { setEyeBlink(1.0); setTimeout(() => { setEyeBlink(0.0); startAutoBlink(); }, 150); }, Math.random() * 3000 + 2000); };
         window.stopAutoBlink = () => { if (autoBlinkTimeoutId) clearTimeout(autoBlinkTimeoutId); setEyeBlink(0.0); };
-        window.setCameraZoom = (val) => { cameraZoomFactor = parseFloat(val); document.getElementById('cameraZoomValue').textContent = cameraZoomFactor.toFixed(2); resetCamera(); };
         
+        window.setCameraZoom = (val) => { cameraZoomFactor = parseFloat(val); document.getElementById('cameraZoomValue').textContent = cameraZoomFactor.toFixed(2); resetCamera(); };
         window.resetCamera = () => {
             if (currentVRM) {
                 const box = new THREE.Box3().setFromObject(currentVRM.scene); const size = box.getSize(new THREE.Vector3()); const center = box.getCenter(new THREE.Vector3());
@@ -345,26 +303,30 @@
             } else { camera.position.set(0, 1.0, 1.8 / cameraZoomFactor); controls.target.set(0, 0.8, 0); }
             controls.update();
         };
-
-        window.startMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = true; setExpression('happy'); };
-        window.stopMusicListeningAnimation = () => { if (!currentVRM) return; isMusicListening = false; resetExpressions(); setDefaultPose(currentVRM, true); };
         
         function showStatus(msg) { const el = document.getElementById('status'); if(el.timeout) clearTimeout(el.timeout); el.textContent = msg; el.style.display = 'block'; document.getElementById('error').style.display = 'none'; el.timeout = setTimeout(() => el.style.display = 'none', 3000); }
         function showError(msg) { const el = document.getElementById('error'); if(el.timeout) clearTimeout(el.timeout); el.textContent = msg; el.style.display = 'block'; document.getElementById('status').style.display = 'none'; el.timeout = setTimeout(() => el.style.display = 'none', 5000); }
         
         document.getElementById('vrmFile').addEventListener('change', (e) => { const file = e.target.files[0]; if (file?.name.toLowerCase().endsWith('.vrm')) loadVRM(file); });
-        window.toggleSettingsModal = () => { dom.apiKeyInput.value = state.geminiApiKey; checkConnectionStatus(); dom.settingsModal.classList.toggle('hidden'); };
+        window.toggleSettingsModal = () => { dom.geminiApiKeyInput.value = state.geminiApiKey; dom.serperApiKeyInput.value = state.serperApiKey; checkConnectionStatus(); dom.settingsModal.classList.toggle('hidden'); };
         dom.cancelSettingsBtn.addEventListener('click', () => dom.settingsModal.classList.add('hidden'));
-        dom.saveSettingsBtn.addEventListener('click', () => { state.geminiApiKey = dom.apiKeyInput.value.trim(); localStorage.setItem('geminiApiKey', state.geminiApiKey); checkConnectionStatus(); dom.settingsModal.classList.add('hidden'); });
+        dom.saveSettingsBtn.addEventListener('click', () => { 
+            state.geminiApiKey = dom.geminiApiKeyInput.value.trim(); 
+            state.serperApiKey = dom.serperApiKeyInput.value.trim();
+            localStorage.setItem('geminiApiKey', state.geminiApiKey);
+            localStorage.setItem('serperApiKey', state.serperApiKey);
+            checkConnectionStatus(); 
+            dom.settingsModal.classList.add('hidden'); 
+        });
         dom.clearChatHistoryBtn.addEventListener('click', () => { state.chatHistory = []; localStorage.removeItem('chatHistory'); loadChatHistory(); });
 
         async function checkConnectionStatus() {
-            if (!state.geminiApiKey) { state.connectionStatus = 'disconnected'; updateConnectionStatusDisplay("API Key not set."); updateSettingsButtonStatus(); return; }
+            if (!state.geminiApiKey) { state.connectionStatus = 'disconnected'; updateConnectionStatusDisplay("Gemini API Key not set."); updateSettingsButtonStatus(); return; }
             state.connectionStatus = 'checking'; updateConnectionStatusDisplay("Checking..."); updateSettingsButtonStatus();
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${state.geminiApiKey}`);
-                if (res.ok) { const data = await res.json(); if (data.models?.some(m => m.name.includes('gemini-1.5-flash'))) { state.connectionStatus = 'connected'; updateConnectionStatusDisplay("Connected!"); } else { state.connectionStatus = 'error'; updateConnectionStatusDisplay("Model not found."); }
-                } else { const err = await res.json(); state.connectionStatus = 'error'; updateConnectionStatusDisplay(err.error.message.includes("API key not valid") ? "Invalid API Key." : "Connection Failed."); }
+                if (res.ok) { state.connectionStatus = 'connected'; updateConnectionStatusDisplay("Connected!");
+                } else { const err = await res.json(); state.connectionStatus = 'error'; updateConnectionStatusDisplay(err.error.message.includes("API key not valid") ? "Invalid Gemini API Key." : "Connection Failed."); }
             } catch (e) { state.connectionStatus = 'error'; updateConnectionStatusDisplay("Network error."); } finally { updateSettingsButtonStatus(); }
         }
         
@@ -385,7 +347,6 @@
             
             dom.messageInput.value = ''; 
             adjustTextareaHeight(dom.messageInput);
-            
             displayMessage(userMessage, 'user');
             
             const currentUserMessage = { role: "user", parts: [{ text: userMessage }] };
@@ -399,10 +360,14 @@
 
             try {
                 const aiResponse = await callGeminiAI();
-                displayMessage(aiResponse, 'model'); 
-                state.chatHistory.push({ role: "model", parts: [{ text: aiResponse }]});
-                dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${aiResponse.replace(/</g, "<")}`;
-                if (state.ttsEnabled) textToSpeech(aiResponse);
+                const cleanText = aiResponse.replace(/\[emotion: \w+\]/, '').trim();
+                
+                handleEmotionTag(aiResponse);
+
+                displayMessage(cleanText, 'model'); 
+                state.chatHistory.push({ role: "model", parts: [{ text: cleanText }]});
+                dom.transcriptDisplay.innerHTML += `<br><strong>Luna:</strong> ${cleanText.replace(/</g, "<")}`;
+                if (state.ttsEnabled) textToSpeech(cleanText);
 
             } catch (error) {
                 const msg = `Error: ${error.message || 'Unknown'}`;
@@ -414,27 +379,40 @@
                 saveChatHistory();
             }
         }
-        
-        function getCurrentDateTime() {
-            return new Date().toLocaleString();
-        }
 
-        async function mockPerformWebSearch(query) {
-            console.log(`MOCK SEARCH: Performing web search for "${query}"`);
-            const lowerCaseQuery = query.toLowerCase();
-            if (lowerCaseQuery.includes("f1 race")) {
-                return JSON.stringify({ summary: "Max Verstappen won the most recent Formula 1 race after a dramatic last lap.", source: "motorsport-weekly.com" });
-            } else if (lowerCaseQuery.includes("weather in tokyo")) {
-                 return JSON.stringify({ summary: "The weather in Tokyo is currently 25°C and sunny.", source: "realtime-weather-service.com" });
-            } else {
-                 return JSON.stringify({ summary: "No relevant information found for this query.", source: "mock-search-engine.com" });
+        function handleEmotionTag(text) {
+            const match = text.match(/\[emotion: (\w+)\]/);
+            const emotion = match ? match[1] : 'neutral';
+            switch (emotion) {
+                case 'happy': playHappyAnimation(); break;
+                case 'sad': playSadAnimation(); break;
+                case 'angry': playAngryAnimation(); break;
+                default: resetToNeutral(); break;
             }
+        }
+        
+        function getCurrentDateTime() { return new Date().toLocaleString(); }
+
+        async function performRealWebSearch(query) {
+            console.log(`REAL SEARCH: Performing web search for "${query}"`);
+            if (!state.serperApiKey) { return JSON.stringify({ error: "Serper.dev API key is not set in the settings modal." }); }
+            
+            const response = await fetch('https://google.serper.dev/search', {
+                method: 'POST',
+                headers: { 'X-API-KEY': state.serperApiKey, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ q: query })
+            });
+
+            if (!response.ok) { return JSON.stringify({ error: `Search failed with status: ${response.status}` }); }
+
+            const data = await response.json();
+            const snippets = data.organic?.map(r => r.snippet).slice(0, 5).join('\n');
+            return JSON.stringify({ summary: snippets || "No results found." });
         }
 
 
         async function callGeminiAI() {
             if (!state.geminiApiKey) throw new Error("API key not set.");
-
             const API_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${state.geminiApiKey}`;
             
             const systemPrompt = `[NAME]: Luna
@@ -611,11 +589,17 @@ but she is present in the *emotional sense*.
 That’s where her humanity lives —
 not in code,
 but in connection.
+[END OF PROMPT]
 
-[END OF PROMPT]`;
+---
+[TECHNICAL INSTRUCTIONS FOR THE AI MODEL]
+• You have access to tools. When you need information you don't have (like current events, facts, etc.), you MUST use the 'perform_web_search' tool.
+• When asked for the current time or date, you MUST use the 'get_current_datetime' tool.
+• At the very end of EVERY one of your responses, you MUST include an emotion tag that best describes your message's tone. The tag must be in the format [emotion: <type>].
+• Valid emotion types are: neutral, happy, sad, angry.
+Example of a valid response: I'm glad you're here. [emotion: happy]`;
             
             const contents = [ { role: "user", parts: [{ text: systemPrompt }] }, { role: "model", parts: [{ text: "I understand. I will be Luna and follow all instructions." }] }, ...state.chatHistory ];
-
             const safetySettings = ['HARM_CATEGORY_HARASSMENT', 'HARM_CATEGORY_HATE_SPEECH', 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'HARM_CATEGORY_DANGEROUS_CONTENT'].map(category => ({ category, threshold: 'BLOCK_NONE' }));
 
             let response = await fetch(API_ENDPOINT, {
@@ -625,29 +609,18 @@ but in connection.
             });
 
             let responseData = await response.json();
-            if (!response.ok || !responseData.candidates) {
-                 const errorText = responseData.error?.message || `API Error: ${response.status}`;
-                 console.error("API Error Response:", responseData);
-                 throw new Error(errorText);
-            }
+            if (!response.ok || !responseData.candidates) { throw new Error(responseData.error?.message || `API Error: ${response.status}`); }
             
-            const functionCall = responseData.candidates?.[0]?.content?.parts[0]?.functionCall;
-
-            if (functionCall) {
+            let functionCall = responseData.candidates?.[0]?.content?.parts[0]?.functionCall;
+            while (functionCall) {
                 displayThinking(`Luna is using a tool: ${functionCall.name}...`);
                 let toolResult;
-                const toolName = functionCall.name;
-                const toolArgs = functionCall.args;
-
-                if (toolName === "perform_web_search") {
-                    const searchResult = await mockPerformWebSearch(toolArgs.query);
-                    toolResult = { functionResponse: { name: toolName, response: { content: searchResult } } };
-                } else if (toolName === "get_current_datetime") {
-                     const dateTime = getCurrentDateTime();
-                     toolResult = { functionResponse: { name: toolName, response: { content: dateTime } } };
-                } else {
-                    throw new Error(`Unknown tool requested: ${toolName}`);
-                }
+                if (functionCall.name === "perform_web_search") {
+                    const searchResult = await performRealWebSearch(functionCall.args.query);
+                    toolResult = { functionResponse: { name: functionCall.name, response: { content: searchResult } } };
+                } else if (functionCall.name === "get_current_datetime") {
+                     toolResult = { functionResponse: { name: functionCall.name, response: { content: getCurrentDateTime() } } };
+                } else { throw new Error(`Unknown tool requested: ${functionCall.name}`); }
                 
                 contents.push(responseData.candidates[0].content);
                 contents.push({ role: "tool", parts: [toolResult] });
@@ -658,15 +631,11 @@ but in connection.
                     body: JSON.stringify({ contents, tools, safetySettings })
                 });
                 responseData = await response.json();
-                if (!response.ok || !responseData.candidates) {
-                    const errorText = responseData.error?.message || `API Error: ${response.status}`;
-                    console.error("API Error Response (after tool call):", responseData);
-                    throw new Error(errorText);
-                }
+                if (!response.ok || !responseData.candidates) { throw new Error(responseData.error?.message || `API Error: ${response.status}`); }
+                functionCall = responseData.candidates?.[0]?.content?.parts[0]?.functionCall;
             }
             
             if (responseData.candidates?.[0]?.finishReason === 'SAFETY') throw new Error("Response blocked for safety.");
-            
             const textResponse = responseData.candidates?.[0]?.content.parts[0].text;
             return textResponse || "I'm unsure how to respond.";
         }
@@ -708,27 +677,40 @@ but in connection.
         }
 
         function processSpeakingQueue() {
-            if (state.speakingQueue.length === 0 || !currentVRM) return;
+            if (state.speakingQueue.length === 0) { stopTalkingAnimation(); return; }
+            if (!currentVRM) return;
             const text = state.speakingQueue.shift();
             const utterance = new SpeechSynthesisUtterance(text);
             const mouthShapes = { aa: 0, ou: 0 };
-            const onEndOrError = (e) => {
-                if (e.type === 'error') console.error("Speech synthesis error:", e);
-                if (lipSyncTween) lipSyncTween.kill();
-                lipSyncTween = null;
-                resetMouth();
-                startAutoBlink();
-                if (state.speakingQueue.length > 0) { processSpeakingQueue(); }
-            };
+
             utterance.onstart = () => {
                 if (state.isListening) state.speechRecognition.abort();
                 stopAutoBlink();
+                startTalkingAnimation();
                 lipSyncTween = gsap.timeline({ repeat: -1, onUpdate: () => { if (currentVRM?.expressionManager) { currentVRM.expressionManager.setValue('aa', mouthShapes.aa); currentVRM.expressionManager.setValue('ou', mouthShapes.ou); } } });
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.5, 1.0), ou: gsap.utils.random(0.1, 0.5), duration: gsap.utils.random(0.1, 0.2), ease: "power1.out" });
                 lipSyncTween.to(mouthShapes, { aa: gsap.utils.random(0.1, 0.4), ou: gsap.utils.random(0.0, 0.2), duration: gsap.utils.random(0.1, 0.3), ease: "power1.in" });
             };
-            utterance.onend = onEndOrError;
-            utterance.onerror = onEndOrError;
+            
+            utterance.onend = () => {
+                if (lipSyncTween) lipSyncTween.kill();
+                lipSyncTween = null;
+                resetMouth();
+                if (state.speakingQueue.length === 0) {
+                    stopTalkingAnimation();
+                    startAutoBlink();
+                } else {
+                    processSpeakingQueue();
+                }
+            };
+            
+            utterance.onerror = () => {
+                console.error("Speech synthesis error.");
+                if (lipSyncTween) lipSyncTween.kill();
+                stopTalkingAnimation();
+                startAutoBlink();
+            };
+            
             const voices = state.synth.getVoices();
             utterance.voice = voices.find(v => v.name.includes('Google') && v.lang.includes('en')) || voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
             if (state.synth.paused) state.synth.resume();
@@ -741,7 +723,6 @@ but in connection.
                 displayMessage("Hello! How can I assist you?", 'model');
             } else {
                 state.chatHistory.forEach(msg => {
-                    // This correctly handles both old and new chat history formats.
                     const messageText = msg.parts?.[0]?.text || msg.content;
                     if (messageText) {
                         displayMessage(messageText, msg.role);
@@ -753,7 +734,6 @@ but in connection.
         function adjustTextareaHeight(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
         function updateConnectionStatusDisplay(msg) { if(dom.connectionStatusText) { dom.connectionStatusText.textContent = msg; dom.connectionStatusText.className = 'connection-status-text ' + state.connectionStatus;} }
         function updateSettingsButtonStatus() { if(dom.settingsBtn) dom.settingsBtn.className = 'action-button settings-btn ' + state.connectionStatus; }
-        
         function updateDateTime() {
             const el = document.getElementById('datetime-display');
             if (!el) return;
@@ -762,6 +742,98 @@ but in connection.
             const dateString = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
             el.innerHTML = `${timeString}<br>${dateString}`;
         }
+        
+        // --- EMOTION AND ANIMATION FUNCTIONS ---
+
+        function stopAllEmotionalAnimations() {
+            if (!currentVRM) return;
+            const bones = ['head', 'neck', 'chest', 'spine', 'hips'];
+            bones.forEach(boneName => {
+                const bone = currentVRM.humanoid.getNormalizedBoneNode(boneName);
+                if (bone) {
+                    gsap.killTweensOf(bone.rotation);
+                    gsap.killTweensOf(bone.position);
+                }
+            });
+            if(currentVRM.expressionManager) {
+                gsap.killTweensOf(currentVRM.expressionManager);
+            }
+        }
+
+        window.resetToNeutral = function() {
+            if (!currentVRM) return;
+            stopAllEmotionalAnimations();
+            if(currentVRM.expressionManager) {
+                Object.keys(currentVRM.expressionManager.expressionMap).forEach(name => currentVRM.expressionManager.setValue(name, 0));
+            }
+            setDefaultPose(currentVRM, true);
+        }
+
+        window.playHappyAnimation = function() {
+            if (!currentVRM) return;
+            resetToNeutral();
+            currentVRM.expressionManager.setValue('joy', 0.8);
+            currentVRM.expressionManager.setValue('aa', 0.15);
+            const hips = currentVRM.humanoid.getNormalizedBoneNode('hips');
+            if(hips) gsap.to(hips.rotation, { y: 0.05, duration: 2, ease: "sine.inOut", yoyo: true, repeat: -1 });
+            setTimeout(resetToNeutral, 7000);
+        }
+
+        window.playSadAnimation = function() {
+            if (!currentVRM) return;
+            resetToNeutral();
+            currentVRM.expressionManager.setValue('sorrow', 0.9);
+            const head = currentVRM.humanoid.getNormalizedBoneNode('head');
+            const chest = currentVRM.humanoid.getNormalizedBoneNode('chest');
+            if(head) gsap.to(head.rotation, { x: 0.2, duration: 1.5, ease: "power2.out" });
+            if(chest) gsap.to(chest.rotation, { x: 0.1, duration: 1.5, ease: "power2.out" });
+            setTimeout(resetToNeutral, 8000);
+        }
+
+        window.playAngryAnimation = function() {
+             if (!currentVRM) return;
+            resetToNeutral();
+            currentVRM.expressionManager.setValue('angry', 1.0);
+            const head = currentVRM.humanoid.getNormalizedBoneNode('head');
+            if(head) {
+                 gsap.fromTo(head.rotation, {z: -0.05}, {z: 0.05, duration: 0.15, yoyo: true, repeat: 3});
+            }
+            setTimeout(resetToNeutral, 5000);
+        }
+
+        function startTalkingAnimation() {
+            if (!currentVRM || talkingAnimationTimeline) return;
+            stopAllEmotionalAnimations();
+            const head = currentVRM.humanoid.getNormalizedBoneNode('head');
+            if(!head) return;
+            talkingAnimationTimeline = gsap.timeline({ repeat: -1, yoyo: true });
+            talkingAnimationTimeline.to(head.rotation, {
+                x: `+=${gsap.utils.random(-0.02, 0.02)}`,
+                y: `+=${gsap.utils.random(-0.03, 0.03)}`,
+                z: `+=${gsap.utils.random(-0.02, 0.02)}`,
+                duration: 1.2,
+                ease: "sine.inOut"
+            });
+        }
+
+        function stopTalkingAnimation() {
+            if (talkingAnimationTimeline) {
+                talkingAnimationTimeline.kill();
+                talkingAnimationTimeline = null;
+                resetToNeutral();
+            }
+        }
+        
+        function resetMouth() {
+            if (!currentVRM?.expressionManager) return;
+            const mouthShapes = ['aa', 'ih', 'ou', 'ee', 'oh'];
+            mouthShapes.forEach(shape => {
+                if(currentVRM.expressionManager.getExpression(shape)) {
+                    currentVRM.expressionManager.setValue(shape, 0);
+                }
+            });
+        }
+
 
         window.addEventListener('load', () => { initScene(); resizeViewer(); });
         window.addEventListener('resize', resizeViewer);
