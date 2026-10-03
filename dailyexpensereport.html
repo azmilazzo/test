@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Sales Report Generator</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #334155;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 4px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #475569;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        input::placeholder {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+        .row .form-group {
+            flex: 1;
+        }
+        textarea {
+            width: 100%;
+            height: 250px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #f1f5f9;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        button {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #1d4ed8;
+        }
+        .toast {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #16a34a;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Plantation Plaza Report Generator</h2>
+
+    <!-- INPUT FORM CARD -->
+    <div class="card">
+        <div class="section-title">📅 General Info</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Month</label>
+                <input type="text" id="month" value="October 2026">
+            </div>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="text" id="date" value="04/10/2026">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Outlet Name</label>
+            <input type="text" id="outlet" value="PLANTATION PLAZA">
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">💰 Sales & POS Data</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Cash POS Sales ($)</label>
+                <input type="number" step="0.01" id="cashPos" placeholder="Cash Sales">
+            </div>
+            <div class="form-group">
+                <label>Total Net Sales ($)</label>
+                <input type="number" step="0.01" id="totalNetSales" placeholder="Net Sales">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>GrabFood ($)</label>
+                <input type="number" step="0.01" id="grabFood" placeholder="GrabFood">
+            </div>
+            <div class="form-group">
+                <label>FoodPanda ($)</label>
+                <input type="number" step="0.01" id="foodPanda" placeholder="PANDA">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Comm. Multiplier</label>
+                <input type="number" step="0.01" id="commRate" value="0.68">
+            </div>
+            <div class="form-group">
+                <label>Float Money ($)</label>
+                <input type="number" step="0.01" id="floatMoney" value="300">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Prev. MTD In-Store Sales ($)</label>
+                <input type="number" step="0.01" id="prevMtdInStore" placeholder="Yesterday's In-Store MTD">
+            </div>
+            <div class="form-group">
+                <label>Prev. MTD Total Sales ($)</label>
+                <input type="number" step="0.01" id="prevMtdTotal" placeholder="Yesterday's Total MTD">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Extra ($)</label>
+                <input type="number" step="0.01" id="extra" value="0">
+            </div>
+            <div class="form-group">
+                <label>Shortage ($)</label>
+                <input type="number" step="0.01" id="shortage" value="0">
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">🍚 Rice Inventory</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Yesterday Balance</label>
+                <input type="number" step="0.1" id="yestBal" placeholder="Yesterday balance">
+            </div>
+            <div class="form-group">
+                <label>Today Cook</label>
+                <input type="number" step="0.1" id="todayCook" placeholder="Today cook">
+            </div>
+            <div class="form-group">
+                <label>Today Used</label>
+                <input type="number" step="0.1" id="todayUsed" placeholder="Today used">
+            </div>
+        </div>
+    </div>
+
+    <!-- PREVIEW & COPY CARD -->
+    <div class="card">
+        <div class="section-title">📋 Generated Message Preview</div>
+        <div class="form-group">
+            <textarea id="outputPreview" readonly></textarea>
+        </div>
+        <button id="copyBtn" onclick="copyToClipboard()">Copy Message to Clipboard</button>
+        <div id="toast" class="toast">Successfully copied to clipboard! ✅</div>
+    </div>
+</div>
+
+<script>
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => input.addEventListener('input', generateReport));
+
+    function formatCurrency(val) {
+        return isNaN(val) ? "0.00" : Number(val).toFixed(2);
+    }
+
+    function generateReport() {
+        const month = document.getElementById('month').value;
+        const date = document.getElementById('date').value;
+        const outlet = document.getElementById('outlet').value;
+
+        const cashPos = parseFloat(document.getElementById('cashPos').value) || 0;
+        const totalNetSales = parseFloat(document.getElementById('totalNetSales').value) || 0;
+        const grabFood = parseFloat(document.getElementById('grabFood').value) || 0;
+        const foodPanda = parseFloat(document.getElementById('foodPanda').value) || 0;
+        const commRate = parseFloat(document.getElementById('commRate').value) || 0.68;
+        const floatMoney = document.getElementById('floatMoney').value;
+
+        const prevMtdInStore = parseFloat(document.getElementById('prevMtdInStore').value) || 0;
+        const prevMtdTotal = parseFloat(document.getElementById('prevMtdTotal').value) || 0;
+
+        const extra = document.getElementById('extra').value;
+        const shortage = document.getElementById('shortage').value;
+
+        const yestBal = parseFloat(document.getElementById('yestBal').value) || 0;
+        const todayCook = parseFloat(document.getElementById('todayCook').value) || 0;
+        const todayUsed = parseFloat(document.getElementById('todayUsed').value) || 0;
+
+        // Calculations
+        const deliveryBefore = grabFood + foodPanda;
+        const deliveryAfter = deliveryBefore * commRate;
+        const netSalesCalc = totalNetSales - deliveryBefore;
+        const newMtdInStore = prevMtdInStore + netSalesCalc;
+        const dailyGross = netSalesCalc + deliveryAfter;
+        const newMtdTotal = prevMtdTotal + dailyGross;
+
+        const totalRice = yestBal + todayCook;
+        const todayBal = totalRice - todayUsed;
+
+        // Template generation
+        const template = `Month : ${month}
+Date : ${date}
+Outlet: ${outlet}
+
+*1) In Store Sales* 
+==============  
+Cash POS Sales: $${formatCurrency(cashPos)}
+
+Total In Store Sales:
+Net sales -  E delivery (Before) 
+$${formatCurrency(totalNetSales)}-$${formatCurrency(deliveryBefore)} = $${formatCurrency(netSalesCalc)}
+
+Month To Date Sales:   
+$${formatCurrency(prevMtdInStore)}+$${formatCurrency(netSalesCalc)} = $${formatCurrency(newMtdInStore)}
+(add daily)
+
+
+*2) E-Delivery Sale*
+==============
+
+Total E-Delivery Sales
+$${formatCurrency(deliveryAfter)} *(After Comms)*
+$${formatCurrency(deliveryBefore)} *(Before  Comms)*
+
+ *Total Gross Sales*
+=============
+Daily sales + Edelivery(Aft Coms)
+$${formatCurrency(netSalesCalc)}+$${formatCurrency(deliveryAfter)} = $${formatCurrency(dailyGross)}
+
+MTD Total   Sales:  
+$${formatCurrency(prevMtdTotal)}+$${formatCurrency(dailyGross)} = $${formatCurrency(newMtdTotal)}
+
+Float money : $${floatMoney} ✅
+Extra : ${extra}
+Shortage: ${shortage}
+
+Yesterday balance:${yestBal}
+Today cook ${todayCook}
+Total rice:${Number(totalRice.toFixed(2))}
+Today used:${todayUsed}
+Today balance:${Number(todayBal.toFixed(2))}`;
+
+        document.getElementById('outputPreview').value = template;
+    }
+
+    function copyToClipboard() {
+        const textarea = document.getElementById('outputPreview');
+        textarea.select();
+        textarea.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(textarea.value);
+
+        const toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 2000);
+    }
+
+    generateReport();
+</script>
+
+</body>
+</html>
