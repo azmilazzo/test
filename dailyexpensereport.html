@@ -286,11 +286,11 @@ Outlet: ${outlet}
 Cash POS Sales: $${formatCurrency(cashPos)}
 
 Total In Store Sales:
-Net sales -  E delivery (Before Commission) 
-$${formatCurrency(totalNetSales)}-$${formatCurrency(deliveryBefore)} = $${formatCurrency(netSalesCalc)}
+Net sales - E delivery (Before Commission) 
+$${formatCurrency(totalNetSales)} - $${formatCurrency(deliveryBefore)} = $${formatCurrency(netSalesCalc)}
 
 Month To Date Sales:   
-$${formatCurrency(prevMtdInStore)}+$${formatCurrency(netSalesCalc)} = $${formatCurrency(newMtdInStore)}
+$${formatCurrency(prevMtdInStore)} + $${formatCurrency(netSalesCalc)} = $${formatCurrency(newMtdInStore)}
 (add daily)
 
 
@@ -304,10 +304,10 @@ $${formatCurrency(deliveryBefore)} *(Before Commission)*
  *Total Gross Sales*
 =============
 Daily sales + Edelivery (After Commission)
-$${formatCurrency(netSalesCalc)}+$${formatCurrency(deliveryAfter)} = $${formatCurrency(dailyGross)}
+$${formatCurrency(netSalesCalc)} + $${formatCurrency(deliveryAfter)} = $${formatCurrency(dailyGross)}
 
-MTD Total   Sales:  
-$${formatCurrency(prevMtdTotal)}+$${formatCurrency(dailyGross)} = $${formatCurrency(newMtdTotal)}
+MTD Total Sales:  
+$${formatCurrency(prevMtdTotal)} + $${formatCurrency(dailyGross)} = $${formatCurrency(newMtdTotal)}
 
 Float money : $${floatMoney} ✅
 Extra : ${extra}
