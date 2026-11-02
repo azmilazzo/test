@@ -125,11 +125,11 @@
         <div class="row">
             <div class="form-group">
                 <label>Month</label>
-                <input type="text" id="month" value="October 2026">
+                <input type="text" id="month">
             </div>
             <div class="form-group">
                 <label>Date</label>
-                <input type="text" id="date" value="04/10/2026">
+                <input type="text" id="date">
             </div>
         </div>
         <div class="form-group">
@@ -222,11 +222,25 @@
 </div>
 
 <script>
+    window.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        document.getElementById('month').value = `${months[now.getMonth()]} ${now.getFullYear()}`;
+        
+        const day = String(now.getDate()).padStart(2, '0');
+        const monthNum = String(now.getMonth() + 1).padStart(2, '0');
+        document.getElementById('date').value = `${day}/${monthNum}/${now.getFullYear()}`;
+        
+        generateReport();
+    });
+
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => input.addEventListener('input', generateReport));
 
     function formatCurrency(val) {
-        return isNaN(val) ? "0.00" : Number(val).toFixed(2);
+        if (isNaN(val)) return "0.00";
+        return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function generateReport() {
@@ -262,7 +276,7 @@
         const totalRice = yestBal + todayCook;
         const todayBal = totalRice - todayUsed;
 
-        // Template generation
+        // Template generation with standardized "after commission" and "before commission" text
         const template = `Month : ${month}
 Date : ${date}
 Outlet: ${outlet}
@@ -272,7 +286,7 @@ Outlet: ${outlet}
 Cash POS Sales: $${formatCurrency(cashPos)}
 
 Total In Store Sales:
-Net sales -  E delivery (Before) 
+Net sales -  E delivery (Before Commission) 
 $${formatCurrency(totalNetSales)}-$${formatCurrency(deliveryBefore)} = $${formatCurrency(netSalesCalc)}
 
 Month To Date Sales:   
@@ -284,12 +298,12 @@ $${formatCurrency(prevMtdInStore)}+$${formatCurrency(netSalesCalc)} = $${for
 ==============
 
 Total E-Delivery Sales
-$${formatCurrency(deliveryAfter)} *(After Comms)*
-$${formatCurrency(deliveryBefore)} *(Before  Comms)*
+$${formatCurrency(deliveryAfter)} *(After Commission)*
+$${formatCurrency(deliveryBefore)} *(Before Commission)*
 
  *Total Gross Sales*
 =============
-Daily sales + Edelivery(Aft Coms)
+Daily sales + Edelivery (After Commission)
 $${formatCurrency(netSalesCalc)}+$${formatCurrency(deliveryAfter)} = $${formatCurrency(dailyGross)}
 
 MTD Total   Sales:  
@@ -299,11 +313,11 @@ Float money : $${floatMoney} ✅
 Extra : ${extra}
 Shortage: ${shortage}
 
-Yesterday balance:${yestBal}
-Today cook ${todayCook}
-Total rice:${Number(totalRice.toFixed(2))}
-Today used:${todayUsed}
-Today balance:${Number(todayBal.toFixed(2))}`;
+Yesterday balance: ${yestBal}
+Today cook: ${todayCook}
+Total rice: ${Number(totalRice.toFixed(2))}
+Today used: ${todayUsed}
+Today balance: ${Number(todayBal.toFixed(2))}`;
 
         document.getElementById('outputPreview').value = template;
     }
@@ -320,8 +334,6 @@ Today balance:${Number(todayBal.toFixed(2))}`;
             toast.style.display = 'none';
         }, 2000);
     }
-
-    generateReport();
 </script>
 
 </body>
