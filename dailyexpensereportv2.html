@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantation Plaza Sales Suite - OCR</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #1e293b;
+            --border: #cbd5e1;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 16px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            color: #475569;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+            display: none;
+        }
+        .card.active {
+            display: block;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            color: #334155;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 4px;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: #475569;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+        }
+        input::placeholder {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            font-weight: normal;
+        }
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+        .row .form-group {
+            flex: 1;
+        }
+        textarea {
+            width: 100%;
+            height: 260px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #f1f5f9;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        button.action-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button.action-btn:hover {
+            background-color: #1d4ed8;
+        }
+        .toast {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #16a34a;
+            font-weight: bold;
+            display: none;
+        }
+    <style>
+        .scan-box { background:#eff6ff; border:1px dashed #93c5fd; border-radius:12px; padding:14px; margin-bottom:20px; }
+        .scan-box h3 { margin:0 0 8px 0; font-size:1rem; color:#1e40af; }
+        .scan-box p.hint { font-size:0.85rem; color:#475569; margin:0 0 10px 0; }
+        .scan-preview { max-width:100%; border-radius:8px; margin-top:10px; display:none; }
+        .scan-status { font-size:0.9rem; font-weight:bold; margin-top:8px; min-height:1.2em; }
+        .scan-status.ok { color:#16a34a; } .scan-status.err { color:#dc2626; } .scan-status.busy { color:#2563eb; }
+        .verify { display:none; margin-top:12px; background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
+        .verify h4 { margin:0 0 8px 0; font-size:0.95rem; }
+        .verify-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+        .verify-grid label { font-size:0.8rem; font-weight:bold; color:#475569; display:block; margin-bottom:2px; }
+        .verify-grid input { width:100%; padding:8px; border:1px solid var(--border); border-radius:8px; box-sizing:border-box; }
+        .verify-grid input.notfound { background:#fef3c7; }
+        .scan-actions { display:flex; gap:8px; margin-top:10px; }
+        .scan-actions button { flex:1; padding:10px; border-radius:8px; border:none; font-weight:bold; cursor:pointer; }
+        .btn-apply { background:#16a34a; color:#fff; } .btn-clear { background:#e2e8f0; color:#334155; }
+        .paycheck { font-size:0.85rem; font-weight:bold; margin-top:6px; }
+        .paycheck.ok { color:#16a34a; } .paycheck.warn { color:#dc2626; }
+        details.rawocr { margin-top:10px; font-size:0.85rem; }
+        details.rawocr pre { white-space:pre-wrap; word-break:break-word; background:#f1f5f9; padding:10px; border-radius:8px; max-height:220px; overflow:auto; }
+        input[type="file"] { width:100%; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <h2>Plantation Plaza Report Suite</h2>
+    <p style="text-align:center;color:#475569;font-size:0.9rem;margin-top:0;">OCR clone &mdash; scan one receipt per tab. Original file untouched.</p>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('daily')">Daily Closing Report</button>
+        <button class="tab-btn tab-lunch" onclick="switchTab('lunch')">After Lunch Report</button>
+    </div>
+
+    <!-- ================= 1. DAILY CLOSING REPORT CARD ================= -->
+    <div id="dailyCard" class="card active">
+        <div class="section-title">📅 General Info</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Month</label>
+                <input type="text" id="dailyMonth" readonly>
+            </div>
+            <div class="form-group">
+                <label>Date (DD/MM/YYYY)</label>
+                <input type="text" id="dailyDate" oninput="onDateChange('daily')">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Outlet Name</label>
+            <input type="text" id="dailyOutlet" value="PLANTATION PLAZA">
+        </div>
+
+        <!-- DAILY TAB ONLY: receipt scan. Independent of the lunch tab. -->
+        <div class="scan-box" id="dailyScanBox">
+            <h3>📷 Scan Day End Receipt (Daily tab only)</h3>
+            <p class="hint">Upload <b>one</b> Day End POS receipt. This scan fills <b>only</b> the Daily Closing Report &mdash; it never touches the lunch tab. Tip: crop to the receipt, keep it straight and well-lit.</p>
+            <input type="file" id="dailyReceiptInput" accept="image/*">
+            <div class="scan-actions">
+                <button type="button" class="btn-apply" onclick="scanDailyReceipt()">Scan receipt</button>
+                <button type="button" class="btn-clear" onclick="clearDailyScan()">Clear / rescan</button>
+            </div>
+            <img id="dailyReceiptPreview" class="scan-preview" alt="Day End receipt preview">
+            <div id="dailyScanStatus" class="scan-status"></div>
+            <details class="rawocr"><summary>Show raw OCR text (what the scanner actually read)</summary><pre id="dailyRawOcr"></pre></details>
+            <div id="dailyVerify" class="verify">
+                <h4>✅ Check extracted figures &mdash; edit if wrong, then Apply</h4>
+                <div class="verify-grid" id="dailyVerifyGrid"></div>
+                <div class="scan-actions">
+                    <button type="button" class="btn-apply" onclick="applyDailyVerified()">Apply verified figures to Daily Report</button>
+                </div>
+                <p class="hint">Blank = not found on the receipt. It is left blank on purpose, not set to 0.</p>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">💰 Sales & POS Data</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Cash POS Sales ($)</label>
+                <input type="number" step="0.01" id="cashPos" placeholder="Cash Sales">
+            </div>
+            <div class="form-group">
+                <label>Total Net Sales ($)</label>
+                <input type="number" step="0.01" id="totalNetSales" placeholder="Net Sales">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>GrabFood ($)</label>
+                <input type="number" step="0.01" id="grabFood" placeholder="GrabFood">
+            </div>
+            <div class="form-group">
+                <label>FoodPanda ($)</label>
+                <input type="number" step="0.01" id="foodPanda" placeholder="PANDA">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>NETS QR ($)</label>
+                <input type="number" step="0.01" id="netsQr" placeholder="NETS QR">
+            </div>
+            <div class="form-group">
+                <label>VISA / Master ($)</label>
+                <input type="number" step="0.01" id="visaMaster" placeholder="VISAMASTER">
+            </div>
+        </div>
+        <div id="dailyPayCheck" class="paycheck"></div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Comm. Multiplier</label>
+                <input type="number" step="0.01" id="commRate" value="0.68">
+            </div>
+            <div class="form-group">
+                <label>Float Money ($)</label>
+                <input type="number" step="0.01" id="floatMoney" value="300">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Prev. MTD In-Store Sales ($)</label>
+                <input type="number" step="0.01" id="prevMtdInStore" placeholder="Yesterday's In-Store MTD">
+            </div>
+            <div class="form-group">
+                <label>Prev. MTD Total Sales ($)</label>
+                <input type="number" step="0.01" id="prevMtdTotal" placeholder="Yesterday's Total MTD">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>Extra ($)</label>
+                <input type="number" step="0.01" id="extra" value="0">
+            </div>
+            <div class="form-group">
+                <label>Shortage ($)</label>
+                <input type="number" step="0.01" id="shortage" value="0">
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">🍚 Rice Inventory</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Yesterday Balance</label>
+                <input type="number" step="0.1" id="yestBal" placeholder="Yesterday balance">
+            </div>
+            <div class="form-group">
+                <label>Today Cook</label>
+                <input type="number" step="0.1" id="todayCook" placeholder="Today cook">
+            </div>
+            <div class="form-group">
+                <label>Today Used</label>
+                <input type="number" step="0.1" id="todayUsed" placeholder="Today used">
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">📋 Generated Message Preview</div>
+        <div class="form-group">
+            <textarea id="outputDaily" readonly></textarea>
+        </div>
+        <button class="action-btn" onclick="copyToClipboard('outputDaily')">Copy Daily Report</button>
+        <div id="toastDaily" class="toast">Successfully copied to clipboard! ✅</div>
+    </div>
+
+    <!-- ================= 2. AFTER LUNCH REPORT CARD ================= -->
+    <div id="lunchCard" class="card">
+        <div class="section-title">📅 General Info</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Date (DD/MM/YYYY)</label>
+                <input type="text" id="lunchDate" oninput="onDateChange('lunch')">
+            </div>
+            <div class="form-group">
+                <label>Time</label>
+                <input type="text" id="lunchTime">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Outlet</label>
+            <input type="text" id="lunchOutlet" value="PPL">
+        </div>
+
+        <!-- LUNCH TAB ONLY: receipt scan. Independent of the daily tab. -->
+        <div class="scan-box" id="lunchScanBox">
+            <h3>📷 Scan Day / Lunch Receipt (Lunch tab only)</h3>
+            <p class="hint">Upload <b>one</b> Day (lunch) POS receipt. This scan fills <b>only</b> the After Lunch Report &mdash; it never touches the daily tab. Tip: crop to the receipt, keep it straight and well-lit.</p>
+            <input type="file" id="lunchReceiptInput" accept="image/*">
+            <div class="scan-actions">
+                <button type="button" class="btn-apply" onclick="scanLunchReceipt()">Scan receipt</button>
+                <button type="button" class="btn-clear" onclick="clearLunchScan()">Clear / rescan</button>
+            </div>
+            <img id="lunchReceiptPreview" class="scan-preview" alt="Lunch receipt preview">
+            <div id="lunchScanStatus" class="scan-status"></div>
+            <details class="rawocr"><summary>Show raw OCR text (what the scanner actually read)</summary><pre id="lunchRawOcr"></pre></details>
+            <div id="lunchVerify" class="verify">
+                <h4>✅ Check extracted figures &mdash; edit if wrong, then Apply</h4>
+                <div class="verify-grid" id="lunchVerifyGrid"></div>
+                <div class="scan-actions">
+                    <button type="button" class="btn-apply" onclick="applyLunchVerified()">Apply verified figures to Lunch Report</button>
+                </div>
+                <p class="hint">Blank = not found on the receipt. It is left blank on purpose, not set to 0.</p>
+            </div>
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">🍔 Lunch Sales Data</div>
+        <div class="form-group">
+            <label>Sales In House ($)</label>
+            <input type="number" step="0.01" id="lunchInHouse" placeholder="531.20">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>Foodpanda ($)</label>
+                <input type="number" step="0.01" id="lunchFoodpanda" placeholder="80.85">
+            </div>
+            <div class="form-group">
+                <label>Grab ($)</label>
+                <input type="number" step="0.01" id="lunchGrab" placeholder="109.33">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group">
+                <label>NETS QR ($)</label>
+                <input type="number" step="0.01" id="lunchNetsQr" placeholder="NETS QR">
+            </div>
+            <div class="form-group">
+                <label>VISA / Master ($)</label>
+                <input type="number" step="0.01" id="lunchVisaMaster" placeholder="VISAMASTER">
+            </div>
+        </div>
+        <div id="lunchPayCheck" class="paycheck"></div>
+
+        <div class="section-title" style="margin-top: 20px;">⭐ Performance Metrics</div>
+        <div class="row">
+            <div class="form-group">
+                <label>Google Review Rating</label>
+                <input type="number" step="0.1" id="lunchRating" value="4.4">
+            </div>
+            <div class="form-group">
+                <label>New Reviews in Month</label>
+                <input type="number" id="lunchNewReviews" value="0">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Online Incidents in Month</label>
+            <input type="number" id="lunchIncidents" value="0">
+        </div>
+
+        <div class="section-title" style="margin-top: 20px;">📋 Generated Message Preview</div>
+        <div class="form-group">
+            <textarea id="outputLunch" readonly></textarea>
+        </div>
+        <button class="action-btn" onclick="copyToClipboard('outputLunch')">Copy Lunch Report</button>
+        <div id="toastLunch" class="toast">Successfully copied to clipboard! ✅</div>
+    </div>
+</div>
+
+<script>
+    const monthsNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const monthNum = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        
+        const fullDateStr = `${day}/${monthNum}/${year}`;
+        
+        // Init Daily
+        document.getElementById('dailyDate').value = fullDateStr;
+        updateMonthField('dailyDate', 'dailyMonth');
+
+        // Init Lunch
+        document.getElementById('lunchDate').value = fullDateStr;
+        
+        // Init Time format e.g. 15:36pm
+        let hours = now.getHours();
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'pm' : 'am';
+        hours = hours % 12;
+        hours = hours ? hours : 12; 
+        document.getElementById('lunchTime').value = `${hours}:${minutes}${ampm}`;
+
+        generateDailyReport();
+        generateLunchReport();
+    });
+
+    function onDateChange(type) {
+        if(type === 'daily') {
+            updateMonthField('dailyDate', 'dailyMonth');
+            generateDailyReport();
+        } else {
+            generateLunchReport();
+        }
+    }
+
+    function updateMonthField(dateInputId, monthInputId) {
+        const val = document.getElementById(dateInputId).value;
+        const parts = val.split('/');
+        if(parts.length === 3) {
+            const mIndex = parseInt(parts[1], 10) - 1;
+            const year = parts[2];
+            if(!isNaN(mIndex) && mIndex >= 0 && mIndex <= 11) {
+                document.getElementById(monthInputId).value = `${monthsNames[mIndex]} ${year}`;
+            }
+        }
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        
+        if(tab === 'daily') {
+            document.querySelector('.tab-btn').classList.add('active');
+            document.getElementById('dailyCard').classList.add('active');
+        } else {
+            document.querySelector('.tab-lunch').classList.add('active');
+            document.getElementById('lunchCard').classList.add('active');
+        }
+    }
+
+    document.querySelectorAll('#dailyCard input').forEach(input => {
+        input.addEventListener('input', generateDailyReport);
+    });
+    document.querySelectorAll('#lunchCard input').forEach(input => {
+        input.addEventListener('input', generateLunchReport);
+    });
+
+    function formatCurrency(val) {
+        if (isNaN(val)) return "0.00";
+        return Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function generateDailyReport() {
+        const month = document.getElementById('dailyMonth').value;
+        const date = document.getElementById('dailyDate').value;
+        const outlet = document.getElementById('dailyOutlet').value;
+
+        const cashPos = parseFloat(document.getElementById('cashPos').value) || 0;
+        const totalNetSales = parseFloat(document.getElementById('totalNetSales').value) || 0;
+        const grabFood = parseFloat(document.getElementById('grabFood').value) || 0;
+        const foodPanda = parseFloat(document.getElementById('foodPanda').value) || 0;
+        const commRate = parseFloat(document.getElementById('commRate').value) || 0.68;
+        const floatMoney = document.getElementById('floatMoney').value;
+
+        const prevMtdInStore = parseFloat(document.getElementById('prevMtdInStore').value) || 0;
+        const prevMtdTotal = parseFloat(document.getElementById('prevMtdTotal').value) || 0;
+
+        const extra = parseFloat(document.getElementById('extra').value);
+        const shortage = parseFloat(document.getElementById('shortage').value);
+        const floatNum = parseFloat(document.getElementById('floatMoney').value);
+        const netsQr = parseFloat(document.getElementById('netsQr').value) || 0;
+        const visaMaster = parseFloat(document.getElementById('visaMaster').value) || 0;
+        const inStoreCheck = cashPos + netsQr + visaMaster;
+
+        const yestBal = parseFloat(document.getElementById('yestBal').value) || 0;
+        const todayCook = parseFloat(document.getElementById('todayCook').value) || 0;
+        const todayUsed = parseFloat(document.getElementById('todayUsed').value) || 0;
+
+        const deliveryBefore = grabFood + foodPanda;
+        const deliveryAfter = deliveryBefore * commRate;
+        const netSalesCalc = totalNetSales - deliveryBefore;
+        const newMtdInStore = prevMtdInStore + netSalesCalc;
+        const dailyGross = netSalesCalc + deliveryAfter;
+        const newMtdTotal = prevMtdTotal + dailyGross;
+
+        const payCheckEl = document.getElementById('dailyPayCheck');
+        if (payCheckEl) {
+            if (cashPos || netsQr || visaMaster) {
+                const diff = Math.abs(inStoreCheck - netSalesCalc);
+                payCheckEl.textContent = diff <= 0.02
+                    ? `✅ Cash ($${formatCurrency(cashPos)}) + NETS QR ($${formatCurrency(netsQr)}) + VISA/Master ($${formatCurrency(visaMaster)}) = $${formatCurrency(inStoreCheck)} — matches In-Store Sales.`
+                    : `⚠️ Cash + NETS QR + VISA/Master = $${formatCurrency(inStoreCheck)}, but In-Store Sales = $${formatCurrency(netSalesCalc)} — check the receipt.`;
+                payCheckEl.className = 'paycheck ' + (diff <= 0.02 ? 'ok' : 'warn');
+            } else { payCheckEl.textContent = ''; }
+        }
+
+        const totalRice = yestBal + todayCook;
+        const todayBal = totalRice - todayUsed;
+
+        // Standardized spacing for equations with spaces around '+' and '-'
+        const template = `Month : ${month}
+Date : ${date}
+Outlet: ${outlet}
+
+*1) In Store Sales* 
+==============  
+Cash POS Sales: $${formatCurrency(cashPos)}
+
+Total In Store Sales:
+Net sales - E delivery (Before Commission) 
+$${formatCurrency(totalNetSales)} - $${formatCurrency(deliveryBefore)} = $${formatCurrency(netSalesCalc)}
+
+Month To Date Sales:   
+$${formatCurrency(prevMtdInStore)} + $${formatCurrency(netSalesCalc)} = $${formatCurrency(newMtdInStore)}
+(add daily)
+
+
+*2) E-Delivery Sale*
+==============
+
+Total E-Delivery Sales
+$${formatCurrency(deliveryAfter)} *(After Commission)*
+$${formatCurrency(deliveryBefore)} *(Before Commission)*
+
+ *Total Gross Sales*
+=============
+Daily sales + Edelivery (After Commission)
+$${formatCurrency(netSalesCalc)} + $${formatCurrency(deliveryAfter)} = $${formatCurrency(dailyGross)}
+
+MTD Total Sales:  
+$${formatCurrency(prevMtdTotal)} + $${formatCurrency(dailyGross)} = $${formatCurrency(newMtdTotal)}
+
+In-Store breakdown: Cash $${formatCurrency(cashPos)} + NETS QR $${formatCurrency(netsQr)} + VISA/Master $${formatCurrency(visaMaster)} = $${formatCurrency(inStoreCheck)}
+
+Float money : $${isNaN(floatNum) ? '' : formatCurrency(floatNum)} ✅
+Extra : $${isNaN(extra) ? '0.00' : formatCurrency(extra)}
+Shortage: $${isNaN(shortage) ? '0.00' : formatCurrency(shortage)}
+
+Yesterday balance: ${yestBal}
+Today cook: ${todayCook}
+Total rice: ${Number(totalRice.toFixed(2))}
+Today used: ${todayUsed}
+Today balance: ${Number(todayBal.toFixed(2))}`;
+
+        document.getElementById('outputDaily').value = template;
+    }
+
+    function generateLunchReport() {
+        const date = document.getElementById('lunchDate').value;
+        const time = document.getElementById('lunchTime').value;
+        const outlet = document.getElementById('lunchOutlet').value;
+
+        const inHouse = parseFloat(document.getElementById('lunchInHouse').value) || 0;
+        const foodpanda = parseFloat(document.getElementById('lunchFoodpanda').value) || 0;
+        const grab = parseFloat(document.getElementById('lunchGrab').value) || 0;
+        
+        const rating = document.getElementById('lunchRating').value;
+        const newReviews = document.getElementById('lunchNewReviews').value;
+        
+        let monthNameStr = monthsNames[new Date().getMonth()].toUpperCase();
+        const parts = date.split('/');
+        if(parts.length === 3) {
+            const mIndex = parseInt(parts[1], 10) - 1;
+            if(!isNaN(mIndex) && mIndex >= 0 && mIndex <= 11) {
+                monthNameStr = monthsNames[mIndex].toUpperCase();
+            }
+        }
+        
+        const incidents = document.getElementById('lunchIncidents').value;
+        const totalSales = inHouse + foodpanda + grab;
+        const lunchNetsQr = parseFloat(document.getElementById('lunchNetsQr').value) || 0;
+        const lunchVisaMaster = parseFloat(document.getElementById('lunchVisaMaster').value) || 0;
+        const lunchCheck = lunchNetsQr + lunchVisaMaster + (parseFloat(document.getElementById('lunchInHouse').value) || 0);
+        const lunchCheckEl = document.getElementById('lunchPayCheck');
+        if (lunchCheckEl) {
+            // In-House already includes Cash + NETS QR + VISA/Master, so this is only a
+            // sanity display when the breakdown fields are filled in separately.
+            lunchCheckEl.textContent = (lunchNetsQr || lunchVisaMaster)
+                ? `NETS QR $${formatCurrency(lunchNetsQr)} + VISA/Master $${formatCurrency(lunchVisaMaster)} are part of In-House Sales above.`
+                : '';
+            lunchCheckEl.className = 'paycheck ok';
+        }
+
+        // Standardized spacing for lunch report
+        const template = `Daily Sales After Lunch
+Outlet - ${outlet}
+Date - ${date}
+Time - ${time}
+
+Sales In House : $${formatCurrency(inHouse)}
+Foodpanda : $${formatCurrency(foodpanda)}
+(after commission)
+Grab : $${formatCurrency(grab)}
+(after commission)
+
+Total Sales : $${formatCurrency(totalSales)}
+
+⭐ Google Review Rating: ${rating}
+📝 New Google Reviews in ${monthNameStr}: ${newReviews}
+🚨 ${monthNameStr} Online Incidents: ${incidents}`;
+
+        document.getElementById('outputLunch').value = template;
+    }
+
+    async function copyToClipboard(elementId) {
+        const textarea = document.getElementById(elementId);
+        const toastId = elementId === 'outputDaily' ? 'toastDaily' : 'toastLunch';
+        const toast = document.getElementById(toastId);
+        let ok = false;
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(textarea.value);
+                ok = true;
+            } else { throw new Error('clipboard API unavailable'); }
+        } catch (e) {
+            try {
+                textarea.select();
+                textarea.setSelectionRange(0, textarea.value.length);
+                ok = document.execCommand('copy');
+            } catch (e2) { ok = false; }
+        }
+        toast.textContent = ok ? 'Successfully copied to clipboard! ✅' : 'Copy failed — long-press the text above and copy it manually. ⚠️';
+        toast.style.color = ok ? '#16a34a' : '#dc2626';
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    // ================= OCR - SEPARATE PER TAB =================
+    // Daily and lunch each have their OWN file input, status, preview,
+    // verification panel, scan state and processing function.
+    // Scanning one tab NEVER writes to the other tab's fields.
+    // Tab switching only hides/shows cards, so scanned data is preserved.
+    const dailyScan = { text: '', extracted: {} };
+    const lunchScan = { text: '', extracted: {} };
+
+    function setStatus(elId, msg, cls) {
+        const el = document.getElementById(elId);
+        el.textContent = msg; el.className = 'scan-status ' + (cls || '');
+    }
+    // Normalise one amount token OCR may have mangled: I/l -> 1, O -> 0,
+    // thousands commas removed, comma-as-decimal handled.
+    function normaliseAmountToken(tok) {
+        let t = tok.replace(/[Il|]/g, '1').replace(/[Oo]/g, '0').replace(/\s/g, '');
+        if (/^\d{1,3}(,\d{3})+\.\d{2}$/.test(t)) return parseFloat(t.replace(/,/g, ''));
+        if (/^-?\d+,\d{2}$/.test(t)) return parseFloat(t.replace(',', '.'));
+        const v = parseFloat(t.replace(/,/g, ''));
+        return isNaN(v) ? null : v;
+    }
+    function findAmountsInWindow(windowText) {
+        const out = [];
+        const re = /-?[0-9IlOo][\dIlOo,]*[.,]\d{2}\b/g;
+        let m;
+        while ((m = re.exec(windowText)) !== null) {
+            const v = normaliseAmountToken(m[0]);
+            if (v !== null) out.push(v);
+        }
+        return out;
+    }
+    // Find a keyword, then take its amount. First try the SAME line as
+    // the keyword - that is where the amount belongs on these receipts.
+    // Only if the same line has no amount, look at the next non-empty
+    // line, and only if that line is just an amount (no label words).
+    // Never take the next labelled line's amount: when Gross's own
+    // amount was garbled, the old code took Discount's 1.56 instead.
+    function amountAfter(text, keywordRe, windowChars) {
+        const m = text.match(keywordRe);
+        if (!m) return null;
+        const start = m.index + m[0].length;
+        const rest = text.slice(start);
+        const sameLine = rest.split('\n')[0] || '';
+        const same = findAmountsInWindow(sameLine);
+        if (same.length) return same[0];
+        const lines = rest.split('\n').slice(1);
+        for (const rawLine of lines) {
+            const line = (rawLine || '').trim();
+            if (!line) continue;
+            // A line with letters is another label (Discount, Net, …) -
+            // its amount is not this figure's amount.
+            if (/[A-Za-z]/.test(line)) return null;
+            const amounts = findAmountsInWindow(line);
+            if (amounts.length) return amounts[0];
+            return null;
+        }
+        return null;
+    }
+    function parseBusinessDate(text) {
+        let m = text.match(/Business Date:\s*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+        if (m) return `${String(m[1]).padStart(2,'0')}/${String(m[2]).padStart(2,'0')}/${m[3]}`;
+        m = text.match(/Day End\s*:\s*(\d{1,2})\/([A-Za-z]{3})\/(\d{4})/i);
+        if (m) {
+            const mon = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12}[m[2].toLowerCase()];
+            if (mon) return `${String(m[1]).padStart(2,'0')}/${String(mon).padStart(2,'0')}/${m[3]}`;
+        }
+        m = text.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        return m ? `${String(m[1]).padStart(2,'0')}/${String(m[2]).padStart(2,'0')}/${m[3]}` : null;
+    }
+    // Parse ONE receipt. Only the summary section (before "Payment Total")
+    // is used for payment amounts - the Paymt table below it lists the
+    // same payments again per shift, so summing the whole receipt would
+    // double-count Cash / NETS QR / VISA.
+    function parseReceiptText(rawText) {
+        let text = (rawText || '').replace(/[—–]/g, '-').replace(/\u00a0/g, ' ');
+        // Common OCR misreads, normalised before searching.
+        text = text.replace(/NETS\s*O\s*R/gi, 'NETS QR').replace(/NETS\s*Q\s*R/gi, 'NETS QR').replace(/NETS\s*G\s*R/gi, 'NETS QR').replace(/NETSQR/gi, 'NETS QR');
+        text = text.replace(/VISA\s*\/?\s*MASTER/gi, 'VISAMASTER').replace(/VISA\s*MASTER/gi, 'VISAMASTER');
+        text = text.replace(/Grab\s*Food/gi, 'GrabFood');
+        const summary = text.split(/Payment Total/i)[0];
+        const get = (re) => amountAfter(summary, re);
+        // "Cash Sales" is unambiguous; bare CASH is the first payment line.
+        const cash = amountAfter(summary, /Cash Sales/i) ?? amountAfter(summary, /\bCASH\b/i);
+        const out = {
+            date: parseBusinessDate(text),
+            gross: amountAfter(summary, /Gross\s*Sales/i) ?? amountAfter(summary, /ross\s+Sales/i) ?? amountAfter(summary, /Gross/i),
+            net: amountAfter(summary, /Net\s*Sales/i) ?? amountAfter(summary, /oot\s+Sales/i) ?? amountAfter(summary, /Ret\s+Sal/i) ?? amountAfter(summary, /\bNet\b/i),
+            cash: cash,
+            grab: get(/GrabFood/i),
+            panda: get(/\bPANDA\b/i),
+            netsQr: get(/NETS QR/i),
+            visa: get(/VISAMASTER/i),
+            floatAmt: get(/^Float\b/m)
+        };
+        // ---- Sanity guards: a wrong figure is worse than a blank one. ----
+        // Gross is always >= Net, and only a little above it (discounts
+        // are small). The Day receipt once read Gross as 1.56 - that was
+        // the Discount amount, not Gross. Reject it and leave it blank.
+        if (out.gross !== null && out.net !== null) {
+            if (out.gross < out.net || (out.gross - out.net) > Math.max(50, 0.5 * out.net)) out.gross = null;
+        }
+        // No single payment can exceed Net Sales.
+        if (out.net !== null) {
+            ['cash','grab','panda','netsQr','visa'].forEach(k => { if (out[k] !== null && out[k] > out.net) out[k] = null; });
+        }
+        // Derive Gross when it is missing: Gross = Net + Discount +
+        // Rounding Adjust (e.g. 481.60 + 1.56 - 0.01 = 483.15).
+        if (out.gross === null && out.net !== null) {
+            const discount = amountAfter(summary, /\bDiscount\b/i);
+            if (discount !== null) {
+                const rounding = amountAfter(summary, /Rounding Adjust/i);
+                out.gross = Math.round((out.net + discount + (rounding || 0)) * 100) / 100;
+            }
+        }
+        return out;
+    }
+    // One OCR pass. PSM 6 (uniform block of text) usually reads narrow
+    // receipts better than the default PSM 3; if that option is rejected
+    // by the library, fall back to the default.
+    async function ocrText(image, psm, statusId, label) {
+        const opts = { logger: m => { if (m.status === 'recognizing text') setStatus(statusId, 'Reading ' + label + '… ' + Math.round(m.progress * 100) + '%', 'busy'); } };
+        if (psm) opts.tessedit_pageseg_mode = psm;
+        const res = await Tesseract.recognize(image, 'eng', opts);
+        return res.data.text || '';
+    }
+    // Merge two parses: keep the first pass, fill only fields still missing.
+    function mergeExtracted(a, b) {
+        const out = Object.assign({}, a);
+        Object.keys(b).forEach(k => { if ((out[k] === null || out[k] === undefined || out[k] === '') && b[k] !== null && b[k] !== undefined && b[k] !== '') out[k] = b[k]; });
+        return out;
+    }
+    // Reconciliation: the payment lines always sum to Net Sales
+    // (Cash + GrabFood + PANDA + NETS QR + VISAMASTER = Net).
+    // GrabFood / PANDA may legitimately be absent from a receipt, so
+    // a missing GrabFood / PANDA counts as 0 here. If exactly one of
+    // Cash / GrabFood is still missing but the rest are known, it can
+    // be derived exactly - no guessing.
+    function reconcileExtracted(e) {
+        const out = Object.assign({}, e);
+        const known = k => out[k] !== null && out[k] !== undefined;
+        const grab = out.grab || 0, panda = out.panda || 0;
+        if (!known('cash') && known('net') && known('netsQr') && known('visa')) {
+            const v = Math.round((out.net - grab - panda - out.netsQr - out.visa) * 100) / 100;
+            if (v > 0.01) out.cash = v;
+        }
+        if (!known('grab') && known('net') && known('cash') && known('panda') && known('netsQr') && known('visa')) {
+            const v = Math.round((out.net - out.cash - out.panda - out.netsQr - out.visa) * 100) / 100;
+            if (v > 0.01) out.grab = v;
+        }
+        return out;
+    }
+    // Upscale + binarise the photo on a canvas before OCR. Tested on the
+    // actual Day End receipt: plain upscaling still misread Gross as
+    // "kee", but upscaling 3x + threshold at 160 read Gross 1159.62,
+    // Net 1158.07, Cash 215.00 and GrabFood 208.05 correctly.
+    // If anything fails, the caller falls back to the original file.
+    function preprocessImage(file) {
+        return new Promise((resolve) => {
+            try {
+                const img = new Image();
+                const url = URL.createObjectURL(file);
+                img.onload = () => {
+                    try {
+                        const scale = Math.min(3, 2000 / Math.max(1, img.width));
+                        const c = document.createElement('canvas');
+                        c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+                        const ctx = c.getContext('2d');
+                        ctx.drawImage(img, 0, 0, c.width, c.height);
+                        const d = ctx.getImageData(0, 0, c.width, c.height);
+                        for (let i = 0; i < d.data.length; i += 4) {
+                            const g = 0.299 * d.data[i] + 0.587 * d.data[i+1] + 0.114 * d.data[i+2];
+                            const v = g > 160 ? 255 : 0;
+                            d.data[i] = d.data[i+1] = d.data[i+2] = v;
+                        }
+                        ctx.putImageData(d, 0, 0);
+                        URL.revokeObjectURL(url);
+                        c.toBlob(b => resolve(b || file), 'image/png');
+                    } catch (e) { URL.revokeObjectURL(url); resolve(file); }
+                };
+                img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+                img.src = url;
+            } catch (e) { resolve(file); }
+        });
+    }
+    function fmt2(v) { return (v === null || v === undefined || isNaN(v)) ? '' : Number(v).toFixed(2); }
+    function buildVerifyGrid(gridId, fields) {
+        const grid = document.getElementById(gridId);
+        grid.innerHTML = '';
+        fields.forEach(f => {
+            const wrap = document.createElement('div');
+            const lab = document.createElement('label'); lab.textContent = f.label;
+            const inp = document.createElement('input');
+            inp.type = 'text'; inp.id = f.id; inp.value = f.value === null || f.value === undefined ? '' : String(f.value);
+            inp.placeholder = 'Not found — left blank';
+            if (f.value === null || f.value === undefined || f.value === '') inp.classList.add('notfound');
+            wrap.appendChild(lab); wrap.appendChild(inp); grid.appendChild(wrap);
+        });
+    }
+    function showPreview(file, imgId) {
+        const img = document.getElementById(imgId);
+        const r = new FileReader();
+        r.onload = e => { img.src = e.target.result; img.style.display = 'block'; };
+        r.readAsDataURL(file);
+    }
+
+    // ---- TAB 1: DAILY CLOSING REPORT - its own OCR function ----
+    async function scanDailyReceipt() {
+        const input = document.getElementById('dailyReceiptInput');
+        const file = input.files && input.files[0];
+        if (!file) { setStatus('dailyScanStatus', 'Choose a Day End receipt photo first.', 'err'); return; }
+        if (typeof Tesseract === 'undefined') { setStatus('dailyScanStatus', 'OCR library failed to load — check internet and reload.', 'err'); return; }
+        showPreview(file, 'dailyReceiptPreview');
+        setStatus('dailyScanStatus', 'Reading Day End receipt… this can take 10–30 seconds.', 'busy');
+        try {
+            const image = await preprocessImage(file);
+            let text = '';
+            try { text = await ocrText(image, '6', 'dailyScanStatus', 'Day End receipt'); }
+            catch (e1) { text = await ocrText(image, null, 'dailyScanStatus', 'Day End receipt'); }
+            dailyScan.text = text;
+            dailyScan.extracted = parseReceiptText(text);
+            // Second pass on the ORIGINAL photo (PSM 6) if any key
+            // figure is still missing - merge, never overwrite found ones.
+            if (dailyScan.extracted.gross === null || dailyScan.extracted.net === null || dailyScan.extracted.cash === null || dailyScan.extracted.grab === null) {
+                setStatus('dailyScanStatus', 'First read missed some figures — trying a second read…', 'busy');
+                try {
+                    const text2 = await ocrText(file, '6', 'dailyScanStatus', 'Day End receipt');
+                    dailyScan.text = text + '\n' + text2;
+                    dailyScan.extracted = mergeExtracted(dailyScan.extracted, parseReceiptText(text2));
+                } catch (e2) { /* keep first-pass results */ }
+            }
+            dailyScan.extracted = reconcileExtracted(dailyScan.extracted);
+            document.getElementById('dailyRawOcr').textContent = dailyScan.text || '(OCR returned no text — try a clearer, straighter photo.)';
+            const e = dailyScan.extracted;
+            // Auto-fill ONLY daily fields. Missing figures stay blank, not 0.
+            if (e.date) { document.getElementById('dailyDate').value = e.date; updateMonthField('dailyDate', 'dailyMonth'); }
+            if (e.net !== null) document.getElementById('totalNetSales').value = fmt2(e.net);
+            if (e.cash !== null) document.getElementById('cashPos').value = fmt2(e.cash);
+            if (e.grab !== null) document.getElementById('grabFood').value = fmt2(e.grab); else document.getElementById('grabFood').value = '';
+            if (e.panda !== null) document.getElementById('foodPanda').value = fmt2(e.panda); else document.getElementById('foodPanda').value = '';
+            if (e.netsQr !== null) document.getElementById('netsQr').value = fmt2(e.netsQr); else document.getElementById('netsQr').value = '';
+            if (e.visa !== null) document.getElementById('visaMaster').value = fmt2(e.visa); else document.getElementById('visaMaster').value = '';
+            buildVerifyGrid('dailyVerifyGrid', [
+                { id: 'vDailyDate', label: 'Business Date', value: e.date },
+                { id: 'vDailyGross', label: 'Gross Sales ($)', value: fmt2(e.gross) },
+                { id: 'vDailyNet', label: 'Net Sales ($)', value: fmt2(e.net) },
+                { id: 'vDailyCash', label: 'Cash Sales ($)', value: fmt2(e.cash) },
+                { id: 'vDailyGrab', label: 'GrabFood ($)', value: fmt2(e.grab) },
+                { id: 'vDailyPanda', label: 'PANDA ($)', value: fmt2(e.panda) },
+                { id: 'vDailyNets', label: 'NETS QR ($)', value: fmt2(e.netsQr) },
+                { id: 'vDailyVisa', label: 'VISAMASTER ($)', value: fmt2(e.visa) }
+            ]);
+            document.getElementById('dailyVerify').style.display = 'block';
+            generateDailyReport();
+            const found = ['date','net','cash','grab','panda','netsQr','visa'].filter(k => e[k] !== null && e[k] !== undefined && e[k] !== '').length;
+            setStatus('dailyScanStatus', `✅ Daily receipt read — ${found} figure(s) found. Check them below, edit if needed, then Apply. Lunch tab untouched.`, 'ok');
+        } catch (err) {
+            setStatus('dailyScanStatus', 'OCR failed: ' + (err && err.message ? err.message : err) + ' — try a clearer photo.', 'err');
+        }
+    }
+    function applyDailyVerified() {
+        const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+        const d = v('vDailyDate'); if (d) { document.getElementById('dailyDate').value = d; updateMonthField('dailyDate', 'dailyMonth'); }
+        document.getElementById('totalNetSales').value = v('vDailyNet');
+        document.getElementById('cashPos').value = v('vDailyCash');
+        document.getElementById('grabFood').value = v('vDailyGrab');
+        document.getElementById('foodPanda').value = v('vDailyPanda');
+        document.getElementById('netsQr').value = v('vDailyNets');
+        document.getElementById('visaMaster').value = v('vDailyVisa');
+        generateDailyReport();
+        setStatus('dailyScanStatus', '✅ Verified figures applied to the Daily Closing Report.', 'ok');
+    }
+    function clearDailyScan() {
+        document.getElementById('dailyReceiptInput').value = '';
+        document.getElementById('dailyReceiptPreview').style.display = 'none';
+        document.getElementById('dailyVerify').style.display = 'none';
+        document.getElementById('dailyRawOcr').textContent = '';
+        dailyScan.text = ''; dailyScan.extracted = {};
+        setStatus('dailyScanStatus', 'Cleared. Upload a new Day End receipt to scan again.', '');
+    }
+
+    // ---- TAB 2: AFTER LUNCH REPORT - its own OCR function ----
+    async function scanLunchReceipt() {
+        const input = document.getElementById('lunchReceiptInput');
+        const file = input.files && input.files[0];
+        if (!file) { setStatus('lunchScanStatus', 'Choose a Day / lunch receipt photo first.', 'err'); return; }
+        if (typeof Tesseract === 'undefined') { setStatus('lunchScanStatus', 'OCR library failed to load — check internet and reload.', 'err'); return; }
+        showPreview(file, 'lunchReceiptPreview');
+        setStatus('lunchScanStatus', 'Reading lunch receipt… this can take 10–30 seconds.', 'busy');
+        try {
+            const image = await preprocessImage(file);
+            let text = '';
+            try { text = await ocrText(image, '6', 'lunchScanStatus', 'lunch receipt'); }
+            catch (e1) { text = await ocrText(image, null, 'lunchScanStatus', 'lunch receipt'); }
+            lunchScan.text = text;
+            lunchScan.extracted = parseReceiptText(text);
+            if (lunchScan.extracted.net === null || lunchScan.extracted.gross === null || lunchScan.extracted.cash === null || lunchScan.extracted.grab === null) {
+                setStatus('lunchScanStatus', 'First read missed some figures — trying a second read…', 'busy');
+                try {
+                    const text2 = await ocrText(file, '6', 'lunchScanStatus', 'lunch receipt');
+                    lunchScan.text = text + '\n' + text2;
+                    lunchScan.extracted = mergeExtracted(lunchScan.extracted, parseReceiptText(text2));
+                } catch (e2) { /* keep first-pass results */ }
+            }
+            lunchScan.extracted = reconcileExtracted(lunchScan.extracted);
+            document.getElementById('lunchRawOcr').textContent = lunchScan.text || '(OCR returned no text — try a clearer, straighter photo.)';
+            const e = lunchScan.extracted;
+            const delivery = (e.grab || 0) + (e.panda || 0);
+            const inHouse = (e.net !== null) ? (e.net - delivery) : null;
+            // Auto-fill ONLY lunch fields. Missing Grab/PANDA stay blank, not 0.
+            if (e.date) document.getElementById('lunchDate').value = e.date;
+            if (inHouse !== null) document.getElementById('lunchInHouse').value = fmt2(inHouse);
+            if (e.panda !== null) document.getElementById('lunchFoodpanda').value = fmt2(e.panda); else document.getElementById('lunchFoodpanda').value = '';
+            if (e.grab !== null) document.getElementById('lunchGrab').value = fmt2(e.grab); else document.getElementById('lunchGrab').value = '';
+            if (e.netsQr !== null) document.getElementById('lunchNetsQr').value = fmt2(e.netsQr); else document.getElementById('lunchNetsQr').value = '';
+            if (e.visa !== null) document.getElementById('lunchVisaMaster').value = fmt2(e.visa); else document.getElementById('lunchVisaMaster').value = '';
+            buildVerifyGrid('lunchVerifyGrid', [
+                { id: 'vLunchDate', label: 'Business Date', value: e.date },
+                { id: 'vLunchGross', label: 'Gross Sales ($)', value: fmt2(e.gross) },
+                { id: 'vLunchNet', label: 'Net Sales ($)', value: fmt2(e.net) },
+                { id: 'vLunchInHouse', label: 'In-House Sales ($)', value: fmt2(inHouse) },
+                { id: 'vLunchGrab', label: 'GrabFood ($)', value: fmt2(e.grab) },
+                { id: 'vLunchPanda', label: 'Foodpanda ($)', value: fmt2(e.panda) },
+                { id: 'vLunchNets', label: 'NETS QR ($)', value: fmt2(e.netsQr) },
+                { id: 'vLunchVisa', label: 'VISAMASTER ($)', value: fmt2(e.visa) }
+            ]);
+            document.getElementById('lunchVerify').style.display = 'block';
+            generateLunchReport();
+            const found = ['date','net','grab','panda','netsQr','visa'].filter(k => e[k] !== null && e[k] !== undefined && e[k] !== '').length;
+            setStatus('lunchScanStatus', `✅ Lunch receipt read — ${found} figure(s) found. In-House = Net − delivery. Check them below, edit if needed, then Apply. Daily tab untouched.`, 'ok');
+        } catch (err) {
+            setStatus('lunchScanStatus', 'OCR failed: ' + (err && err.message ? err.message : err) + ' — try a clearer photo.', 'err');
+        }
+    }
+    function applyLunchVerified() {
+        const v = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+        const d = v('vLunchDate'); if (d) document.getElementById('lunchDate').value = d;
+        document.getElementById('lunchInHouse').value = v('vLunchInHouse');
+        document.getElementById('lunchFoodpanda').value = v('vLunchPanda');
+        document.getElementById('lunchGrab').value = v('vLunchGrab');
+        document.getElementById('lunchNetsQr').value = v('vLunchNets');
+        document.getElementById('lunchVisaMaster').value = v('vLunchVisa');
+        generateLunchReport();
+        setStatus('lunchScanStatus', '✅ Verified figures applied to the After Lunch Report.', 'ok');
+    }
+    function clearLunchScan() {
+        document.getElementById('lunchReceiptInput').value = '';
+        document.getElementById('lunchReceiptPreview').style.display = 'none';
+        document.getElementById('lunchVerify').style.display = 'none';
+        document.getElementById('lunchRawOcr').textContent = '';
+        lunchScan.text = ''; lunchScan.extracted = {};
+        setStatus('lunchScanStatus', 'Cleared. Upload a new lunch receipt to scan again.', '');
+    }
+
+</script>
+
+</body>
+</html>
