@@ -115,6 +115,20 @@
         .sup-btn[aria-pressed="true"] .sup-name { color: var(--leaf-dark); }
       }
 
+      /* ---------- Outlet picker ---------- */
+      .outlet-card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: .9rem 1rem; box-shadow: var(--shadow);
+      }
+      .outlet-field { display: flex; flex-direction: column; gap: .3rem; }
+      .outlet-field label { font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+      .outlet-field select {
+        width: 100%; font: inherit; font-size: 1.08rem; font-weight: 800; color: var(--ink);
+        background: var(--surface-2); border: 1.5px solid var(--leaf); border-radius: 10px;
+        padding: .55rem .6rem; min-height: 3.1rem; cursor: pointer;
+      }
+      .outlet-summary { margin: .6rem 0 0; font-size: .93rem; font-weight: 600; color: var(--ink-soft); }
+
       /* ---------- Date row ---------- */
       .date-card {
         background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
@@ -249,17 +263,31 @@
     <div class="wrap">
       <header class="intro">
         <h1>Make an order for <span class="accent">Nasi Lemak Ayam Taliwang</span></h1>
-        <p>Pick the supplier, tap in the quantities, then copy the ready-made message into that supplier's WhatsApp group. Only items with a quantity go into the message — blanks are left out automatically.</p>
+        <p>Pick the outlet and the supplier, tap in the quantities, then copy the ready-made message into that supplier's WhatsApp group. Only items with a quantity go into the message — blanks are left out automatically.</p>
         <div class="steps" aria-hidden="true">
-          <span><b>1</b>Pick supplier</span>
+          <span><b>1</b>Pick outlet &amp; supplier</span>
           <span><b>2</b>Fill quantities</span>
           <span><b>3</b>Copy &amp; paste in WhatsApp</span>
         </div>
       </header>
 
+      <section aria-labelledby="h-outlet">
+        <div class="sec-head">
+          <h2 id="h-outlet">1 · Which outlet?</h2>
+          <span class="hint">The address in the message follows this</span>
+        </div>
+        <div class="outlet-card">
+          <div class="outlet-field">
+            <label for="outletSelect">Outlet</label>
+            <select id="outletSelect" aria-describedby="outletSummary"></select>
+          </div>
+          <p class="outlet-summary" id="outletSummary" aria-live="polite"></p>
+        </div>
+      </section>
+
       <section aria-labelledby="h-supplier">
         <div class="sec-head">
-          <h2 id="h-supplier">1 · Which supplier?</h2>
+          <h2 id="h-supplier">2 · Which supplier?</h2>
           <span class="hint">One order per group chat</span>
         </div>
         <div class="suppliers" id="suppliers" role="group" aria-label="Choose a supplier"></div>
@@ -267,7 +295,7 @@
 
       <section aria-labelledby="h-date">
         <div class="sec-head">
-          <h2 id="h-date">2 · Order date</h2>
+          <h2 id="h-date">3 · Order date</h2>
         </div>
         <div class="date-card">
           <div class="date-field">
@@ -281,7 +309,7 @@
 
       <section aria-labelledby="h-items">
         <div class="sec-head">
-          <h2 id="h-items">3 · Fill in quantities</h2>
+          <h2 id="h-items">4 · Fill in quantities</h2>
           <span class="hint" id="itemsHint"></span>
         </div>
         <div class="search-row" id="searchRow" hidden>
@@ -296,7 +324,7 @@
 
       <section aria-labelledby="h-preview">
         <div class="sec-head">
-          <h2 id="h-preview">4 · Your message</h2>
+          <h2 id="h-preview">5 · Your message</h2>
           <span class="hint">Exactly what gets pasted</span>
         </div>
         <div class="preview-card">
@@ -306,7 +334,7 @@
       </section>
 
       <div class="foot-note">
-        <p>Each supplier keeps its own usual header — address, billing company and delivery schedule are already filled in, matching the templates you have been sending.</p>
+        <p>Some suppliers print the outlet's full address, others just its name — switching the outlet above updates both automatically. Each supplier keeps its own usual header, billing company and delivery schedule, matching the templates you have been sending.</p>
       </div>
     </div>
 
@@ -327,16 +355,56 @@
       "use strict";
 
       /* ============================================================
+         Outlets — every supplier template takes its outlet name and
+         address from the outlet picked in the dropdown, never from
+         text hard-coded in the template. Some templates print the
+         full address, some only the outlet name, and Indomie uses
+         the short name — each variant is a field below.
+
+         TO ADD A NEW OUTLET: copy the block below, give it a new
+         id, and fill in that outlet's name and address details.
+         It will appear in the dropdown automatically; no other
+         code needs to change.
+         ============================================================ */
+      var OUTLETS = [
+        {
+          id: "plantation-plaza",
+          name: "Plantation Plaza",              // Sambal header: *Plantation Plaza*
+          nameUpper: "PLANTATION PLAZA",         // Otah / Plastic / Eggs: OUTLET - PLANTATION PLAZA
+          shortName: "Plantation",               // Indomie: OUTLET : Plantation
+          brand: "Nasi Lemak Ayam Taliwang",
+          brandUpper: "NASI LEMAK AYAM TALIWANG",
+          companyShort: "House of Brand",        // Chicken header wording
+          companyUpper: "HOUSE OF BRANDS",       // Rice / Indomie header wording
+          companyLegal: "House of Brands Singapore Pte Ltd.",
+          companyLegalUpper: "HOUSE OF BRANDS SINGAPORE PTE. LTD.",
+          street: "127 Plantation Crescent",
+          streetUpper: "127 PLANTATION CRESCENT",
+          unitBuilding: "#03-02 Plantation Plaza",
+          unitBuildingUpper: "#03-02 PLANTATION PLAZA",
+          cityPostcode: "Singapore 690127",
+          cityPostcodeUpper: "SINGAPORE 690127",
+          fullAddress: "BLK 127 Plantation Crescent #03-02, Plantation Plaza Singapore 690127.",
+          addressOneLine: "127 Plantation Crescent. #03-02 Plantation Plaza, Singapore 690127.",
+          addressWrapped: [                      // Rice / Indomie print the address wrapped over 3 lines
+            "BLK 127 PLANTATION",
+            "CRESCENT #03-02, TENGAH",
+            "PLANTATION PLAZA S690127"
+          ],
+          summary: "BLK 127 Plantation Crescent #03-02, Plantation Plaza, Singapore 690127",
+          invoiceEmail: "nasitaliwanginvoices@outlook.com",
+          billingEmail: "hobsginvoices@outlook.com",
+          licenseNo: "SW24980V003"
+        }
+      ];
+
+      /* ============================================================
          Supplier templates — headers and item lists taken from the
          order messages already in use for each WhatsApp group.
+         header(d, o): d = order date info, o = the selected outlet.
          unit = the word printed after the quantity in the message.
          pack = the pack-size note shown under the item name.
          ============================================================ */
-      var ADDRESS_LINES = [
-        "Nasi Lemak Ayam Taliwang",
-        "House of Brand",
-        "BLK 127 Plantation Crescent #03-02, Plantation Plaza Singapore 690127."
-      ];
 
       var SUPPLIERS = [
         {
@@ -344,10 +412,14 @@
           name: "Chicken",
           sub: "Meat & dry goods",
           style: "numbered",
-          header: function (d) {
-            return ["*NEW ORDER*", "", "Address"].concat(ADDRESS_LINES, [
-              "nasitaliwanginvoices@outlook.com", "", "DATE :" + d.dmy, "", "*ITEMS*"
-            ]);
+          header: function (d, o) {
+            return [
+              "*NEW ORDER*", "", "Address",
+              o.brand,
+              o.companyShort,
+              o.fullAddress,
+              o.invoiceEmail, "", "DATE :" + d.dmy, "", "*ITEMS*"
+            ];
           },
           line: function (item, qty, idx) {
             return (idx + 1) + ". " + item.name + " = " + qty + (item.unit ? " " + item.unit : "");
@@ -387,12 +459,12 @@
           name: "Vegetables",
           sub: "Fresh produce",
           style: "equals",
-          header: function (d) {
+          header: function (d, o) {
             return [
-              "Nasi Lemak Ayam Taliwang",
-              "127 Plantation Crescent",
-              "#03-02 Plantation Plaza",
-              "Singapore 690127",
+              o.brand,
+              o.street,
+              o.unitBuilding,
+              o.cityPostcode,
               "",
               "Date: " + d.dmy,
               ""
@@ -423,8 +495,8 @@
           name: "Otah",
           sub: "Frozen otah",
           style: "dash",
-          header: function (d) {
-            return ["*NEW ORDER*", "OUTLET - PLANTATION PLAZA", "DATE - " + d.dmyShort, ""];
+          header: function (d, o) {
+            return ["*NEW ORDER*", "OUTLET - " + o.nameUpper, "DATE - " + d.dmyShort, ""];
           },
           line: function (item, qty) {
             return item.name + " - " + qty + (item.unit ? item.unit : "");
@@ -438,12 +510,12 @@
           name: "Sambal",
           sub: "Sauces & sambal",
           style: "colon",
-          header: function (d) {
+          header: function (d, o) {
             return [
-              "*Plantation Plaza*",
-              "127 PLANTATION CRESCENT",
-              "#03-02 PLANTATION PLAZA",
-              "SINGAPORE 690127",
+              "*" + o.name + "*",
+              o.streetUpper,
+              o.unitBuildingUpper,
+              o.cityPostcodeUpper,
               "*" + d.dmy + "*",
               "DAY-" + d.dayLong,
               ""
@@ -483,18 +555,16 @@
           name: "Rice",
           sub: "Rice, oil & cleaning",
           style: "numbered",
-          header: function (d) {
+          header: function (d, o) {
             return [
               "*NEW ORDER*", "",
               "ADRESS",
-              "NASI LEMAK AYAM TALIWANG",
-              "HOUSE OF BRANDS",
-              "BLK 127 PLANTATION",
-              "CRESCENT #03-02, TENGAH",
-              "PLANTATION PLAZA S690127",
+              o.brandUpper,
+              o.companyUpper
+            ].concat(o.addressWrapped, [
               "DATE= *" + d.dmy + " (" + d.dayShort + ")*",
               ""
-            ];
+            ]);
           },
           line: function (item, qty, idx) {
             return (idx + 1) + ". " + item.name + " = " + qty + (item.unit ? " " + item.unit : "");
@@ -512,13 +582,13 @@
           name: "Plastic",
           sub: "Packaging & disposables",
           style: "bullet",
-          header: function (d) {
+          header: function (d, o) {
             return [
               "*NEW ORDER*",
-              "OUTLET - *PLANTATION PLAZA*",
+              "OUTLET - *" + o.nameUpper + "*",
               "",
-              "Billing Company : HOUSE OF BRANDS SINGAPORE PTE. LTD.",
-              "hobsginvoices@outlook.com",
+              "Billing Company : " + o.companyLegalUpper,
+              o.billingEmail,
               "",
               "DATE: " + d.dmy,
               "DAY: " + d.dayShort,
@@ -569,20 +639,18 @@
           name: "Indomie",
           sub: "Indomie & drinks",
           style: "equals",
-          header: function (d) {
+          header: function (d, o) {
             return [
               "*NEW ORDER*",
-              "OUTLET : Plantation",
+              "OUTLET : " + o.shortName,
               "DATE : " + d.dmyShort,
               "DAY : " + d.dayLong,
-              "ADDRESS : NASI LEMAK AYAM TALIWANG",
-              "HOUSE OF BRANDS",
-              "BLK 127 PLANTATION",
-              "CRESCENT #03-02, TENGAH",
-              "PLANTATION PLAZA S690127",
-              "nasitaliwanginvoices@outlook.com",
+              "ADDRESS : " + o.brandUpper,
+              o.companyUpper
+            ].concat(o.addressWrapped, [
+              o.invoiceEmail,
               ""
-            ];
+            ]);
           },
           line: function (item, qty) {
             return item.name + " = " + qty + (item.unit ? " " + item.unit : "");
@@ -600,14 +668,14 @@
           name: "Coconut Cream",
           sub: "Coconut cream",
           style: "colon",
-          header: function (d) {
+          header: function (d, o) {
             return [
               "NEW ORDER",
               "",
               "ADDRESS",
-              "127 Plantation Crescent. #03-02 Plantation Plaza, Singapore 690127.",
-              "Invoice to: House of Brands Singapore Pte Ltd.",
-              "License no.: SW24980V003",
+              o.addressOneLine,
+              "Invoice to: " + o.companyLegal,
+              "License no.: " + o.licenseNo,
               "",
               "DATE :" + d.dmy
             ];
@@ -624,10 +692,10 @@
           name: "Eggs",
           sub: "Fresh & boiled eggs",
           style: "dash",
-          header: function (d) {
+          header: function (d, o) {
             return [
               "*NEW ORDER *", "",
-              "OUTLET : PLANTATION PLAZA",
+              "OUTLET : " + o.nameUpper,
               "DATE: " + d.dmyShort,
               "DAY: " + d.dayLong,
               ""
@@ -648,12 +716,15 @@
 
       /* ---------------- State (in-memory only, per session) ---------------- */
       var state = {
+        outletId: "plantation-plaza",
         supplierId: "chicken",
         quantities: {} // supplierId -> { itemIndex: "qty string" }
       };
       SUPPLIERS.forEach(function (s) { state.quantities[s.id] = {}; });
 
       var els = {
+        outlet: document.getElementById("outletSelect"),
+        outletSummary: document.getElementById("outletSummary"),
         suppliers: document.getElementById("suppliers"),
         items: document.getElementById("items"),
         itemsHint: document.getElementById("itemsHint"),
@@ -678,6 +749,13 @@
           if (SUPPLIERS[i].id === state.supplierId) return SUPPLIERS[i];
         }
         return SUPPLIERS[0];
+      }
+
+      function outlet() {
+        for (var i = 0; i < OUTLETS.length; i++) {
+          if (OUTLETS[i].id === state.outletId) return OUTLETS[i];
+        }
+        return OUTLETS[0];
       }
 
       function pad(n) { return (n < 10 ? "0" : "") + n; }
@@ -720,7 +798,7 @@
       function buildMessage() {
         var s = supplier();
         var d = dateInfo();
-        var lines = s.header(d).slice();
+        var lines = s.header(d, outlet()).slice();
         var filled = filledItems();
         filled.forEach(function (f, i) { lines.push(s.line(f.item, f.qty, i)); });
         if (s.footer) {
@@ -731,6 +809,19 @@
       }
 
       /* ---------------- Rendering ---------------- */
+      function renderOutlet() {
+        if (!els.outlet.options.length) {
+          OUTLETS.forEach(function (o) {
+            var opt = document.createElement("option");
+            opt.value = o.id;
+            opt.textContent = o.name;
+            els.outlet.appendChild(opt);
+          });
+        }
+        els.outlet.value = state.outletId;
+        els.outletSummary.textContent = outlet().summary;
+      }
+
       function renderSuppliers() {
         els.suppliers.innerHTML = "";
         SUPPLIERS.forEach(function (s) {
@@ -868,6 +959,7 @@
       }
 
       function renderAll() {
+        renderOutlet();
         renderSuppliers();
         renderItems();
         renderPreview();
@@ -916,6 +1008,11 @@
       });
 
       els.search.addEventListener("input", renderItems);
+      els.outlet.addEventListener("change", function () {
+        state.outletId = els.outlet.value;
+        renderOutlet();
+        renderPreview();
+      });
       els.date.addEventListener("change", renderPreview);
       els.todayBtn.addEventListener("click", function () {
         var now = new Date();
