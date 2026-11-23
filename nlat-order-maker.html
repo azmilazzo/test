@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>NLAT Order Maker</title>
+    <style>
+      button, [role="button"], select, summary, input:not([type="checkbox"], [type="radio"]) { min-height: 2.75rem; }
+
+      :root {
+        --bg: #f6f4ee;
+        --surface: #ffffff;
+        --surface-2: #eef3ec;
+        --ink: #1c2a20;
+        --ink-soft: #4c5a50;
+        --line: #d9ddd2;
+        --leaf: #1e5b3a;
+        --leaf-dark: #14402a;
+        --leaf-soft: #e2efe4;
+        --chili: #bf3b1e;
+        --chili-soft: #fbe9e3;
+        --amber: #b97a16;
+        --wa: #1faa55;
+        --wa-dark: #128c4b;
+        --preview-bg: #e7f2df;
+        --preview-ink: #20301f;
+        --shadow: 0 1px 2px rgba(20, 40, 26, .06), 0 8px 24px rgba(20, 40, 26, .06);
+        --radius: 14px;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121714;
+          --surface: #1b221d;
+          --surface-2: #232c26;
+          --ink: #eef3ee;
+          --ink-soft: #a9b8ac;
+          --line: #33413a;
+          --leaf: #4cb782;
+          --leaf-dark: #8fd3ab;
+          --leaf-soft: #22382b;
+          --chili: #ff8a6b;
+          --chili-soft: #3d2620;
+          --amber: #e0aa4e;
+          --wa: #25c05e;
+          --wa-dark: #3dd173;
+          --preview-bg: #1d2b20;
+          --preview-ink: #e6f0e4;
+          --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+        }
+      }
+
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: "Avenir Next", Avenir, "Segoe UI", system-ui, -apple-system, sans-serif;
+        line-height: 1.45;
+        padding-bottom: 6.5rem;
+      }
+      .wrap { max-width: 46rem; margin: 0 auto; padding: 0 1rem; }
+
+      /* ---------- Intro ---------- */
+      .intro { padding: 1.4rem 0 .4rem; }
+      .intro h1 {
+        font-size: 1.65rem; line-height: 1.15; margin: 0 0 .35rem;
+        letter-spacing: -.01em; font-weight: 800;
+      }
+      .intro h1 .accent { color: var(--leaf); }
+      .intro p { margin: 0; color: var(--ink-soft); font-size: 1rem; max-width: 34rem; }
+      .steps {
+        display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .8rem;
+        font-size: .86rem; font-weight: 600; color: var(--ink-soft);
+      }
+      .steps span {
+        background: var(--surface); border: 1px solid var(--line);
+        border-radius: 999px; padding: .4rem .7rem;
+      }
+      .steps b { color: var(--leaf); margin-right: .3rem; }
+
+      /* ---------- Sections ---------- */
+      section { margin-top: 1.4rem; }
+      .sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; margin-bottom: .6rem; }
+      .sec-head h2 { font-size: 1.05rem; margin: 0; font-weight: 800; letter-spacing: .01em; }
+      .sec-head .hint { font-size: .85rem; color: var(--ink-soft); }
+
+      /* ---------- Supplier picker ---------- */
+      .suppliers { display: grid; grid-template-columns: repeat(3, 1fr); gap: .55rem; }
+      .sup-btn {
+        appearance: none; border: 1.5px solid var(--line); background: var(--surface);
+        color: var(--ink); border-radius: var(--radius); cursor: pointer;
+        padding: .8rem .5rem .7rem; min-height: 4.4rem;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15rem;
+        font: inherit; text-align: center; position: relative;
+        transition: border-color .12s ease, background .12s ease;
+      }
+      .sup-btn .sup-name { font-weight: 800; font-size: 1rem; line-height: 1.2; }
+      .sup-btn .sup-sub { font-size: .76rem; color: var(--ink-soft); font-weight: 600; }
+      .sup-btn .sup-count {
+        position: absolute; top: .4rem; right: .4rem;
+        background: var(--chili); color: #fff; font-size: .72rem; font-weight: 800;
+        min-width: 1.35rem; height: 1.35rem; border-radius: 999px;
+        display: none; align-items: center; justify-content: center; padding: 0 .3rem;
+      }
+      .sup-btn.has-items .sup-count { display: inline-flex; }
+      .sup-btn[aria-pressed="true"] {
+        border-color: var(--leaf); background: var(--leaf-soft);
+        box-shadow: inset 0 0 0 1px var(--leaf);
+      }
+      .sup-btn[aria-pressed="true"] .sup-name { color: var(--leaf-dark); }
+      @media (prefers-color-scheme: dark) {
+        .sup-btn[aria-pressed="true"] .sup-name { color: var(--leaf-dark); }
+      }
+
+      /* ---------- Date row ---------- */
+      .date-card {
+        background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: .9rem 1rem; display: flex; flex-wrap: wrap; gap: .8rem 1.2rem; align-items: end;
+        box-shadow: var(--shadow);
+      }
+      .date-field { display: flex; flex-direction: column; gap: .3rem; }
+      .date-field label { font-size: .82rem; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-soft); }
+      .date-field input[type="date"] {
+        font: inherit; font-size: 1.05rem; font-weight: 700; color: var(--ink);
+        background: var(--surface-2); border: 1.5px solid var(--line); border-radius: 10px;
+        padding: .45rem .6rem; min-height: 2.9rem;
+      }
+      .date-today {
+        appearance: none; border: 1.5px solid var(--line); background: var(--surface);
+        border-radius: 10px; font: inherit; font-weight: 700; font-size: .95rem;
+        padding: .45rem .9rem; cursor: pointer; color: var(--leaf-dark); min-height: 2.9rem;
+      }
+      .date-day { font-size: 1rem; font-weight: 700; padding-bottom: .55rem; }
+      .date-day span { color: var(--ink-soft); font-weight: 600; }
+
+      /* ---------- Items ---------- */
+      .search-row { margin-bottom: .6rem; }
+      .search-row input[type="search"] {
+        width: 100%; font: inherit; font-size: 1rem; padding: .6rem .8rem;
+        border: 1.5px solid var(--line); border-radius: 10px;
+        background: var(--surface); color: var(--ink); min-height: 2.9rem;
+      }
+      .items { display: flex; flex-direction: column; gap: .5rem; }
+      .item {
+        background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
+        padding: .65rem .7rem .65rem .95rem;
+        display: flex; align-items: center; gap: .7rem;
+      }
+      .item.filled { border-color: var(--leaf); background: var(--leaf-soft); }
+      .item-info { flex: 1 1 auto; min-width: 0; }
+      .item-name { font-weight: 700; font-size: 1rem; line-height: 1.25; overflow-wrap: anywhere; }
+      .item-unit { font-size: .83rem; color: var(--ink-soft); font-weight: 600; margin-top: .1rem; }
+      .item.filled .item-unit { color: var(--leaf-dark); }
+      .stepper { display: flex; align-items: stretch; gap: .35rem; flex: 0 0 auto; }
+      .step-btn {
+        appearance: none; width: 2.9rem; min-height: 2.9rem; border-radius: 10px;
+        border: 1.5px solid var(--line); background: var(--surface);
+        font-size: 1.35rem; font-weight: 800; line-height: 1; cursor: pointer; color: var(--ink);
+        display: inline-flex; align-items: center; justify-content: center; padding: 0;
+      }
+      .step-btn:active { background: var(--surface-2); }
+      .item.filled .step-btn { background: var(--surface); }
+      .qty-input {
+        width: 4.1rem; min-height: 2.9rem; text-align: center;
+        font: inherit; font-size: 1.1rem; font-weight: 800; color: var(--ink);
+        border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface-2);
+        padding: .3rem .2rem;
+      }
+      .item.filled .qty-input { border-color: var(--leaf); background: var(--surface); }
+      .qty-input::placeholder { color: var(--ink-soft); font-weight: 600; font-size: .95rem; }
+      .no-results {
+        display: none; padding: 1rem; text-align: center; color: var(--ink-soft);
+        background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius); font-weight: 600;
+      }
+      .clear-row { margin-top: .7rem; display: flex; justify-content: flex-end; }
+      .clear-btn {
+        appearance: none; background: none; border: none; cursor: pointer;
+        font: inherit; font-weight: 700; font-size: .95rem; color: var(--chili);
+        padding: .6rem .4rem; min-height: 2.75rem;
+      }
+
+      /* ---------- Preview ---------- */
+      .preview-card {
+        background: var(--preview-bg); border: 1px solid var(--line); border-radius: var(--radius);
+        padding: 1rem 1.05rem; box-shadow: var(--shadow);
+      }
+      .preview-card pre {
+        margin: 0; white-space: pre-wrap; overflow-wrap: anywhere;
+        font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        font-size: .93rem; line-height: 1.55; color: var(--preview-ink);
+      }
+      .preview-empty { color: var(--ink-soft); font-weight: 600; font-size: .95rem; margin: .6rem 0 0; }
+      .preview-empty[hidden] { display: none; }
+
+      /* ---------- Sticky action bar ---------- */
+      .action-bar {
+        position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+        background: color-mix(in srgb, var(--surface) 92%, transparent);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-top: 1px solid var(--line);
+        padding: .7rem 1rem calc(.7rem + env(safe-area-inset-bottom));
+      }
+      .action-inner { max-width: 46rem; margin: 0 auto; display: flex; gap: .55rem; align-items: center; }
+      .action-count { font-size: .88rem; font-weight: 700; color: var(--ink-soft); white-space: nowrap; }
+      .action-count b { color: var(--ink); font-size: 1rem; }
+      .btn-copy {
+        flex: 1 1 auto; appearance: none; border: none; cursor: pointer;
+        background: var(--wa); color: #fff; font: inherit; font-weight: 800; font-size: 1.05rem;
+        border-radius: 12px; padding: .8rem 1rem; min-height: 3.3rem;
+        display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+      }
+      .btn-copy:active { background: var(--wa-dark); }
+      .btn-copy:disabled { opacity: .45; cursor: not-allowed; }
+      .btn-wa {
+        flex: 0 0 auto; appearance: none; cursor: pointer; text-decoration: none;
+        border: 1.5px solid var(--wa); color: var(--wa-dark); background: transparent;
+        font: inherit; font-weight: 800; font-size: .98rem;
+        border-radius: 12px; padding: .8rem .9rem; min-height: 3.3rem;
+        display: inline-flex; align-items: center; justify-content: center;
+      }
+      @media (max-width: 30rem) {
+        .action-count { display: none; }
+        .btn-wa { padding: .8rem .7rem; font-size: .92rem; }
+      }
+
+      /* ---------- Toast ---------- */
+      .toast {
+        position: fixed; left: 50%; bottom: 6.8rem; transform: translateX(-50%) translateY(1rem);
+        background: var(--leaf-dark); color: #fff; font-weight: 700; font-size: .98rem;
+        padding: .75rem 1.1rem; border-radius: 999px; box-shadow: var(--shadow);
+        opacity: 0; pointer-events: none; transition: opacity .18s ease, transform .18s ease;
+        max-width: calc(100vw - 2rem); text-align: center; z-index: 30;
+      }
+      @media (prefers-color-scheme: dark) { .toast { background: var(--leaf); color: #0f1a12; } }
+      .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+      .foot-note { margin-top: 1.6rem; font-size: .88rem; color: var(--ink-soft); }
+      .foot-note p { margin: 0 0 .4rem; }
+
+      @media (prefers-reduced-motion: reduce) {
+        * { transition: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="intro">
+        <h1>Make an order for <span class="accent">Nasi Lemak Ayam Taliwang</span></h1>
+        <p>Pick the supplier, tap in the quantities, then copy the ready-made message into that supplier's WhatsApp group. Only items with a quantity go into the message — blanks are left out automatically.</p>
+        <div class="steps" aria-hidden="true">
+          <span><b>1</b>Pick supplier</span>
+          <span><b>2</b>Fill quantities</span>
+          <span><b>3</b>Copy &amp; paste in WhatsApp</span>
+        </div>
+      </header>
+
+      <section aria-labelledby="h-supplier">
+        <div class="sec-head">
+          <h2 id="h-supplier">1 · Which supplier?</h2>
+          <span class="hint">One order per group chat</span>
+        </div>
+        <div class="suppliers" id="suppliers" role="group" aria-label="Choose a supplier"></div>
+      </section>
+
+      <section aria-labelledby="h-date">
+        <div class="sec-head">
+          <h2 id="h-date">2 · Order date</h2>
+        </div>
+        <div class="date-card">
+          <div class="date-field">
+            <label for="orderDate">Date</label>
+            <input type="date" id="orderDate" />
+          </div>
+          <button type="button" class="date-today" id="todayBtn">Today</button>
+          <div class="date-day" id="dateDay" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-items">
+        <div class="sec-head">
+          <h2 id="h-items">3 · Fill in quantities</h2>
+          <span class="hint" id="itemsHint"></span>
+        </div>
+        <div class="search-row" id="searchRow" hidden>
+          <input type="search" id="itemSearch" placeholder="Search items…" aria-label="Search items in this list" />
+        </div>
+        <div class="items" id="items"></div>
+        <div class="no-results" id="noResults">No items match that search.</div>
+        <div class="clear-row">
+          <button type="button" class="clear-btn" id="clearBtn">Clear all quantities</button>
+        </div>
+      </section>
+
+      <section aria-labelledby="h-preview">
+        <div class="sec-head">
+          <h2 id="h-preview">4 · Your message</h2>
+          <span class="hint">Exactly what gets pasted</span>
+        </div>
+        <div class="preview-card">
+          <pre id="preview" aria-live="polite"></pre>
+          <p class="preview-empty" id="previewEmpty">Add at least one quantity above and the item lines will appear here.</p>
+        </div>
+      </section>
+
+      <div class="foot-note">
+        <p>Each supplier keeps its own usual header — address, billing company and delivery schedule are already filled in, matching the templates you have been sending.</p>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <div class="action-inner">
+        <div class="action-count" id="actionCount"><b>0</b> items</div>
+        <button type="button" class="btn-copy" id="copyBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="2"/></svg>
+          <span id="copyLabel">Copy message</span>
+        </button>
+        <a class="btn-wa" id="waBtn" href="#" target="_blank" rel="noopener">Open WhatsApp</a>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+
+    <script>
+      "use strict";
+
+      /* ============================================================
+         Supplier templates — headers and item lists taken from the
+         order messages already in use for each WhatsApp group.
+         unit = the word printed after the quantity in the message.
+         pack = the pack-size note shown under the item name.
+         ============================================================ */
+      var ADDRESS_LINES = [
+        "Nasi Lemak Ayam Taliwang",
+        "House of Brand",
+        "BLK 127 Plantation Crescent #03-02, Plantation Plaza Singapore 690127."
+      ];
+
+      var SUPPLIERS = [
+        {
+          id: "chicken",
+          name: "Chicken",
+          sub: "Meat & dry goods",
+          style: "numbered",
+          header: function (d) {
+            return ["*NEW ORDER*", "", "Address"].concat(ADDRESS_LINES, [
+              "nasitaliwanginvoices@outlook.com", "", "DATE :" + d.dmy, "", "*ITEMS*"
+            ]);
+          },
+          line: function (item, qty, idx) {
+            return (idx + 1) + ". " + item.name + " = " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "QTR Leg (CTN) (15 kg)", unit: "Ctn", pack: "15 kg carton" },
+            { name: "CW 120-150 (10 kg)", unit: "Ctn", pack: "10 kg carton" },
+            { name: "Perdix Hotdog (CTN)", unit: "Ctn" },
+            { name: "Ikan Selar (8/10) CTN", unit: "Ctn" },
+            { name: "Banana Leaves (G)", unit: "" },
+            { name: "Cucumber (KG)", unit: "kg" },
+            { name: "Salt (5x2KG)", unit: "" },
+            { name: "Sugar (5KG BAG)", unit: "" },
+            { name: "Corn Flour (20PKT)", unit: "" },
+            { name: "Lime Juice (6x1LTR)", unit: "" },
+            { name: "Turmeric Powder (1KG)", unit: "" },
+            { name: "ABC Kicap Manis (5L)", unit: "" },
+            { name: "Corn Starch", unit: "" },
+            { name: "Coriander Powder", unit: "" },
+            { name: "Garlic Powder", unit: "" },
+            { name: "Bawang Goreng", unit: "" },
+            { name: "Cinnamon", unit: "" },
+            { name: "Lemon Grass (kg)", unit: "kg" },
+            { name: "Daun Salam (g)", unit: "g" },
+            { name: "Daun Limau (g)", unit: "g" },
+            { name: "Lengkuas (kg)", unit: "kg" },
+            { name: "Old Ginger", unit: "kg" },
+            { name: "Pandan Leave", unit: "Kg" },
+            { name: "Minced Garlic (kg)", unit: "kg" },
+            { name: "Red Onion", unit: "kg" },
+            { name: "Frozen Chix Skin (kg)", unit: "kg" },
+            { name: "Frozen Chix Fillet (kg)", unit: "kg" }
+          ]
+        },
+        {
+          id: "vegetables",
+          name: "Vegetables",
+          sub: "Fresh produce",
+          style: "equals",
+          header: function (d) {
+            return [
+              "Nasi Lemak Ayam Taliwang",
+              "127 Plantation Crescent",
+              "#03-02 Plantation Plaza",
+              "Singapore 690127",
+              "",
+              "Date: " + d.dmy,
+              ""
+            ];
+          },
+          line: function (item, qty) {
+            return item.name + " = " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "Cucumber", unit: "Kg" },
+            { name: "Lemon Grass", unit: "Kg" },
+            { name: "Daun Salam", unit: "g" },
+            { name: "Daun Limau", unit: "g" },
+            { name: "Lengkuas", unit: "Kg" },
+            { name: "Ginger", unit: "Kg" },
+            { name: "Pandan Leaves", unit: "Kg" },
+            { name: "Daun Pisang", unit: "pkt" },
+            { name: "Minced Garlic", unit: "Kg" },
+            { name: "Taugeh", unit: "Kg" },
+            { name: "Daun Soup", unit: "grams" },
+            { name: "Tempe", unit: "" },
+            { name: "Mee Kuning", unit: "pkts" },
+            { name: "Onion", unit: "Kg" }
+          ]
+        },
+        {
+          id: "otah",
+          name: "Otah",
+          sub: "Frozen otah",
+          style: "dash",
+          header: function (d) {
+            return ["*NEW ORDER*", "OUTLET - PLANTATION PLAZA", "DATE - " + d.dmyShort, ""];
+          },
+          line: function (item, qty) {
+            return item.name + " - " + qty + (item.unit ? item.unit : "");
+          },
+          items: [
+            { name: "Frozen Otah", unit: "pkts", pack: "Sold by the packet" }
+          ]
+        },
+        {
+          id: "sambal",
+          name: "Sambal",
+          sub: "Sauces & sambal",
+          style: "colon",
+          header: function (d) {
+            return [
+              "*Plantation Plaza*",
+              "127 PLANTATION CRESCENT",
+              "#03-02 PLANTATION PLAZA",
+              "SINGAPORE 690127",
+              "*" + d.dmy + "*",
+              "DAY-" + d.dayLong,
+              ""
+            ];
+          },
+          footer: function () {
+            return ["", "Delivery schedule", "Tues,Thur,Sat"];
+          },
+          line: function (item, qty) {
+            return item.name + " :" + qty;
+          },
+          items: [
+            { name: "Nasi Lemak Sambal (2KG)", unit: "" },
+            { name: "Taliwang Sauce (2KG)", unit: "" },
+            { name: "Crispy Ikan Bilis (2.5KG)", unit: "" },
+            { name: "Crispy Peanuts (4KG)", unit: "" },
+            { name: "Ayam Goreng (2KG)", unit: "" },
+            { name: "Sambal Kecap (1KG)", unit: "" },
+            { name: "Cabe Ijo (1KG)", unit: "" },
+            { name: "Balado (1KG)", unit: "" },
+            { name: "Braised Cabbage (1KG)", unit: "" },
+            { name: "Curry Sauce (1KG)", unit: "" },
+            { name: "NLAT AYAM BEREMPAH (5pcs)", unit: "" },
+            { name: "Nlat Crispy Crumbs (500g)", unit: "" },
+            { name: "NLAT marinated Q/leg (30pcs) (3pkt/box)", unit: "" },
+            { name: "Flour Mixture for chicken wings (1ctn/8pkts)", unit: "" },
+            { name: "Sambal Bottle — Taliwang", unit: "", pack: "Bottled sambal" },
+            { name: "Sambal Bottle — Sambal Nasi Lemak", unit: "", pack: "Bottled sambal" },
+            { name: "Sambal Bottle — Cabe Ijo", unit: "", pack: "Bottled sambal" },
+            { name: "Sambal Bottle — Sambal Kicap", unit: "", pack: "Bottled sambal" },
+            { name: "Sambal Bottle — Balado", unit: "", pack: "Bottled sambal" },
+            { name: "Nasi Lemak Sambal (20g = 250PKT)", unit: "" }
+          ]
+        },
+        {
+          id: "rice",
+          name: "Rice",
+          sub: "Rice, oil & cleaning",
+          style: "numbered",
+          header: function (d) {
+            return [
+              "*NEW ORDER*", "",
+              "ADRESS",
+              "NASI LEMAK AYAM TALIWANG",
+              "HOUSE OF BRANDS",
+              "BLK 127 PLANTATION",
+              "CRESCENT #03-02, TENGAH",
+              "PLANTATION PLAZA S690127",
+              "DATE= *" + d.dmy + " (" + d.dayShort + ")*",
+              ""
+            ];
+          },
+          line: function (item, qty, idx) {
+            return (idx + 1) + ". " + item.name + " = " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "Hom Mali Rice 25kg/5kg", unit: "bundle" },
+            { name: "Oil 17kg Net", unit: "Tin" },
+            { name: "Dishwashing Soap", unit: "" },
+            { name: "Floor Cleaner", unit: "" },
+            { name: "Bleach", unit: "" }
+          ]
+        },
+        {
+          id: "plastic",
+          name: "Plastic",
+          sub: "Packaging & disposables",
+          style: "bullet",
+          header: function (d) {
+            return [
+              "*NEW ORDER*",
+              "OUTLET - *PLANTATION PLAZA*",
+              "",
+              "Billing Company : HOUSE OF BRANDS SINGAPORE PTE. LTD.",
+              "hobsginvoices@outlook.com",
+              "",
+              "DATE: " + d.dmy,
+              "DAY: " + d.dayShort,
+              ""
+            ];
+          },
+          line: function (item, qty) {
+            return "• " + item.name + " = " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "NLAT Box (500pcs/ctn)", unit: "ctn" },
+            { name: "MCR Box (500pcs/ctn)", unit: "ctn" },
+            { name: "DINE IN TRAY Box (600pcs/ctn)", unit: "ctn" },
+            { name: "1000cc WPS Bowl (600pcs/ctn)", unit: "ctn" },
+            { name: "1000cc Flat Lid (600pcs/ctn)", unit: "ctn" },
+            { name: "WPS lunch box (500pcs/ctn)", unit: "ctn" },
+            { name: "Plastic Fork (2000pcs/ctn)", unit: "ctn" },
+            { name: "Plastic Spoon (2000pcs/ctn)", unit: "ctn" },
+            { name: "Disposable Glove (100pcs/box)", unit: "box" },
+            { name: "Latex Glove (100pcs/box)", unit: "box" },
+            { name: "1oz Chilli Cup (1000pcs/ctn)", unit: "ctn" },
+            { name: "1.5oz Chilli Cup (1000pcs/ctn)", unit: "ctn" },
+            { name: "2oz Chilli Cup (1000pcs/ctn)", unit: "ctn" },
+            { name: "Chilli Plate (1000pcs/ctn)", unit: "ctn" },
+            { name: "S Plastic Bag (100pcs/pkt)", unit: "pkt" },
+            { name: "M Plastic Bag (30pcs/pkt)", unit: "pkt" },
+            { name: "L Plastic Bag (30pcs/pkt)", unit: "pkt" },
+            { name: "White Trash Bag (40pcs/pkt)", unit: "pkt" },
+            { name: "30x34” Black Trash Bag (25pcs/pkt)", unit: "pkt" },
+            { name: "36x48” Black Trash Bag (15pcs/pkt)", unit: "pkt" },
+            { name: "8x10 String Bag (400pcs/pkt)", unit: "pkt" },
+            { name: "6x9 String Bag (400pcs/pkt)", unit: "pkt" },
+            { name: "1Cup Carrier Bag (90pcs/pkt)", unit: "pkt" },
+            { name: "Waffle bag (500pcs/pkt)", unit: "pkt" },
+            { name: "No.2B Paper Bag (500pcs/pkt)", unit: "pkt" },
+            { name: "Hawker Wrapping Paper (100pcs/pkt)", unit: "pkt" },
+            { name: "45x30cm Clean Wrap (by roll)", unit: "roll" },
+            { name: "Red Rubber Band (1kg/pkt)", unit: "pkt" },
+            { name: "Face Mask (50pcs/box)", unit: "box" },
+            { name: "Hair Net (100pcs/pkt)", unit: "pkt" },
+            { name: "700ml Plain Plastic Cup (1000pcs/ctn)", unit: "ctn" },
+            { name: "220x6mm Transparent Straw (150pcs/pkt)", unit: "pkt" },
+            { name: "Lacy Aluminium Foil (by roll)", unit: "roll" }
+          ]
+        },
+        {
+          id: "indomie",
+          name: "Indomie",
+          sub: "Indomie & drinks",
+          style: "equals",
+          header: function (d) {
+            return [
+              "*NEW ORDER*",
+              "OUTLET : Plantation",
+              "DATE : " + d.dmyShort,
+              "DAY : " + d.dayLong,
+              "ADDRESS : NASI LEMAK AYAM TALIWANG",
+              "HOUSE OF BRANDS",
+              "BLK 127 PLANTATION",
+              "CRESCENT #03-02, TENGAH",
+              "PLANTATION PLAZA S690127",
+              "nasitaliwanginvoices@outlook.com",
+              ""
+            ];
+          },
+          line: function (item, qty) {
+            return item.name + " = " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "TEH BOTOL", unit: "ctn" },
+            { name: "INDO MIE", unit: "ctn" },
+            { name: "BEGEDEL", unit: "" },
+            { name: "SAHIR FISH FILLET", unit: "ctn" },
+            { name: "Mineral Water", unit: "ctn" }
+          ]
+        },
+        {
+          id: "coconut",
+          name: "Coconut Cream",
+          sub: "Coconut cream",
+          style: "colon",
+          header: function (d) {
+            return [
+              "NEW ORDER",
+              "",
+              "ADDRESS",
+              "127 Plantation Crescent. #03-02 Plantation Plaza, Singapore 690127.",
+              "Invoice to: House of Brands Singapore Pte Ltd.",
+              "License no.: SW24980V003",
+              "",
+              "DATE :" + d.dmy
+            ];
+          },
+          line: function (item, qty) {
+            return item.name + " :" + qty + (item.unit ? item.unit : "");
+          },
+          items: [
+            { name: "Coconut cream", unit: "ctn", pack: "Sold by the carton" }
+          ]
+        },
+        {
+          id: "eggs",
+          name: "Eggs",
+          sub: "Fresh & boiled eggs",
+          style: "dash",
+          header: function (d) {
+            return [
+              "*NEW ORDER *", "",
+              "OUTLET : PLANTATION PLAZA",
+              "DATE: " + d.dmyShort,
+              "DAY: " + d.dayLong,
+              ""
+            ];
+          },
+          footer: function () {
+            return ["", "Delivery schedule . *Tues, thur, Sat*"];
+          },
+          line: function (item, qty) {
+            return item.name + " - " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "EGGS SIZE D", unit: "trays" },
+            { name: "HARD BOILED EGG", unit: "" }
+          ]
+        }
+      ];
+
+      /* ---------------- State (in-memory only, per session) ---------------- */
+      var state = {
+        supplierId: "chicken",
+        quantities: {} // supplierId -> { itemIndex: "qty string" }
+      };
+      SUPPLIERS.forEach(function (s) { state.quantities[s.id] = {}; });
+
+      var els = {
+        suppliers: document.getElementById("suppliers"),
+        items: document.getElementById("items"),
+        itemsHint: document.getElementById("itemsHint"),
+        searchRow: document.getElementById("searchRow"),
+        search: document.getElementById("itemSearch"),
+        noResults: document.getElementById("noResults"),
+        date: document.getElementById("orderDate"),
+        dateDay: document.getElementById("dateDay"),
+        preview: document.getElementById("preview"),
+        previewEmpty: document.getElementById("previewEmpty"),
+        copyBtn: document.getElementById("copyBtn"),
+        copyLabel: document.getElementById("copyLabel"),
+        waBtn: document.getElementById("waBtn"),
+        actionCount: document.getElementById("actionCount"),
+        clearBtn: document.getElementById("clearBtn"),
+        todayBtn: document.getElementById("todayBtn"),
+        toast: document.getElementById("toast")
+      };
+
+      function supplier() {
+        for (var i = 0; i < SUPPLIERS.length; i++) {
+          if (SUPPLIERS[i].id === state.supplierId) return SUPPLIERS[i];
+        }
+        return SUPPLIERS[0];
+      }
+
+      function pad(n) { return (n < 10 ? "0" : "") + n; }
+
+      var DAY_SHORT = ["Sun", "Mon", "Tues", "Wed", "Thur", "Fri", "Sat"];
+      var DAY_LONG = ["Sunday", "Monday", "Tues", "Wednesday", "Thur", "Friday", "Saturday"];
+      var DAY_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+      var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      function dateInfo() {
+        var val = els.date.value; // yyyy-mm-dd
+        var dt;
+        if (val) {
+          var parts = val.split("-");
+          dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        } else {
+          dt = new Date();
+        }
+        return {
+          dmy: pad(dt.getDate()) + "/" + pad(dt.getMonth() + 1) + "/" + dt.getFullYear(),
+          dmyShort: pad(dt.getDate()) + "/" + pad(dt.getMonth() + 1) + "/" + String(dt.getFullYear()).slice(2),
+          dayShort: DAY_SHORT[dt.getDay()],
+          dayLong: DAY_LONG[dt.getDay()],
+          dayFull: DAY_FULL[dt.getDay()],
+          readable: dt.getDate() + " " + MONTHS[dt.getMonth()] + " " + dt.getFullYear()
+        };
+      }
+
+      function filledItems() {
+        var s = supplier();
+        var q = state.quantities[s.id];
+        var out = [];
+        s.items.forEach(function (item, idx) {
+          var v = (q[idx] || "").trim();
+          if (v !== "" && v !== "0") out.push({ item: item, qty: v, idx: idx });
+        });
+        return out;
+      }
+
+      function buildMessage() {
+        var s = supplier();
+        var d = dateInfo();
+        var lines = s.header(d).slice();
+        var filled = filledItems();
+        filled.forEach(function (f, i) { lines.push(s.line(f.item, f.qty, i)); });
+        if (s.footer) {
+          var foot = s.footer(d);
+          for (var j = 0; j < foot.length; j++) lines.push(foot[j]);
+        }
+        return lines.join("\n");
+      }
+
+      /* ---------------- Rendering ---------------- */
+      function renderSuppliers() {
+        els.suppliers.innerHTML = "";
+        SUPPLIERS.forEach(function (s) {
+          var count = Object.keys(state.quantities[s.id]).filter(function (k) {
+            var v = (state.quantities[s.id][k] || "").trim();
+            return v !== "" && v !== "0";
+          }).length;
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "sup-btn" + (count > 0 ? " has-items" : "");
+          btn.setAttribute("aria-pressed", s.id === state.supplierId ? "true" : "false");
+          btn.innerHTML =
+            '<span class="sup-count">' + count + "</span>" +
+            '<span class="sup-name"></span>' +
+            '<span class="sup-sub"></span>';
+          btn.querySelector(".sup-name").textContent = s.name;
+          btn.querySelector(".sup-sub").textContent = s.sub;
+          btn.addEventListener("click", function () {
+            state.supplierId = s.id;
+            els.search.value = "";
+            renderAll();
+            els.items.scrollIntoView({ behavior: "smooth", block: "start" });
+          });
+          els.suppliers.appendChild(btn);
+        });
+      }
+
+      function renderItems() {
+        var s = supplier();
+        var q = state.quantities[s.id];
+        var filter = els.search.value.trim().toLowerCase();
+        els.items.innerHTML = "";
+        var visible = 0;
+        s.items.forEach(function (item, idx) {
+          if (filter && item.name.toLowerCase().indexOf(filter) === -1) return;
+          visible++;
+          var val = q[idx] || "";
+          var row = document.createElement("div");
+          row.className = "item" + (val.trim() !== "" && val.trim() !== "0" ? " filled" : "");
+
+          var info = document.createElement("div");
+          info.className = "item-info";
+          var nm = document.createElement("div");
+          nm.className = "item-name";
+          nm.textContent = item.name;
+          info.appendChild(nm);
+          var unitBits = [];
+          if (item.pack) unitBits.push(item.pack);
+          if (item.unit) unitBits.push("Qty in " + item.unit);
+          if (unitBits.length) {
+            var un = document.createElement("div");
+            un.className = "item-unit";
+            un.textContent = unitBits.join(" · ");
+            info.appendChild(un);
+          }
+          row.appendChild(info);
+
+          var stepper = document.createElement("div");
+          stepper.className = "stepper";
+
+          var minus = document.createElement("button");
+          minus.type = "button";
+          minus.className = "step-btn";
+          minus.textContent = "−";
+          minus.setAttribute("aria-label", "Reduce quantity for " + item.name);
+
+          var input = document.createElement("input");
+          input.className = "qty-input";
+          input.type = "text";
+          input.inputMode = "decimal";
+          input.autocomplete = "off";
+          input.placeholder = "0";
+          input.value = val;
+          input.setAttribute("aria-label", "Quantity for " + item.name + (item.unit ? " (" + item.unit + ")" : ""));
+
+          var plus = document.createElement("button");
+          plus.type = "button";
+          plus.className = "step-btn";
+          plus.textContent = "+";
+          plus.setAttribute("aria-label", "Increase quantity for " + item.name);
+
+          function setQty(v) {
+            if (v === "" || v === "0") { delete q[idx]; }
+            else { q[idx] = v; }
+            row.classList.toggle("filled", !!(v && v !== "0"));
+            renderPreview();
+            renderSuppliers();
+          }
+          function step(delta) {
+            var cur = parseFloat((input.value || "").replace(",", "."));
+            if (isNaN(cur)) cur = 0;
+            var next = cur + delta;
+            if (next < 0) next = 0;
+            var str = (Math.round(next * 100) / 100).toString();
+            input.value = next === 0 ? "" : str;
+            setQty(input.value);
+          }
+          minus.addEventListener("click", function () { step(-1); });
+          plus.addEventListener("click", function () { step(1); });
+          input.addEventListener("input", function () { setQty(input.value.trim()); });
+          input.addEventListener("blur", function () {
+            var v = input.value.trim();
+            if (v === "0") { input.value = ""; setQty(""); }
+          });
+
+          stepper.appendChild(minus);
+          stepper.appendChild(input);
+          stepper.appendChild(plus);
+          row.appendChild(stepper);
+          els.items.appendChild(row);
+        });
+        els.noResults.style.display = visible === 0 ? "block" : "none";
+        els.searchRow.hidden = s.items.length < 10;
+        els.itemsHint.textContent = s.items.length + " items · leave blank what you don't need";
+      }
+
+      function renderPreview() {
+        var d = dateInfo();
+        els.dateDay.innerHTML = "";
+        var daySpan = document.createElement("span");
+        daySpan.textContent = "Day: ";
+        els.dateDay.appendChild(daySpan);
+        els.dateDay.appendChild(document.createTextNode(d.dayFull + " · " + d.readable));
+
+        var msg = buildMessage();
+        els.preview.textContent = msg;
+        var n = filledItems().length;
+        els.previewEmpty.hidden = n > 0;
+        els.copyBtn.disabled = n === 0;
+        els.copyLabel.textContent = n === 0 ? "Copy message" : "Copy message (" + n + " item" + (n === 1 ? "" : "s") + ")";
+        els.actionCount.innerHTML = "<b>" + n + "</b> item" + (n === 1 ? "" : "s");
+        els.waBtn.href = "https://wa.me/?text=" + encodeURIComponent(msg);
+        els.waBtn.style.opacity = n === 0 ? ".45" : "1";
+        els.waBtn.style.pointerEvents = n === 0 ? "none" : "auto";
+      }
+
+      function renderAll() {
+        renderSuppliers();
+        renderItems();
+        renderPreview();
+      }
+
+      /* ---------------- Actions ---------------- */
+      var toastTimer = null;
+      function showToast(text) {
+        els.toast.textContent = text;
+        els.toast.classList.add("show");
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { els.toast.classList.remove("show"); }, 2600);
+      }
+
+      function fallbackCopy(text) {
+        var ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        var ok = false;
+        try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        return ok;
+      }
+
+      els.copyBtn.addEventListener("click", function () {
+        var msg = buildMessage();
+        function done() { showToast("Copied! Now paste it in the " + supplier().name + " WhatsApp group."); }
+        function failed() { showToast("Copy didn't work — long-press the message above to copy it manually."); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(msg).then(done, function () {
+            if (fallbackCopy(msg)) done(); else failed();
+          });
+        } else {
+          if (fallbackCopy(msg)) done(); else failed();
+        }
+      });
+
+      els.clearBtn.addEventListener("click", function () {
+        state.quantities[state.supplierId] = {};
+        renderAll();
+        showToast("Cleared — start fresh for " + supplier().name + ".");
+      });
+
+      els.search.addEventListener("input", renderItems);
+      els.date.addEventListener("change", renderPreview);
+      els.todayBtn.addEventListener("click", function () {
+        var now = new Date();
+        els.date.value = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+        renderPreview();
+      });
+
+      /* Default the date to today on open. */
+      (function init() {
+        var now = new Date();
+        els.date.value = now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-" + pad(now.getDate());
+        renderAll();
+      })();
+    </script>
+  </body>
+</html>
