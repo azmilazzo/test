@@ -635,6 +635,53 @@
           ]
         },
         {
+          id: "plastic2",
+          name: "Plastic 2",
+          sub: "Second plastic seller",
+          style: "colon",
+          header: function (d, o) {
+            return [
+              o.brand,
+              o.street,
+              o.unitBuilding,
+              o.cityPostcode + ".",
+              "Billing Company : " + o.companyLegalUpper,
+              o.billingEmail,
+              "",
+              "Date:" + d.dmy,
+              ""
+            ];
+          },
+          line: function (item, qty) {
+            return item.name + ": " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "S Trans", unit: "" },
+            { name: "M Trans", unit: "" },
+            { name: "L Trans", unit: "" },
+            { name: "J Trans", unit: "" },
+            { name: "Rubbish Bag", unit: "" },
+            { name: "String Bag", unit: "" },
+            { name: "SC", unit: "" },
+            { name: "Plastic Straws", unit: "" },
+            { name: "Plastic Fork", unit: "ctn" },
+            { name: "Plastic Spoon", unit: "ctn" },
+            { name: "Plastic Gloves", unit: "" },
+            { name: "Vinyl Gloves (L)", unit: "" },
+            { name: "Hawker paper", unit: "" },
+            { name: "Waffle Bag", unit: "" },
+            { name: "Face Mask", unit: "" },
+            { name: "Aluminium Foil 300x30", unit: "" },
+            { name: "Hair net", unit: "" },
+            { name: "Rubber Band", unit: "" },
+            { name: "Plastic Cup A0700", unit: "" },
+            { name: "Plastic Cup Lid", unit: "" },
+            { name: "Nets Paper Roll", unit: "" },
+            { name: "Pos Paper roll", unit: "" },
+            { name: "Paper hot cup 8oz", unit: "" }
+          ]
+        },
+        {
           id: "indomie",
           name: "Indomie",
           sub: "Indomie & drinks",
@@ -711,6 +758,28 @@
             { name: "EGGS SIZE D", unit: "trays" },
             { name: "HARD BOILED EGG", unit: "" }
           ]
+        },
+        {
+          id: "fishcake",
+          name: "Fishcake",
+          sub: "Fishcake",
+          style: "equals",
+          header: function (d, o) {
+            return [
+              "*NEW ORDER*",
+              "",
+              "OUTLET = *" + o.name + "*",
+              "DATE =" + d.dmyNoPad,
+              "",
+              ""
+            ];
+          },
+          line: function (item, qty) {
+            return item.name + " =" + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "FISHCAKE", unit: "pkts", pack: "Sold by the packet" }
+          ]
         }
       ];
 
@@ -776,6 +845,7 @@
         }
         return {
           dmy: pad(dt.getDate()) + "/" + pad(dt.getMonth() + 1) + "/" + dt.getFullYear(),
+          dmyNoPad: dt.getDate() + "/" + pad(dt.getMonth() + 1) + "/" + dt.getFullYear(),
           dmyShort: pad(dt.getDate()) + "/" + pad(dt.getMonth() + 1) + "/" + String(dt.getFullYear()).slice(2),
           dayShort: DAY_SHORT[dt.getDay()],
           dayLong: DAY_LONG[dt.getDay()],
