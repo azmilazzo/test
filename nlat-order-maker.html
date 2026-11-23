@@ -161,7 +161,22 @@
       .item {
         background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
         padding: .65rem .7rem .65rem .95rem;
-        display: flex; align-items: center; gap: .7rem;
+        display: flex; align-items: center; gap: .7rem; flex-wrap: wrap;
+      }
+      .item-controls { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; margin-left: auto; justify-content: flex-end; }
+      .unit-toggle {
+        display: inline-flex; border: 1.5px solid var(--line); border-radius: 999px;
+        overflow: hidden; background: var(--surface-2); flex: 0 0 auto;
+      }
+      .unit-toggle button {
+        appearance: none; border: none; background: transparent; cursor: pointer;
+        font: inherit; font-size: .88rem; font-weight: 800; line-height: 1;
+        padding: .5rem .65rem; min-height: 2.5rem; min-width: 2.5rem; color: var(--ink-soft);
+      }
+      .unit-toggle button + button { border-left: 1.5px solid var(--line); }
+      .unit-toggle button[aria-pressed="true"] { background: var(--leaf); color: #fff; }
+      @media (prefers-color-scheme: dark) {
+        .unit-toggle button[aria-pressed="true"] { background: var(--leaf); color: #0f1a12; }
       }
       .item.filled { border-color: var(--leaf); background: var(--leaf-soft); }
       .item-info { flex: 1 1 auto; min-width: 0; }
@@ -787,9 +802,36 @@
       var state = {
         outletId: "plantation-plaza",
         supplierId: "chicken",
-        quantities: {} // supplierId -> { itemIndex: "qty string" }
+        quantities: {}, // supplierId -> { itemIndex: "qty string" }
+        units: {} // supplierId -> { itemIndex: "g" | "kg" } for weighed items
       };
-      SUPPLIERS.forEach(function (s) { state.quantities[s.id] = {}; });
+      SUPPLIERS.forEach(function (s) { state.quantities[s.id] = {}; state.units[s.id] = {}; });
+
+      function isWeightUnit(unit) {
+        if (!unit) return false;
+        var u = String(unit).toLowerCase().trim();
+        return u === "kg" || u === "g" || u === "grams" || u === "gram";
+      }
+      function defaultWeightUnit(item) {
+        var u = (item.unit || "").toLowerCase().trim();
+        return (u === "g" || u === "grams" || u === "gram") ? "g" : "kg";
+      }
+      function getEffectiveUnit(supplierId, item, idx) {
+        if (!isWeightUnit(item.unit)) return item.unit;
+        return state.units[supplierId][idx] || defaultWeightUnit(item);
+      }
+      function getEffectiveItem(supplierId, item, idx) {
+        var effUnit = getEffectiveUnit(supplierId, item, idx);
+        var effName = item.name;
+        if (isWeightUnit(item.unit) && /\(\s*(kg|g)\s*\)/i.test(effName)) {
+          effName = effName.replace(/\(\s*(kg|g)\s*\)/i, "(" + effUnit + ")");
+        }
+        return { name: effName, unit: effUnit, pack: item.pack };
+      }
+      function displayName(item) {
+        if (!isWeightUnit(item.unit)) return item.name;
+        return item.name.replace(/\s*\(\s*(kg|g)\s*\)\s*$/i, "").trim();
+      }
 
       var els = {
         outlet: document.getElementById("outletSelect"),
@@ -860,7 +902,7 @@
         var out = [];
         s.items.forEach(function (item, idx) {
           var v = (q[idx] || "").trim();
-          if (v !== "" && v !== "0") out.push({ item: item, qty: v, idx: idx });
+          if (v !== "" && v !== "0") out.push({ item: getEffectiveItem(s.id, item, idx), qty: v, idx: idx });
         });
         return out;
       }
@@ -932,15 +974,20 @@
           var row = document.createElement("div");
           row.className = "item" + (val.trim() !== "" && val.trim() !== "0" ? " filled" : "");
 
+          var isWeight = isWeightUnit(item.unit);
+          var effUnit = getEffectiveUnit(s.id, item, idx);
+          var shownName = displayName(item);
+
           var info = document.createElement("div");
           info.className = "item-info";
           var nm = document.createElement("div");
           nm.className = "item-name";
-          nm.textContent = item.name;
+          nm.textContent = shownName;
           info.appendChild(nm);
           var unitBits = [];
           if (item.pack) unitBits.push(item.pack);
-          if (item.unit) unitBits.push("Qty in " + item.unit);
+          if (item.unit && !isWeight) unitBits.push("Qty in " + item.unit);
+          if (isWeight) unitBits.push("Weighed item — choose g or kg");
           if (unitBits.length) {
             var un = document.createElement("div");
             un.className = "item-unit";
@@ -949,6 +996,32 @@
           }
           row.appendChild(info);
 
+          var controls = document.createElement("div");
+          controls.className = "item-controls";
+
+          if (isWeight) {
+            (function (itemIdx, currentUnit) {
+              var toggle = document.createElement("div");
+              toggle.className = "unit-toggle";
+              toggle.setAttribute("role", "group");
+              toggle.setAttribute("aria-label", "Unit for " + shownName);
+              ["g", "kg"].forEach(function (u) {
+                var ub = document.createElement("button");
+                ub.type = "button";
+                ub.textContent = u;
+                ub.setAttribute("aria-pressed", u === currentUnit ? "true" : "false");
+                ub.setAttribute("aria-label", "Use " + u + " for " + shownName);
+                ub.addEventListener("click", function () {
+                  state.units[s.id][itemIdx] = u;
+                  renderItems();
+                  renderPreview();
+                });
+                toggle.appendChild(ub);
+              });
+              controls.appendChild(toggle);
+            })(idx, effUnit);
+          }
+
           var stepper = document.createElement("div");
           stepper.className = "stepper";
 
@@ -956,7 +1029,7 @@
           minus.type = "button";
           minus.className = "step-btn";
           minus.textContent = "−";
-          minus.setAttribute("aria-label", "Reduce quantity for " + item.name);
+          minus.setAttribute("aria-label", "Reduce quantity for " + shownName);
 
           var input = document.createElement("input");
           input.className = "qty-input";
@@ -965,13 +1038,13 @@
           input.autocomplete = "off";
           input.placeholder = "0";
           input.value = val;
-          input.setAttribute("aria-label", "Quantity for " + item.name + (item.unit ? " (" + item.unit + ")" : ""));
+          input.setAttribute("aria-label", "Quantity for " + shownName + (effUnit ? " (" + effUnit + ")" : ""));
 
           var plus = document.createElement("button");
           plus.type = "button";
           plus.className = "step-btn";
           plus.textContent = "+";
-          plus.setAttribute("aria-label", "Increase quantity for " + item.name);
+          plus.setAttribute("aria-label", "Increase quantity for " + shownName);
 
           function setQty(v) {
             if (v === "" || v === "0") { delete q[idx]; }
@@ -1000,12 +1073,14 @@
           stepper.appendChild(minus);
           stepper.appendChild(input);
           stepper.appendChild(plus);
-          row.appendChild(stepper);
+          controls.appendChild(stepper);
+          row.appendChild(controls);
           els.items.appendChild(row);
         });
         els.noResults.style.display = visible === 0 ? "block" : "none";
         els.searchRow.hidden = s.items.length < 10;
-        els.itemsHint.textContent = s.items.length + " items · leave blank what you don't need";
+        var hasWeight = s.items.some(function (it) { return isWeightUnit(it.unit); });
+        els.itemsHint.textContent = s.items.length + " items · leave blank what you don't need" + (hasWeight ? " · weighed items: pick g or kg" : "");
       }
 
       function renderPreview() {
@@ -1073,6 +1148,7 @@
 
       els.clearBtn.addEventListener("click", function () {
         state.quantities[state.supplierId] = {};
+        state.units[state.supplierId] = {};
         renderAll();
         showToast("Cleared — start fresh for " + supplier().name + ".");
       });
