@@ -407,6 +407,37 @@
             "PLANTATION PLAZA S690127"
           ],
           summary: "BLK 127 Plantation Crescent #03-02, Plantation Plaza, Singapore 690127",
+          drinksAddressUpper: "127 PLANTATION CRESCENT #03-02 PLANTATION PLAZA SINGAPORE 690127",
+          invoiceEmail: "nasitaliwanginvoices@outlook.com",
+          billingEmail: "hobsginvoices@outlook.com",
+          licenseNo: "SW24980V003"
+        },
+        {
+          id: "ang-mo-kio",
+          name: "Ang Mo Kio",
+          nameUpper: "ANG MO KIO",
+          shortName: "Ang Mo Kio",
+          brand: "Nasi Lemak Ayam Taliwang",
+          brandUpper: "NASI LEMAK AYAM TALIWANG",
+          companyShort: "House of Brand",
+          companyUpper: "HOUSE OF BRANDS",
+          companyLegal: "House of Brands Singapore Pte Ltd.",
+          companyLegalUpper: "HOUSE OF BRANDS SINGAPORE PTE. LTD.",
+          street: "608 Ang Mo Kio Avenue 5",
+          streetUpper: "608 ANG MO KIO AVENUE 5",
+          unitBuilding: "#01-2771",
+          unitBuildingUpper: "#01-2771",
+          cityPostcode: "Singapore 560608",
+          cityPostcodeUpper: "SINGAPORE 560608",
+          fullAddress: "608 Ang Mo Kio Avenue 5 #01-2771 Singapore 560608 MR3.",
+          addressOneLine: "608 Ang Mo Kio Avenue 5. #01-2771, Singapore 560608.",
+          addressWrapped: [
+            "608 ANG MO KIO",
+            "AVENUE 5 #01-2771",
+            "SINGAPORE 560608 MR3"
+          ],
+          summary: "608 Ang Mo Kio Avenue 5 #01-2771, Singapore 560608",
+          drinksAddressUpper: "608 ANG MO KIO AVENUE 5 #01-2771 SINGAPORE 560608 MR3",
           invoiceEmail: "nasitaliwanginvoices@outlook.com",
           billingEmail: "hobsginvoices@outlook.com",
           licenseNo: "SW24980V003"
@@ -799,6 +830,35 @@
           },
           items: [
             { name: "FISHCAKE", unit: "pkts", pack: "Sold by the packet" }
+          ]
+        },
+        {
+          id: "drinks",
+          name: "Drinks",
+          sub: "Bottled drinks & water",
+          style: "equals",
+          header: function (d, o) {
+            return [
+              "*Nasi Lemak Taliwang*",
+              "",
+              "*NEW ORDER*",
+              "OUTLET - " + o.nameUpper,
+              "ADRESS :" + o.drinksAddressUpper,
+              "",
+              "",
+              "Date: " + d.dmyShort,
+              "Day: " + d.dayLong,
+              ""
+            ];
+          },
+          line: function (item, qty) {
+            return item.name + " = " + qty + (item.unit ? " " + item.unit : "");
+          },
+          items: [
+            { name: "Mineral Water", unit: "" },
+            { name: "Green Tea", unit: "" },
+            { name: "Chrysanthemum Tea", unit: "" },
+            { name: "Lemon Tea", unit: "" }
           ]
         }
       ];
