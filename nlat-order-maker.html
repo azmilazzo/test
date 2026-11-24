@@ -433,7 +433,7 @@
               o.brand,
               o.companyShort,
               o.fullAddress,
-              o.invoiceEmail, "", "DATE :" + d.dmy, "", "*ITEMS*"
+              o.invoiceEmail, "", "DATE :" + d.dmy, "DAY :" + d.dayLong, "", "*ITEMS*"
             ];
           },
           line: function (item, qty, idx) {
@@ -482,6 +482,7 @@
               o.cityPostcode,
               "",
               "Date: " + d.dmy,
+              "Day: " + d.dayLong,
               ""
             ];
           },
@@ -511,7 +512,7 @@
           sub: "Frozen otah",
           style: "dash",
           header: function (d, o) {
-            return ["*NEW ORDER*", "OUTLET - " + o.nameUpper, "DATE - " + d.dmyShort, ""];
+            return ["*NEW ORDER*", "OUTLET - " + o.nameUpper, "DATE - " + d.dmyShort, "DAY - " + d.dayLong, ""];
           },
           line: function (item, qty) {
             return item.name + " - " + qty + (item.unit ? item.unit : "");
@@ -577,7 +578,8 @@
               o.brandUpper,
               o.companyUpper
             ].concat(o.addressWrapped, [
-              "DATE= *" + d.dmy + " (" + d.dayShort + ")*",
+              "DATE= *" + d.dmy + "*",
+              "DAY= *" + d.dayLong + "*",
               ""
             ]);
           },
@@ -664,6 +666,7 @@
               o.billingEmail,
               "",
               "Date:" + d.dmy,
+              "Day:" + d.dayLong,
               ""
             ];
           },
@@ -739,7 +742,8 @@
               "Invoice to: " + o.companyLegal,
               "License no.: " + o.licenseNo,
               "",
-              "DATE :" + d.dmy
+              "DATE :" + d.dmy,
+              "DAY :" + d.dayLong
             ];
           },
           line: function (item, qty) {
@@ -785,6 +789,7 @@
               "",
               "OUTLET = *" + o.name + "*",
               "DATE =" + d.dmyNoPad,
+              "DAY =" + d.dayLong,
               "",
               ""
             ];
