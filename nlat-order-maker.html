@@ -461,7 +461,7 @@
           header: function (d, o) {
             return [
               "*NEW ORDER*", "", "Address",
-              o.brand,
+              "*" + o.brand + "*",
               o.companyShort,
               o.fullAddress,
               o.invoiceEmail, "", "DATE :" + d.dmy, "DAY :" + d.dayLong, "", "*ITEMS*"
@@ -507,7 +507,7 @@
           style: "equals",
           header: function (d, o) {
             return [
-              o.brand,
+              "*" + o.brand + "*",
               o.street,
               o.unitBuilding,
               o.cityPostcode,
@@ -606,7 +606,7 @@
             return [
               "*NEW ORDER*", "",
               "ADRESS",
-              o.brandUpper,
+              "*" + o.brandUpper + "*",
               o.companyUpper
             ].concat(o.addressWrapped, [
               "DATE= *" + d.dmy + "*",
@@ -689,7 +689,7 @@
           style: "colon",
           header: function (d, o) {
             return [
-              o.brand,
+              "*" + o.brand + "*",
               o.street,
               o.unitBuilding,
               o.cityPostcode + ".",
@@ -741,7 +741,7 @@
               "OUTLET : " + o.shortName,
               "DATE : " + d.dmyShort,
               "DAY : " + d.dayLong,
-              "ADDRESS : " + o.brandUpper,
+              "ADDRESS : *" + o.brandUpper + "*",
               o.companyUpper
             ].concat(o.addressWrapped, [
               o.invoiceEmail,
